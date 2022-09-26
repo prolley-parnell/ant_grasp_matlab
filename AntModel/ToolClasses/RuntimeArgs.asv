@@ -204,8 +204,7 @@ classdef RuntimeArgs
             obj.SENSE.MODE = "furthest_first_pair";
             obj.SENSE.THRESH = 0.6;
 
-            %The number of contact points that must be collected before the
-            %first goal evaluation is carried out.
+            
             obj.SENSE.MINIMUM_N = 5;
 
             %Whether to consider grasps that are larger than the reach of
@@ -258,7 +257,7 @@ classdef RuntimeArgs
             %Whether to enable the movement of the body or not, used for
             %simplifying the model and enabling tests that do not require
             %the body to move.
-            obj.BODY_MOTION_ENABLE = 1;
+            obj.BODY_MOTION_ENABLE = 0;
 
 
         end

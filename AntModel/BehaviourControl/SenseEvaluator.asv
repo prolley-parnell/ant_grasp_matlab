@@ -62,15 +62,12 @@ classdef SenseEvaluator
 
                 if mandibleContactCheck > 1
                     ant.grasp_complete = 1;
-                    ant.mandible_state = 0;
                     ant.positionController.trajectory_queue = [];
                 elseif mandibleContactCheck == 1
                     ant.positionController.trajectory_queue = [];
                     ant.mandible_state = 1;
                 elseif mandibleContactCheck == 0
-                    %TODO Move this elsewhere - Ant mandibles should open
-                    %once when a new goal is given, and remain open until
-                    %one mandible makes contact
+                    %TODO Move this elsewhere - Ant mand
                     ant.mandible_state = -1;
                 end
 

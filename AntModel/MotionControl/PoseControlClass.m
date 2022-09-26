@@ -66,6 +66,7 @@ classdef PoseControlClass
                 contactStructArray = [contactStructArray;dataStruct];
 
 
+
                 switch(limbs{i}.type)
                     case "Antenna"
                         [obj, limbs{i}, qLocal] = obj.moveAntenna(limbs{i}, ant.q, ant.position);
@@ -83,8 +84,8 @@ classdef PoseControlClass
 
 
 
-                if ~isempty(contactStructArray)
-                    ant = ant.addContact(contactStructArray);
+                if ~isempty(dataStruct)
+                    ant = ant.addContact(dataStruct);
                     %Update the search space, if this is enabled in the
                     %runtime args
                     if strcmp(obj.RUNTIME_ARGS.SEARCH_SPACE.MODE, "GM")
@@ -207,27 +208,29 @@ classdef PoseControlClass
             qOut = qIn;
             mandibleOut = mandibleIn;
 
-            if and(antMandibleState ~= mandibleIn.motion_state, ~mandibleIn.collision_latch)
-                %Make a new trajectory
-                mandibleIn.motion_state = antMandibleState;
+            if obj.RUNTIME_ARGS.BODY_MOTION_ENABLE
+                if and(antMandibleState ~= mandibleIn.motion_state, ~mandibleIn.collision_latch)
+                    %Make a new trajectory
+                    mandibleIn.motion_state = antMandibleState;
 
-                [mandibleOut, reloadSuccessFlag] = obj.actionGen.loadMandibleTrajectory(mandibleIn, qIn);
+                    [mandibleOut, reloadSuccessFlag] = obj.actionGen.loadMandibleTrajectory(mandibleIn, qIn);
 
-                if ~reloadSuccessFlag
-                    return
+                    if ~reloadSuccessFlag
+                        return
+                    end
                 end
-            end
 
 
-            if mandibleOut.motion_state ~= 0
-                [mandibleOut, q, successFlag] = tbox.popTrajectory(mandibleOut);
-                if successFlag
-                    qOut = q;
-                else
-                    if isempty(mandibleOut.trajectory_queue)
-                        mandibleOut.motion_state = 0;
+                if mandibleOut.motion_state ~= 0
+                    [mandibleOut, q, successFlag] = tbox.popTrajectory(mandibleOut);
+                    if successFlag
+                        qOut = q;
                     else
-                        warning("You really shouldn't be here - you reloaded the Mandible path and then popped and it still didn't work")
+                        if isempty(mandibleOut.trajectory_queue)
+                            mandibleOut.motion_state = 0;
+                        else
+                            warning("You really shouldn't be here - you reloaded the Mandible path and then popped and it still didn't work")
+                        end
                     end
                 end
             end
@@ -248,7 +251,7 @@ classdef PoseControlClass
 
         % ------------ Neck Pose update function
         function [ant, pCcopy] = moveNeck(~, ant)
-            
+
             pCcopy = ant.poseController;
             qOut = ant.q;
 
