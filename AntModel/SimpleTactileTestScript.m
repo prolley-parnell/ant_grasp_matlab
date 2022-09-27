@@ -14,7 +14,7 @@ RUNTIME_ARGS.disableWarnings();
 
 %% ----------- Experiment Set up
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 30;
+RUNTIME_ARGS.N_TRIALS = 50;
 RUNTIME_ARGS.PLOT.ENABLE = [0 0];
 
 RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
@@ -49,7 +49,7 @@ RUNTIME_ARGS.SEARCH_SPACE.VAR = 0.7;
 %RUNTIME_ARGS.BODY_NAV_MODE = "follow";
 
 
-NumberOfPoints = {10, 20, 30};
+NumberOfPoints = {10, 20, 30, 40, 50};
 
 for i = 1:length(NumberOfPoints)
 
