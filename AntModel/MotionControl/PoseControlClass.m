@@ -2,8 +2,8 @@ classdef PoseControlClass
     %PoseControlCLASS Class that provides joint positions to the Ant
     %Uses an action generator to generate cartesian trajectories, and makes
     %joint waypoints based on those cartesian trajectories.
-    %   ChangeLog: 26/08/22 - Emily Rolley-Parnell - consolidating code and
-    %   removing excess lines from newNeckTrajectory
+    %   ChangeLog: 27/09/22 - Emily Rolley-Parnell - Remove the neck
+    %   variables to their own class
 
 
     properties
@@ -11,9 +11,6 @@ classdef PoseControlClass
         antTree
         interval
         space_limits
-
-        headneck_mask
-        head_trajectory
 
         RUNTIME_ARGS
 
@@ -30,15 +27,13 @@ classdef PoseControlClass
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
             obj.interval = RUNTIME_ARGS.RATE;
 
-            obj.headneck_mask = [1 1 0 0 0 0 0 0 0 0]';
-            obj.head_trajectory = [];
-
 
         end
 
         function [ant, contactStructArray] = updatePose(obj, ant, env, motionFlag)
             %Update neck and head
-            [ant, obj] = obj.moveNeck(ant);
+            %[ant, obj] = obj.moveNeck(ant);
+            [ant] = obj.moveNeck(ant);
             [ant, contactStructArray] = obj.updateLimbs(ant, env, motionFlag);
         end
 
@@ -236,42 +231,27 @@ classdef PoseControlClass
             end
         end
 
-        function obj = newNeckTrajectory(obj, qIn, goalStruct)
+        function [neckOut] = newNeckTrajectory(obj, neckIn, qIn, goalStruct)
+            neckOut = neckIn;
+            neckOut.trajectory_queue = obj.actionGen.loadNeckTrajectory(neckIn, qIn, goalStruct);
 
-            headObj.end_effector = 'mandible_base_link';
-            headObj.joint_mask = obj.headneck_mask;
-            headObj.full_tree = obj.antTree;
-
-
-            obj.head_trajectory = obj.actionGen.bodyGoal2Traj(headObj, qIn, goalStruct);
-
-            %obj.head_trajectory = headObjOut.trajectory_queue;
         end
-
+   
 
         % ------------ Neck Pose update function
-        function [ant, pCcopy] = moveNeck(~, ant)
+        function [antOut] = moveNeck(~, antIn)
+            antOut = antIn;
+            qIn = antIn.q;
+            neckIn = antIn.neckObj;
 
-            pCcopy = ant.poseController;
-            qOut = ant.q;
-
-            if ~isempty(pCcopy.head_trajectory)
-                try
-                    qLocal = pCcopy.head_trajectory(:,1);
-                    pCcopy.head_trajectory(:,1) = [];
-
-                    masked_goal = pCcopy.headneck_mask .* qLocal;
-                    qOut = ant.q.*(1-pCcopy.headneck_mask) + masked_goal;
-
-                catch
-
-                    warning("head pose trajectory is non-empty but the pose could not be extracted")
-
-                end
+            [neckOut, qLocal, successFlag] = tbox.popTrajectory(neckIn);
+            if successFlag
+                antOut.neckObj = neckOut;
+                antOut.q = neckOut.applyMask(qIn, qLocal);
             end
 
-            ant.q = qOut;
-            ant.poseController = pCcopy;
+
+
         end
 
 

@@ -17,6 +17,7 @@ classdef Ant
 
 
         limbs
+        neckObj
 
         contact_points
         memory_size
@@ -72,6 +73,7 @@ classdef Ant
                 obj.limbs{i}.free_point = tbox.findEndEffectorGlobalPosition(obj.antTree, obj.q, obj.position, end_effectors{i});
             end
 
+            obj.neckObj = Neck(obj.antTree,RUNTIME_ARGS);
             obj.contact_points = struct.empty;
             %obj.contact_points = struct("point",[], "limb", []);
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
@@ -125,7 +127,7 @@ classdef Ant
                     obj.positionController = obj.positionController.updateGoal(obj.contact_points, obj.position, goal);
 
                     %Find head pose trajectory
-                    obj.poseController = obj.poseController.newNeckTrajectory(obj.q, obj.positionController.goal);
+                    obj.neckObj = obj.poseController.newNeckTrajectory(obj.neckObj, obj.q, obj.positionController.goal);
                     % Open Mandibles
                     obj.mandible_state = -1;
 
