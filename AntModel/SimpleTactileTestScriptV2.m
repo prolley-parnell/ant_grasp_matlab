@@ -14,13 +14,16 @@ RUNTIME_ARGS.disableWarnings();
 
 %% ----------- Experiment Set up
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 50;
+RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.RATE = 0.05;
 RUNTIME_ARGS.PLOT.ENABLE = [0 0];
 
 RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
-RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
+
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.1;
+
 
 RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
@@ -38,18 +41,18 @@ weights.Mandible = 0.4;
 
 % ------------- Antenna Motion -------------- %
 RUNTIME_ARGS.SEARCH_SPACE.MODE = "fixed";
-RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-2, 2; ...
-                2, 4; ...
+RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-1, 1; ...
+                2.5, 3.5; ...
                 0, 1];
-RUNTIME_ARGS.SEARCH_SPACE.VAR = 0.7;
+RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
+
+%No need for a threshold, as it picks the best after 10 contacts, and no
+%new goal is generated
+RUNTIME_ARGS.SENSE.THRESH = 0;
 
 
-
-
-%RUNTIME_ARGS.BODY_NAV_MODE = "follow";
-
-
-NumberOfPoints = {10, 20, 30, 40, 50};
+%NumberOfPoints = {10, 20, 30, 40, 50};
+NumberOfPoints = {10, 20, 30, 40, 50, 100, 200};
 
 for i = 1:length(NumberOfPoints)
 

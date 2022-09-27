@@ -10,21 +10,25 @@ rng('shuffle');
 RUNTIME_ARGS = RuntimeArgs();
 
 % Warnings are automatically enabled
-%RUNTIME_ARGS.disableWarnings();
+RUNTIME_ARGS.disableWarnings();
 
 %% ----------- Experiment Set up
 % Number of Iterations
 RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.RATE = 0.05;
 RUNTIME_ARGS.PLOT.ENABLE = [1 1];
 
 RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
-RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
-%RUNTIME_ARGS.BODY_NAV_MODE = "follow";
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.1;
 
-RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0 0 0]';
+
+RUNTIME_ARGS.BODY_MOTION_ENABLE = 1;
+
+
+RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
 
 
 % Weights
@@ -32,22 +36,16 @@ weights.Neck = 0.5;
 weights.Antenna = 0.1;
 weights.Mandible = 0.4;
 
-%% RUN TRIAL FIXED Mand GM %%
-
-RUNTIME_ARGS.TRIAL_NAME = 'FIXED_SPACE';
-
 % ------------- Antenna Motion -------------- %
 RUNTIME_ARGS.SEARCH_SPACE.MODE = "fixed";
-RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-2, 2; ...
-                2, 4; ...
+RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-1, 1; ...
+                2.5, 3.5; ...
                 0, 1];
-RUNTIME_ARGS.SEARCH_SPACE.VAR = 0.7;
+RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
-%RUNTIME_ARGS.BODY_NAV_MODE = "follow";
-
+%No need for a threshold, as it picks the best after 10 contacts, and no
+%new goal is generated
+RUNTIME_ARGS.SENSE.THRESH = 0;
 
 [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS);
-
-
-
 

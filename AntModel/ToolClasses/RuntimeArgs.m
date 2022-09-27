@@ -34,6 +34,8 @@ classdef RuntimeArgs
 
         SENSE
 
+        GRASP
+
         MAP_SIZE
         MAP_POINT_RADIUS
 
@@ -96,7 +98,7 @@ classdef RuntimeArgs
 
             % At the end of the simulation, save a CSV with the data collected during
             % each simulation
-            obj.PRINTOUT.ENABLE = false;
+            obj.PRINTOUT.ENABLE = true;
 
             %Output file format
             %Matlab uses Tables to process the data and can print it to
@@ -127,7 +129,7 @@ classdef RuntimeArgs
 
             obj.COLLISION_OBJ.FILE_PATH = 'Environment/12_sided_tiny_shape.stl';
             obj.COLLISION_OBJ.POSITION = [0 3 0.5];
-            obj.COLLISION_OBJ.SCALE = 0.2;
+            obj.COLLISION_OBJ.SCALE = 0.15;
 
 
             %ANT_URDF The file path to the URDF used to define the
@@ -206,7 +208,7 @@ classdef RuntimeArgs
 
             %The number of contact points that must be collected before the
             %first goal evaluation is carried out.
-            obj.SENSE.MINIMUM_N = 5;
+            obj.SENSE.MINIMUM_N = 7;
 
             %Whether to consider grasps that are larger than the reach of
             %the mandibles at the maximum positions
@@ -214,6 +216,17 @@ classdef RuntimeArgs
             %some sensing modes are not wider than the mandible reach
             %false: does not consider this
             obj.SENSE.MAND_MAX = true;
+
+            %Qhull arguments, different modes enabled to get a fast
+            %representation of the convex grasp wrench space using QHULL
+            obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
+            
+            % Force applied by mandibles
+            obj.GRASP.FORCE = 1.7;
+
+            % Friction of the surface of the object for calculations for
+            % grasp quality
+            obj.GRASP.OBJ_FRICTION = 1;
 
 
             %Map size (struct)

@@ -16,11 +16,11 @@ classdef graspEvaluator
         function obj = graspEvaluator(RUNTIME_ARGS)
             %GRASPEVALUATOR Construct an instance of this class
             %   Detailed explanation goes here
-            obj.mu = 0.7;
+            obj.mu = RUNTIME_ARGS.GRASP.OBJ_FRICTION;
             obj.m = 8;
-            obj.force_applied = 1;
+            obj.force_applied = RUNTIME_ARGS.GRASP.FORCE;
             %obj.qhull_arguments = {'QJ', 'Pp', 'Q9', 'QR0', 'n'};
-            obj.qhull_arguments = {'QJ', 'Pp', 'Qt'};
+            obj.qhull_arguments = RUNTIME_ARGS.GRASP.QUALITY.Q_HULL_ARGS;
 
         end
 
@@ -140,11 +140,13 @@ classdef graspEvaluator
             [isInHull, epsilon] = inhull(point,wrenchT,chull, tol);
 
             % Calculate the epsilon stability
-
-            if epsilon<1e-9 %arbitrary threshold
+            
+%             if epsilon<1e-9 %arbitrary threshold
+%                 epsilon = 0; %Wipe out errors in calculations
+%             end
+            if ~isInHull
                 epsilon = 0; %Wipe out errors in calculations
             end
-
         end
 
 
