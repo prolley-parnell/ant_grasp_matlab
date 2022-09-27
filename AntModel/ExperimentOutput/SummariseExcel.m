@@ -3,19 +3,19 @@
 %For each subfolder, sum the values for each excel trial
 clear all;
 %Import the folder name to process
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\SimpleTactileTestScriptV2';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\SimpleTactileTestScript';
 
 folderStruct = dir(folder_name);
 resultsTable = table();
 experimentIndex = 1;
-%For all folders that are not hidden
+%For all folders that are not hidden (experiments)
 for i = 1:length(folderStruct)
     if ~strcmp(folderStruct(i).name(1), '.') && isfolder([folder_name, '\', folderStruct(i).name])
         %"printout" is the subfolder name for xls files in the runtime args
         subfolder = ['\', folderStruct(i).name, '\printout'];
         subDir = [folder_name, subfolder];
 
-
+        
         experimentStruct = dir([subDir, '\*.xls']);
         experimentTable = table();
 
@@ -32,10 +32,18 @@ for i = 1:length(folderStruct)
 
 
         end
-        goalQuality(experimentIndex,:) = mean([experimentTable.Volume(:), experimentTable.Epsilon(:), experimentTable.COMOffset(:)], 1);
-        resultsTable.meanVolume(experimentIndex) = goalQuality(experimentIndex,1);
-        resultsTable.meanEpsilon(experimentIndex) = goalQuality(experimentIndex,2);
-        resultsTable.meanCOMOffset(experimentIndex) = goalQuality(experimentIndex,3);
+
+        experimentQuality = [experimentTable.Volume(:), experimentTable.Epsilon(:), experimentTable.COMOffset(:)];
+        
+        resultsTable.meanVolume(experimentIndex) = mean(experimentQuality(:,1));
+        resultsTable.varVolume(experimentIndex) = var(experimentQuality(:,1));
+        
+        resultsTable.meanEpsilon(experimentIndex) = mean(experimentQuality(:,2));
+        resultsTable.varEpsilon(experimentIndex) = var(experimentQuality(:,2));
+
+        resultsTable.meanCOMOffset(experimentIndex) = mean(experimentQuality(:,3));
+        resultsTable.varCOMOffset(experimentIndex) = var(experimentQuality(:,3));
+
         resultsTable.Properties.RowNames{experimentIndex} = folderStruct(i).name;
         experimentIndex = experimentIndex + 1;
 
@@ -43,5 +51,5 @@ for i = 1:length(folderStruct)
 
 
 end
-resultsTable = sortrows(resultsTable,2);
+
 save([folder_name, '\summarisegoalexcel.mat'], 'resultsTable');
