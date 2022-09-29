@@ -2,8 +2,11 @@
 close all;
 clear;
 
-addpath('MotionControl','ModelAntBody', 'BehaviourControl', 'Environment',...
-    'urdf', 'Grasp', 'ExperimentOutput', 'MainScript', 'ToolClasses');
+modelFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel';
+scriptFolder = pwd;
+cd(modelFolder)
+
+addpath('Environment', 'Grasp', 'ExperimentOutput', 'ToolClasses');
 
 rng('shuffle');
 
@@ -43,10 +46,10 @@ goalObj.midpoint = [bestGoal.Midpoint_1, bestGoal.Midpoint_2, bestGoal.Midpoint_
 goalObj.contact_point_array(1,:) = [bestGoal.PointA_1, bestGoal.PointA_2, bestGoal.PointA_3];
 goalObj.contact_point_array(2,:) = [bestGoal.PointB_1, bestGoal.PointB_2, bestGoal.PointB_3];
 
-
-%make env
-%make grasp eval
-%run test on goal struct
+qualityObject = graspQuality();
+%qualityObject = repmat(graspQuality(), [1, nExperiment]);
+nQuality = length(properties(graspQuality));
+graspQarray = repmat(struct('force', [], 'friction', [], 'volume',[], 'epsilon', []), [nExperiment,1]);
 
 tic
 p = gcp;
@@ -55,7 +58,19 @@ opts = parforOptions(p);
 parfor (n = 1:nExperiment, opts)
     env = CollisionObjects(RUNTIME_ARGS_i(n));
     gE = graspEvaluator(RUNTIME_ARGS_i(n))
-    qualityObject(n) = gE.evaluateGoal(goalObj, env);
+    qualityObject = gE.evaluateGoal(goalObj, env);
+    graspQarray(n).force = RUNTIME_ARGS_i(n).GRASP.FO 
+
 end
 toc
-%2.42Hours
+%34.9 seconds
+
+
+%Sort the quality object array in to an array
+for k = 1:nExperiment
+        
+    
+end
+
+cd(scriptFolder)
+save('forceResults.mat', 'qualityObject')

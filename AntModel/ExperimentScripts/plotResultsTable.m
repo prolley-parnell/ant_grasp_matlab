@@ -2,6 +2,7 @@
 
 close all;
 clear all;
+addpath('ExperimentOutput');
 
 folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
 file_name = 'summarisegoalexcel.mat';
