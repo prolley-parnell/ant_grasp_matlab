@@ -3,7 +3,7 @@
 %For each subfolder, sum the values for each excel trial
 clear all;
 %Import the folder name to process
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\SimpleTactileTestScript';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
 
 folderStruct = dir(folder_name);
 resultsTable = table();
@@ -26,6 +26,9 @@ for i = 1:length(folderStruct)
                 if strcmp(sheetNamesj(k), 'Sensed Goal')
                     trialTable = readtable(fileName, 'FileType','spreadsheet', 'Sheet', k);
                     experimentTable(j,:) = trialTable;
+                    if trialTable.Volume > 5.6e-09
+                        bestGoal = trialTable
+                    end
 
                 end
             end
@@ -37,12 +40,15 @@ for i = 1:length(folderStruct)
         
         resultsTable.meanVolume(experimentIndex) = mean(experimentQuality(:,1));
         resultsTable.varVolume(experimentIndex) = var(experimentQuality(:,1));
+        resultsTable.minmaxVolume(experimentIndex,:) = [min(experimentQuality(:,1)) , max(experimentQuality(:,1))];
         
         resultsTable.meanEpsilon(experimentIndex) = mean(experimentQuality(:,2));
         resultsTable.varEpsilon(experimentIndex) = var(experimentQuality(:,2));
+        resultsTable.minmaxEpsilon(experimentIndex,:) = [min(experimentQuality(:,2)) , max(experimentQuality(:,2))];
 
         resultsTable.meanCOMOffset(experimentIndex) = mean(experimentQuality(:,3));
         resultsTable.varCOMOffset(experimentIndex) = var(experimentQuality(:,3));
+        resultsTable.minmaxOffset(experimentIndex,:) = [min(experimentQuality(:,3)) , max(experimentQuality(:,3))];
 
         resultsTable.Properties.RowNames{experimentIndex} = folderStruct(i).name;
         experimentIndex = experimentIndex + 1;

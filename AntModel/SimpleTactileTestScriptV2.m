@@ -14,7 +14,7 @@ RUNTIME_ARGS.disableWarnings();
 
 %% ----------- Experiment Set up
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.N_TRIALS = 70;
 RUNTIME_ARGS.RATE = 0.05;
 RUNTIME_ARGS.PLOT.ENABLE = [0 0];
 
@@ -59,11 +59,12 @@ for i = 1: nExperiment
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints{i};
 end
 
-
+tic
 p = gcp;
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
 parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
-
+toc
+%2.42Hours
