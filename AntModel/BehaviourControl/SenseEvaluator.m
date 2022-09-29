@@ -9,7 +9,6 @@ classdef SenseEvaluator
         threshold
         quality
         COC
-        pass_check_flag
 
         RUNTIME_ARGS
 
@@ -35,18 +34,18 @@ classdef SenseEvaluator
             %points collected through tactile sensing
             obj.COC = struct("mean", [], "delta", []);
 
-            %The flag to indicate a satisfactory goal has been found based
-            %on the sensor data.
-            obj.pass_check_flag = 0;
+
         end
 
         function [ant, goal] = check(obj, ant, sensedData)
             goal = goalStruct();
-            if ~isempty(sensedData)
+            %if ~isempty(sensedData)
+            nContactPoints = length(ant.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
+            if ~isempty(sensedData) && nContactPoints >= 0
 
-                %if strcmp(sensedData.limb, ''
+                
                 obj = obj.calcCOC(ant.contact_points);
-                %if ~obj.pass_check_flag
+                
                 switch(obj.mode)
                     %Move towards the first pair of contacts that are closer together than the mandible distance
                     case "closest_first_pair"
@@ -63,11 +62,15 @@ classdef SenseEvaluator
 
                 if mandibleContactCheck > 1
                     ant.grasp_complete = 1;
+                    ant.mandible_state = 0;
                     ant.positionController.trajectory_queue = [];
                 elseif mandibleContactCheck == 1
                     ant.positionController.trajectory_queue = [];
                     ant.mandible_state = 1;
                 elseif mandibleContactCheck == 0
+                    %TODO Move this elsewhere - Ant mandibles should open
+                    %once when a new goal is given, and remain open until
+                    %one mandible makes contact
                     ant.mandible_state = -1;
                 end
 

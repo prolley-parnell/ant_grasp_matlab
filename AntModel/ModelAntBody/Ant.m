@@ -17,6 +17,7 @@ classdef Ant
 
 
         limbs
+        neckObj
 
         contact_points
         memory_size
@@ -72,8 +73,9 @@ classdef Ant
                 obj.limbs{i}.free_point = tbox.findEndEffectorGlobalPosition(obj.antTree, obj.q, obj.position, end_effectors{i});
             end
 
-
-            obj.contact_points = struct("point",[], "limb", []);
+            obj.neckObj = Neck(obj.antTree,RUNTIME_ARGS);
+            obj.contact_points = struct.empty;
+            %obj.contact_points = struct("point",[], "limb", []);
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
 
 
@@ -92,15 +94,6 @@ classdef Ant
                 show(obj.antTree, obj.q ,'Parent', gca, 'Position', obj.position, 'PreservePlot',false, 'Collisions', 'off', 'Visual', 'on', 'FastUpdate',true);
             end
         end
-%         function obj = showPoints(obj, collision_points)
-%             if obj.RUNTIME_ARGS.PLOT.ENABLE(2)
-%                 figure(2)
-%                 hold on;
-%                 plot3(collision_points(1,:), collision_points(2,:), collision_points(3,:),'o','MarkerSize', 5, 'Color', obj.colour)
-%                 hold off;
-%             end
-%         end
-
 
         function [obj, sensedData, goal] = update(obj, env)
 
@@ -120,29 +113,31 @@ classdef Ant
 
             % Update goals
             %If SenseEval indicates to move
-
             if ~goal.isempty() && ~obj.grasp_complete
+                
                 goal = goal.setalignment2goal(obj.position);
                 goal.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
                 %Evaluate goal
                 goal.qualityObj = obj.graspEval.evaluateGoal(goal, env);
 
-                %Add the environmental collision data to the map of the env
-                obj.positionController = obj.positionController.updateGoal(obj.contact_points, obj.position, goal);
+                if obj.RUNTIME_ARGS.BODY_MOTION_ENABLE
 
-                %Find head pose trajectory
-                obj.poseController = obj.poseController.newNeckTrajectory(obj.q, obj.positionController.goal);
-                % Open Mandibles
-                obj.mandible_state = -1;
+                    %Add the environmental collision data to the map of the env
+                    obj.positionController = obj.positionController.updateGoal(obj.contact_points, obj.position, goal);
+
+                    %Find head pose trajectory
+                    obj.neckObj = obj.poseController.newNeckTrajectory(obj.neckObj, obj.q, obj.positionController.goal);
+                    % Open Mandibles
+                    obj.mandible_state = -1;
+
+                else
+                    obj.grasp_complete = 1;
+                end
 
 
             end
-
-
-
         end
-
 
         function distance = findMaxMandibleDist(obj)
 
@@ -173,7 +168,7 @@ classdef Ant
         function obj = addContact(obj, contactStruct)
             if ~isempty(contactStruct)
                 obj.contact_points(end+1).point = contactStruct.point;
-                %obj.contact_points(end).normal = contactStruct.normal;
+                obj.contact_points(end).normal = contactStruct.normal;
                 obj.contact_points(end).limb = contactStruct.limb;
 
                 length_difference = length(obj.contact_points) - obj.memory_size;

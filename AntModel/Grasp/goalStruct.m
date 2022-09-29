@@ -5,7 +5,7 @@ classdef goalStruct
     properties (SetAccess = public, GetAccess = public)
         qualityObj graspQuality
     end
-    properties (SetAccess = protected, GetAccess = public)
+    properties (SetAccess = public, GetAccess = public)
         time_s = -1
         midpoint = nan([1,3],"double")
         contact_axis = nan([1,3],"double")

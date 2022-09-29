@@ -361,6 +361,34 @@ classdef SampleActionGen
             outputTrajectory = outputObj.trajectory_queue;
 
         end
+        function outputTrajectory = loadNeckTrajectory(obj, neckIn, qIn, goalStructIn)
+
+            [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
+
+            % -- Apply the difference in rotation to the current pose of
+            % the head
+
+            sourcebody = neckIn.base_name;
+            targetbody = neckIn.end_effector;
+            currentPoseTF = getTransform(neckIn.full_tree, qIn, targetbody, sourcebody);
+            base2EETF = getTransform(neckIn.full_tree, homeConfiguration(neckIn.full_tree), targetbody, sourcebody);
+
+
+
+            %goalPose_rotm = global2goalR * tform2rotm(base2EETF);
+            goalPose = rotm2tform(global2goalR) * base2EETF;
+
+
+            % -- interpolate between the current pose and the rotated pose
+            tSamples = 0:0.05:1;
+            [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
+
+
+
+            outputObj = obj.trajfromWP(neckIn, waypoints, qIn);
+            outputTrajectory = outputObj.trajectory_queue;
+
+        end
 
 
 
