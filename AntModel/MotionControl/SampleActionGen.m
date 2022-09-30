@@ -51,7 +51,7 @@ classdef SampleActionGen
             %positions
             %Generate the next goal
             antennaOut = antennaIn;
-            goal = obj.selectGoal();
+            goal = obj.selectGoal(antennaIn.free_point);
             %goal = obj.randomGoalGen();
             pattern = antennaIn.control_type(~strcmp(antennaIn.control_type, "goals")); %Find the name of the pattern
 
@@ -174,13 +174,13 @@ classdef SampleActionGen
 
 
         end
-        function [goalOut] = selectGoal(obj)
+        function [goalOut] = selectGoal(obj, currentPosition)
 
             %Use the refine method to select one
             if ~isempty(obj.refineSearch)
                 N = obj.refineSearch.n_sample;
                 goalArray = obj.randomGoalGen(N);
-                goalOut = obj.refineSearch.refine(goalArray);
+                goalOut = obj.refineSearch.refine(goalArray, currentPosition);
 
             else
                 %Generate N random goals from the search space

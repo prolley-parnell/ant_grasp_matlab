@@ -75,9 +75,11 @@ classdef Ant
 
             obj.neckObj = Neck(obj.antTree,RUNTIME_ARGS);
             obj.contact_points = struct.empty;
-            %obj.contact_points = struct("point",[], "limb", []);
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
 
+            if ~isempty(obj.poseController.actionGen.refineSearch)
+                obj.poseController.actionGen.refineSearch.mu3 = obj.findMaxMandibleDist;
+            end
 
             obj.senseEval = SenseEvaluator(RUNTIME_ARGS, obj.findMaxMandibleDist);
             obj.graspEval = graspEvaluator(RUNTIME_ARGS);

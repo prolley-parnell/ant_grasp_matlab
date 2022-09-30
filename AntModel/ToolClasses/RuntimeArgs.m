@@ -178,7 +178,7 @@ classdef RuntimeArgs
             %set VAR = "IPD" to use the distance between the contact point
             %and its next closest point
             %Or set the variance to be a scalar e.g. 0.5
-            obj.SEARCH_SPACE.SAMPLE.VAR = "IPD";
+            obj.SEARCH_SPACE.SAMPLE.VAR = "0.5";
 
             %Range is only used if mode = "fixed"
             %[Xmin Xmax Ymin Ymax Zmin Zmax]
@@ -194,7 +194,7 @@ classdef RuntimeArgs
 
             %Arguments required for the refinement of sampled points
             %For REFINE
-            obj.SEARCH_SPACE.REFINE.ARG = {'P'};
+            obj.SEARCH_SPACE.REFINE.ARG = {'psi1', 'psi2','psi3'};
 
 
 
