@@ -30,8 +30,8 @@ weights.Mandible = 0.4;
 RUNTIME_ARGS.TRIAL_NAME = 'GM_MAND_DIST';
 
 % ------------- Antenna Motion -------------- %
-RUNTIME_ARGS.SEARCH_SPACE.MODE = "GM";
-RUNTIME_ARGS.SEARCH_SPACE.VAR = 0.7;
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "GM";
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.VAR = 0.7;
 
 
 [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS);
@@ -49,8 +49,8 @@ meanForAllTrialsMANDVAR
 RUNTIME_ARGS.TRIAL_NAME = 'FIXED_SPACE';
 
 % ------------- Antenna Motion -------------- %
-RUNTIME_ARGS.SEARCH_SPACE.MODE = "fixed";
-RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-2, 2; ...
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "fixed";
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-2, 2; ...
                 2, 4; ...
                 0, 1];
 

@@ -166,16 +166,11 @@ classdef RuntimeArgs
             %Default = 20; int between 1 and inf
             %obj.ANT_MEMORY = 20;
 
-            %Define the method that ants explore the environment using
-            %their antennae
+            %Define the method that the antenna use to generate potential
+            %sample points
             %Mode options: "fixed", "GM" (Gaussian Model)
-            obj.SEARCH_SPACE.MODE = "GM";
-
-            %Range is only used if mode = "fixed"
-            %[Xmin Xmax Ymin Ymax Zmin Zmax]
-            obj.SEARCH_SPACE.RANGE = [-2, 2; ...
-                2, 4; ...
-                0, 1];
+            %obj.SEARCH_SPACE.SAMPLE.MODE = "fixed";
+            obj.SEARCH_SPACE.SAMPLE.MODE = "GM";
 
             %Var is only used in the Gaussian Model (GM) mode
             %The variance around each point of contact that combine to make
@@ -183,7 +178,25 @@ classdef RuntimeArgs
             %set VAR = "IPD" to use the distance between the contact point
             %and its next closest point
             %Or set the variance to be a scalar e.g. 0.5
-            obj.SEARCH_SPACE.VAR = "IPD";
+            obj.SEARCH_SPACE.SAMPLE.VAR = "IPD";
+
+            %Range is only used if mode = "fixed"
+            %[Xmin Xmax Ymin Ymax Zmin Zmax]
+            obj.SEARCH_SPACE.SAMPLE.RANGE = [-2, 2; ...
+                2, 4; ...
+                0, 1];
+
+
+
+            %Method for refining the potential samling points
+            %DEFAULT: 'IG' - Information Gain
+            obj.SEARCH_SPACE.REFINE.MODE = 'IG';
+
+            %Arguments required for the refinement of sampled points
+            %For REFINE
+            obj.SEARCH_SPACE.REFINE.ARG = {'P'};
+
+
 
 
             % Which method is used to evaluate the input sensory data

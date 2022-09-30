@@ -10,7 +10,7 @@ rng('shuffle');
 RUNTIME_ARGS = RuntimeArgs();
 
 % Warnings are automatically enabled
-RUNTIME_ARGS.disableWarnings();
+%RUNTIME_ARGS.disableWarnings();
 
 %% ----------- Experiment Set up
 % Number of Iterations
@@ -25,7 +25,7 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.1;
 
 
-RUNTIME_ARGS.BODY_MOTION_ENABLE = 1;
+RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 
 RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
@@ -37,8 +37,9 @@ weights.Antenna = 0.1;
 weights.Mandible = 0.4;
 
 % ------------- Antenna Motion -------------- %
-RUNTIME_ARGS.SEARCH_SPACE.MODE = "fixed";
-RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-1, 1; ...
+%RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "fixed";
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "GM";
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
                 2.5, 3.5; ...
                 0, 1];
 RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];

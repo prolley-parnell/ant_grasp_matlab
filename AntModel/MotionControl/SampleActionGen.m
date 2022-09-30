@@ -13,26 +13,32 @@ classdef SampleActionGen
 
         gik
 
-        search_space
+        search_range
         search_config
-
+        refineSearch
 
     end
 
     methods
-        function obj = SampleActionGen(antTree, RATE, SEARCH_CONFIG)
+        function obj = SampleActionGen(fullTree, RUNTIME_ARGS)
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
-            obj.interval = RATE;
+            obj.interval = RUNTIME_ARGS.RATE;
             obj.maxvelocities = ones([10,1]) * deg2rad(100);
-            %Make the scape pedicel joint have a higher speed limit 
+            %Make the scape pedicel joint have a higher speed limit
             obj.maxvelocities([7 10]) = deg2rad(180);
 
-            obj.search_config = SEARCH_CONFIG;
-            obj.search_space = SEARCH_CONFIG.RANGE;
+            obj.search_config = RUNTIME_ARGS.SEARCH_SPACE;
+            obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE;
+
+            if strcmp(RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE, 'IG')
+                obj.refineSearch = InformationGain(RUNTIME_ARGS);
+            else
+                obj.refineSearch = struct.empty;
+            end
 
             %Initialise Generalized IK Solver
-            obj.gik = generalizedInverseKinematics('RigidBodyTree', antTree);
+            obj.gik = generalizedInverseKinematics('RigidBodyTree', fullTree);
 
             obj.gik.ConstraintInputs = {"joint", "pose"};
             obj.gik.SolverParameters.AllowRandomRestart = false;
@@ -45,7 +51,8 @@ classdef SampleActionGen
             %positions
             %Generate the next goal
             antennaOut = antennaIn;
-            goal = obj.randomGoalGen();
+            goal = obj.selectGoal();
+            %goal = obj.randomGoalGen();
             pattern = antennaIn.control_type(~strcmp(antennaIn.control_type, "goals")); %Find the name of the pattern
 
             switch pattern
@@ -78,11 +85,11 @@ classdef SampleActionGen
         end
 
         function [qTrajectory] = jointTrajectory(~, waypoints, velLimits)
-                    numSamples = 10;
+            numSamples = 10;
 
-                    [qTrajectory, ~, ~, ~, ~] = trapveltraj(waypoints, numSamples, 'PeakVelocity', velLimits);
-                    %Remove the duplicate position
-                    qTrajectory(:,1) = [];
+            [qTrajectory, ~, ~, ~, ~] = trapveltraj(waypoints, numSamples, 'PeakVelocity', velLimits);
+            %Remove the duplicate position
+            qTrajectory(:,1) = [];
 
 
         end
@@ -113,16 +120,9 @@ classdef SampleActionGen
 
             step_size = 0.07;
 
-
-
-
-
             waypoints(1,:) = [start_pt(1) : vector(1)*step_size : end_pt(1)];
             waypoints(2,:) = [start_pt(2) : vector(2)*step_size : end_pt(2)];
             waypoints(3,:) = [start_pt(3) : vector(3)*step_size : end_pt(3)];
-
-            %plot3(waypoints(1,:), waypoints(2,:), waypoints(3,:));
-
 
 
         end
@@ -146,17 +146,11 @@ classdef SampleActionGen
             waypoints(2,:) = [start_pt(2) : vector(2)/(length(t)-1) : end_pt(2)];
             waypoints(3,:) = [start_pt(3) : vector(3)/(length(t)-1) : end_pt(3)] + height;
 
-            %plot3(waypoints(1,:), waypoints(2,:), waypoints(3,:));
-
-
 
         end
 
 
         function waypoints = spiralPath(~, start_pt, end_pt)
-
-
-
 
             vector = end_pt - start_pt;
             distance = sqrt(sum(vector(:).^2));
@@ -180,26 +174,43 @@ classdef SampleActionGen
 
 
         end
+        function [goalOut] = selectGoal(obj)
 
-        function [goal] = randomGoalGen(obj)
+            %Use the refine method to select one
+            if ~isempty(obj.refineSearch)
+                N = obj.refineSearch.n_sample;
+                goalArray = obj.randomGoalGen(N);
+                goalOut = obj.refineSearch.refine(goalArray);
+
+            else
+                %Generate N random goals from the search space
+
+                goalOut = obj.randomGoalGen(1);
+
+
+
+            end
+        end
+
+        function [goal] = randomGoalGen(obj, nGoal)
             %Generate an antennal goal position in the world frame
 
-            switch class(obj.search_space)
+            switch class(obj.search_range)
 
                 case "gmdistribution"
-                    goal = random(obj.search_space, 1);
+                    goal = random(obj.search_range, nGoal);
 
                 case "double"
 
                     r = @(a, b, set) (a + (b-a).*set);
                     %mid = mean(space_limits(1,:));
 
-                    init_val = rand([1, 3]);
+                    init_val = rand([nGoal, 3]);
 
 
-                    X = r(obj.search_space(1,1), obj.search_space(1,2), init_val(1));
-                    Y = r(obj.search_space(2,1), obj.search_space(2,2), init_val(2));
-                    Z = r(obj.search_space(3,1), obj.search_space(3,2), init_val(3));
+                    X = r(obj.search_range(1,1), obj.search_range(1,2), init_val(:,1));
+                    Y = r(obj.search_range(2,1), obj.search_range(2,2), init_val(:,2));
+                    Z = r(obj.search_range(3,1), obj.search_range(3,2), init_val(:,3));
 
 
 
@@ -249,13 +260,10 @@ classdef SampleActionGen
 
 
 
-
             limitJointChange = constraintJointBounds(inputObj.full_tree);
-            %limitJointChange.Weights = inputObj.joint_mask';
 
 
-            maxJointChange = obj.maxvelocities.*inputObj.joint_mask*obj.interval*2;
-            %maxJointChange = obj.maxvelocities*obj.interval;
+            maxJointChange = obj.maxvelocities.*inputObj.joint_mask*obj.interval;
 
 
             for k = 2:numWaypoints
@@ -281,6 +289,16 @@ classdef SampleActionGen
             outputObj = inputObj;
         end
 
+        function obj = updateContactMemory(obj, contact_pointStruct)
+            if strcmp(obj.search_config.SAMPLE.MODE, "GM")
+                obj = obj.updateGM(contact_pointStruct);
+            end
+            if ~isempty(obj.refineSearch)
+                obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
+            end
+
+        end
+
         function obj = updateGM(obj, contact_pointStruct)
 
             points = cat(1,contact_pointStruct(:).point);
@@ -292,7 +310,7 @@ classdef SampleActionGen
             I = eye(d,d);
             p = ones([1, n])/n;
             %variance of the distribution around each point
-            if strcmp(obj.search_config.VAR, "IPD")
+            if strcmp(obj.search_config.SAMPLE.VAR, "IPD")
                 if n > 1
                     distanceMAT = pdist2(points, points);
                     distanceMAT(distanceMAT==0) = nan;
@@ -304,63 +322,54 @@ classdef SampleActionGen
                     dist = minDist;
 
                 else
-
-
                     dist = 1;
-
                 end
-
                 sigma = I.* reshape(dist, [1 1 n]);
 
-
-
             else
-                if ~strcmp(class(obj.search_config.VAR), "double")
+                if ~strcmp(class(obj.search_config.SAMPLE.VAR), "double")
                     warning("The set variance is not a valid value - overwrite to 1")
-                    obj.search_config.VAR = 1;
+                    obj.search_config.SAMPLE.VAR = 1;
                 end
 
-                variance = obj.search_config.VAR;
+                variance = obj.search_config.SAMPLE.VAR;
 
 
                 sigma = repmat(I*variance, [1 1 n]);
             end
 
-
-
-
             gmObj = gmdistribution(points,sigma,p);
 
-            obj.search_space = gmObj;
+            obj.search_range = gmObj;
         end
-        function outputTrajectory = bodyGoal2Traj(obj, headIn, qIn, goalStructIn)
-
-            [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
-
-            % -- Apply the difference in rotation to the current pose of
-            % the head
-
-            sourcebody = 'base_link';
-            targetbody = headIn.end_effector;
-            currentPoseTF = getTransform(headIn.full_tree, qIn, targetbody, sourcebody);
-            base2EETF = getTransform(headIn.full_tree, homeConfiguration(headIn.full_tree), targetbody, sourcebody);
-
-
-
-            %goalPose_rotm = global2goalR * tform2rotm(base2EETF);
-            goalPose = rotm2tform(global2goalR) * base2EETF;
-
-
-            % -- interpolate between the current pose and the rotated pose
-            tSamples = 0:0.05:1;
-            [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
-
-
-
-            outputObj = obj.trajfromWP(headIn, waypoints, qIn);
-            outputTrajectory = outputObj.trajectory_queue;
-
-        end
+%         function outputTrajectory = bodyGoal2Traj(obj, headIn, qIn, goalStructIn)
+% 
+%             [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
+% 
+%             % -- Apply the difference in rotation to the current pose of
+%             % the head
+% 
+%             sourcebody = 'base_link';
+%             targetbody = headIn.end_effector;
+%             currentPoseTF = getTransform(headIn.full_tree, qIn, targetbody, sourcebody);
+%             base2EETF = getTransform(headIn.full_tree, homeConfiguration(headIn.full_tree), targetbody, sourcebody);
+% 
+% 
+% 
+%             %goalPose_rotm = global2goalR * tform2rotm(base2EETF);
+%             goalPose = rotm2tform(global2goalR) * base2EETF;
+% 
+% 
+%             % -- interpolate between the current pose and the rotated pose
+%             tSamples = 0:0.05:1;
+%             [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
+% 
+% 
+% 
+%             outputObj = obj.trajfromWP(headIn, waypoints, qIn);
+%             outputTrajectory = outputObj.trajectory_queue;
+% 
+%         end
         function outputTrajectory = loadNeckTrajectory(obj, neckIn, qIn, goalStructIn)
 
             [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
@@ -407,7 +416,7 @@ classdef SampleActionGen
                         col = 1;
                     end
 
-                    
+
 
                     %Find the maximum open joint values
                     goal_joint_val = mandibleIn.joint_limits(:,col);

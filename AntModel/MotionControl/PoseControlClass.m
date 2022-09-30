@@ -20,7 +20,7 @@ classdef PoseControlClass
     methods
         function obj = PoseControlClass(antTree, RUNTIME_ARGS)
             %MOTIONCLASS
-            obj.actionGen = SampleActionGen(antTree, RUNTIME_ARGS.RATE, RUNTIME_ARGS.SEARCH_SPACE);
+            obj.actionGen = SampleActionGen(antTree, RUNTIME_ARGS);
 
             obj.antTree = antTree;
 
@@ -83,9 +83,8 @@ classdef PoseControlClass
                     ant = ant.addContact(dataStruct);
                     %Update the search space, if this is enabled in the
                     %runtime args
-                    if strcmp(obj.RUNTIME_ARGS.SEARCH_SPACE.MODE, "GM")
-                        obj.actionGen = obj.actionGen.updateGM(ant.contact_points);
-                    end
+                    obj.actionGen = obj.actionGen.updateContactMemory(ant.contact_points);
+
                 end
             end
             ant.limbs = limbs;
