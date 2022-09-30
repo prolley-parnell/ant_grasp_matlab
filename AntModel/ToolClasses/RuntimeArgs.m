@@ -54,6 +54,7 @@ classdef RuntimeArgs
 
             %Automatically enable warnings
             warning('on')
+
             % Individual plots can be enabled/disabled
             % The current plots are
             % Fig 1: RigidBodyTree model of ant and the CollisionBody of the object
@@ -291,6 +292,7 @@ classdef RuntimeArgs
 
         function disableWarnings(~)
             warning('off')
+            warning('off','inhull:degeneracy')
         end
 
         function obj = initiatePlots(obj)

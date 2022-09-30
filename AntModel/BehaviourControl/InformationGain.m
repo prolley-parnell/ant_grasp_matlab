@@ -36,7 +36,7 @@ classdef InformationGain
             obj.information_measures = any(measureFlag,1);
 
             %number of samples to evaluate for finding the highest information gain
-            obj.n_sample = 4;
+            obj.n_sample = 5;
     
             %Parameters set by Active Tactile Exploration Based on
             %Cost-Aware Information Gain Maximisation

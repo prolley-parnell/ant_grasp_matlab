@@ -1,6 +1,10 @@
 %% Set the environment by closing any previous figures and variables
 close all;
 clear;
+modelFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\';
+scriptFolder = pwd;
+
+cd(modelFolder)
 
 addpath('MotionControl','ModelAntBody', 'BehaviourControl', 'Environment',...
         'urdf', 'Grasp', 'ExperimentOutput', 'MainScript', 'ToolClasses');
