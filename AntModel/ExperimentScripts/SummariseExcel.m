@@ -26,10 +26,6 @@ for i = 1:length(folderStruct)
                 if strcmp(sheetNamesj(k), 'Sensed Goal')
                     trialTable = readtable(fileName, 'FileType','spreadsheet', 'Sheet', k);
                     experimentTable(j,:) = trialTable;
-                    if trialTable.Volume > 5.6e-09
-                        bestGoal = trialTable
-                    end
-
                 end
             end
 
