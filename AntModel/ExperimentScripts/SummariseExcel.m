@@ -3,10 +3,11 @@
 %For each subfolder, sum the values for each excel trial
 clear all;
 %Import the folder name to process
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefine2-40';
 
 folderStruct = dir(folder_name);
 resultsTable = table();
+resultArray = [];
 experimentIndex = 1;
 %For all folders that are not hidden (experiments)
 for i = 1:length(folderStruct)
@@ -15,7 +16,7 @@ for i = 1:length(folderStruct)
         subfolder = ['\', folderStruct(i).name, '\printout'];
         subDir = [folder_name, subfolder];
 
-        
+
         experimentStruct = dir([subDir, '\*.xls']);
         experimentTable = table();
 
@@ -33,20 +34,11 @@ for i = 1:length(folderStruct)
         end
 
         experimentQuality = [experimentTable.Volume(:), experimentTable.Epsilon(:), experimentTable.COMOffset(:)];
-        
-        resultsTable.meanVolume(experimentIndex) = mean(experimentQuality(:,1));
-        resultsTable.varVolume(experimentIndex) = var(experimentQuality(:,1));
-        resultsTable.minmaxVolume(experimentIndex,:) = [min(experimentQuality(:,1)) , max(experimentQuality(:,1))];
-        
-        resultsTable.meanEpsilon(experimentIndex) = mean(experimentQuality(:,2));
-        resultsTable.varEpsilon(experimentIndex) = var(experimentQuality(:,2));
-        resultsTable.minmaxEpsilon(experimentIndex,:) = [min(experimentQuality(:,2)) , max(experimentQuality(:,2))];
+        name_split = split(folderStruct(i).name,'_');
+        nContactArray = repmat(str2double(name_split{1}),[length(experimentStruct),1]);
+        resultArray = cat(1, resultArray, [nContactArray,experimentQuality]);
 
-        resultsTable.meanCOMOffset(experimentIndex) = mean(experimentQuality(:,3));
-        resultsTable.varCOMOffset(experimentIndex) = var(experimentQuality(:,3));
-        resultsTable.minmaxOffset(experimentIndex,:) = [min(experimentQuality(:,3)) , max(experimentQuality(:,3))];
 
-        resultsTable.Properties.RowNames{experimentIndex} = folderStruct(i).name;
         experimentIndex = experimentIndex + 1;
 
     end
@@ -54,4 +46,38 @@ for i = 1:length(folderStruct)
 
 end
 
-save([folder_name, '\summarisegoalexcel.mat'], 'resultsTable');
+%%
+
+save([folder_name, '\allQualities.mat'], 'resultArray');
+
+
+%%
+resultsTable = table();
+
+[~, sortIndx] = sort(resultArray(:,1));
+sortedResultArray = resultArray(sortIndx,:);
+
+nContact = unique(sortedResultArray(:,1));
+
+for k = 1:length(nContact)
+
+    expSortIndx = find(sortedResultArray(:,1) == nContact(k));
+    experimentQualityAll = sortedResultArray(expSortIndx,:);
+
+    resultsTable.meanVolume(k) = mean(experimentQualityAll(:,2));
+    resultsTable.varVolume(k) = var(experimentQualityAll(:,2));
+    resultsTable.minmaxVolume(k,:) = [min(experimentQualityAll(:,2)) , max(experimentQualityAll(:,2))];
+
+    resultsTable.meanEpsilon(k) = mean(experimentQualityAll(:,3));
+    resultsTable.varEpsilon(k) = var(experimentQualityAll(:,3));
+    resultsTable.minmaxEpsilon(k,:) = [min(experimentQualityAll(:,3)) , max(experimentQualityAll(:,3))];
+
+    resultsTable.meanCOMOffset(k) = mean(experimentQualityAll(:,4));
+    resultsTable.varCOMOffset(k) = var(experimentQualityAll(:,4));
+    resultsTable.minmaxOffset(k,:) = [min(experimentQualityAll(:,4)) , max(experimentQualityAll(:,4))];
+
+    resultsTable.Properties.RowNames{k} = int2str(nContact(k));
+    
+end
+
+save([folder_name, '\summarisegoalqualityexcel.mat'], 'resultsTable');

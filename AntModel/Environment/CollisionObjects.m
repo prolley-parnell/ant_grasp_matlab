@@ -59,6 +59,7 @@ classdef CollisionObjects
 
 
         function obj = addStl(obj, ARGS)
+            
             %Import mesh from file
             meshObj = importGeometry(ARGS.FILE_PATH);
             %Scale mesh according to RUNTIME_ARGS

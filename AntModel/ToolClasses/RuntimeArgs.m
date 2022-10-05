@@ -128,7 +128,7 @@ classdef RuntimeArgs
 
 
 
-            obj.COLLISION_OBJ.FILE_PATH = 'Environment/12_sided_tiny_shape.stl';
+            obj.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
             obj.COLLISION_OBJ.POSITION = [0 3 0.5];
             obj.COLLISION_OBJ.SCALE = 0.15;
 
@@ -236,11 +236,11 @@ classdef RuntimeArgs
             obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
             
             % Force applied by mandibles
-            obj.GRASP.FORCE = 1.7;
+            obj.GRASP.FORCE = 1;
 
             % Friction of the surface of the object for calculations for
             % grasp quality
-            obj.GRASP.OBJ_FRICTION = 1;
+            obj.GRASP.OBJ_FRICTION = 0.7;
 
 
             %Map size (struct)

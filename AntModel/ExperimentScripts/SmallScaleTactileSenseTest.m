@@ -7,7 +7,7 @@ scriptFolder = pwd;
 
 cd(modelFolder)
 addpath('MotionControl','ModelAntBody', 'BehaviourControl', 'Environment',...
-    'urdf', 'Grasp', 'ExperimentOutput', 'MainScript', 'ToolClasses');
+    'urdf', 'Grasp', 'ExperimentOutput', 'ExperimentScripts', 'MainScript', 'ToolClasses');
 
 rng('shuffle');
 
@@ -19,9 +19,11 @@ RUNTIME_ARGS = RuntimeArgs();
 RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.N_TRIALS = 50;
 
-NumberOfPoints = [2:1:30];
+NumberOfPoints = [2:1:40];
+%NumberOfPoints = [9:1:40];
+
 nExperiment = length(NumberOfPoints);
 
 RUNTIME_ARGS.RATE = 0.05;
@@ -51,12 +53,13 @@ RUNTIME_ARGS.SENSE.THRESH = 0;
 
 
 %%
-obj.SEARCH_SPACE.REFINE.MODE = 'IG';
+%RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
+RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
 
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 for i = 1: nExperiment
-    RUNTIME_ARGS_i(i).TRIAL_NAME = [int2str(NumberOfPoints(i)), '_ContactPts_IGEF'];
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['noRefine2-40\', int2str(NumberOfPoints(i)), '_ContactPts_noRefine'];
     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 end
@@ -69,4 +72,23 @@ parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
 toc
-%2.42Hours
+
+
+% RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
+% 
+% 
+% RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
+% for i = 1: nExperiment
+%     RUNTIME_ARGS_i(i).TRIAL_NAME = ['norefine_small2-30\', int2str(NumberOfPoints(i)), '_ContactPts_IGEF'];
+%     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
+%     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
+% end
+% 
+% tic
+% p = gcp;
+% parfevalOnAll(p,@warning, 0,'off');
+% opts = parforOptions(p);
+% for n = 1:nExperiment
+%     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
+% end
+% toc
