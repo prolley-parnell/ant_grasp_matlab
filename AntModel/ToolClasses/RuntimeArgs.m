@@ -54,6 +54,7 @@ classdef RuntimeArgs
 
             %Automatically enable warnings
             warning('on')
+
             % Individual plots can be enabled/disabled
             % The current plots are
             % Fig 1: RigidBodyTree model of ant and the CollisionBody of the object
@@ -127,8 +128,9 @@ classdef RuntimeArgs
 
 
 
-            obj.COLLISION_OBJ.FILE_PATH = 'Environment/12_sided_tiny_shape.stl';
+            obj.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
             obj.COLLISION_OBJ.POSITION = [0 3 0.5];
+            obj.COLLISION_OBJ.ROTATION = [0 0 0]; %roll pitch yaw
             obj.COLLISION_OBJ.SCALE = 0.15;
 
 
@@ -166,16 +168,11 @@ classdef RuntimeArgs
             %Default = 20; int between 1 and inf
             %obj.ANT_MEMORY = 20;
 
-            %Define the method that ants explore the environment using
-            %their antennae
+            %Define the method that the antenna use to generate potential
+            %sample points
             %Mode options: "fixed", "GM" (Gaussian Model)
-            obj.SEARCH_SPACE.MODE = "GM";
-
-            %Range is only used if mode = "fixed"
-            %[Xmin Xmax Ymin Ymax Zmin Zmax]
-            obj.SEARCH_SPACE.RANGE = [-2, 2; ...
-                2, 4; ...
-                0, 1];
+            %obj.SEARCH_SPACE.SAMPLE.MODE = "fixed";
+            obj.SEARCH_SPACE.SAMPLE.MODE = "GM";
 
             %Var is only used in the Gaussian Model (GM) mode
             %The variance around each point of contact that combine to make
@@ -183,7 +180,25 @@ classdef RuntimeArgs
             %set VAR = "IPD" to use the distance between the contact point
             %and its next closest point
             %Or set the variance to be a scalar e.g. 0.5
-            obj.SEARCH_SPACE.VAR = "IPD";
+            obj.SEARCH_SPACE.SAMPLE.VAR = "0.5";
+
+            %Range is only used if mode = "fixed"
+            %[Xmin Xmax Ymin Ymax Zmin Zmax]
+            obj.SEARCH_SPACE.SAMPLE.RANGE = [-2, 2; ...
+                2, 4; ...
+                0, 1];
+
+
+
+            %Method for refining the potential samling points
+            %DEFAULT: 'IG' - Information Gain
+            obj.SEARCH_SPACE.REFINE.MODE = 'IG';
+
+            %Arguments required for the refinement of sampled points
+            %For REFINE
+            obj.SEARCH_SPACE.REFINE.ARG = {'psi1', 'psi2' ,'psi3', 'psi4'};
+
+
 
 
             % Which method is used to evaluate the input sensory data
@@ -222,11 +237,11 @@ classdef RuntimeArgs
             obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
             
             % Force applied by mandibles
-            obj.GRASP.FORCE = 1.7;
+            obj.GRASP.FORCE = 1;
 
             % Friction of the surface of the object for calculations for
             % grasp quality
-            obj.GRASP.OBJ_FRICTION = 1;
+            obj.GRASP.OBJ_FRICTION = 0.7;
 
 
             %Map size (struct)
@@ -278,6 +293,7 @@ classdef RuntimeArgs
 
         function disableWarnings(~)
             warning('off')
+            warning('off','inhull:degeneracy')
         end
 
         function obj = initiatePlots(obj)

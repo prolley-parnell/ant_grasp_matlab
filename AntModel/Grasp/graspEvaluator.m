@@ -25,22 +25,22 @@ classdef graspEvaluator
         end
 
         function qualityObj = evaluateGoal(obj, goalObj, environmentClass)
-            
+
             %Find the distance between the two points and the true Centre
             %of Mass
             idx = 1;
             objPose = environmentClass.objectHandles{idx}.Pose;
             objCOM = environmentClass.COM{idx};
-            
-            globalCOM = tbox.local2global(objCOM, objPose); 
-            
+
+            globalCOM = tbox.local2global(objCOM, objPose);
+
             qualityObj = graspQuality();
 
             A = goalObj.contact_point_array(1,:);
             B = goalObj.contact_point_array(2,:);
             %Calculate the offset from the COM to the grasp contacts axis
             qualityObj.com_offset = obj.axis2COM(A, B, globalCOM);
-            
+
 
             %Calculate the volume and epsilon for the given goal grasp
             %point locations
@@ -48,7 +48,7 @@ classdef graspEvaluator
             vertices = environmentClass.objectHandles{idx}.Vertices;
 
             [qualityObj.volume, qualityObj.epsilon] = obj.findWrenchQuality(forces, [A;B], vertices, globalCOM, objCOM);
-            
+
 
         end
 
@@ -64,7 +64,7 @@ classdef graspEvaluator
         function [forces] = genOpposeForces(obj, contactA, contactB)
             %Generate a pair of forces that point in the direction of
             %the other contact point as if pinched in a vice
-            
+
             force_a = contactB - contactA;
             forceA_norm = force_a/vecnorm(force_a);
             forceB_norm = -forceA_norm;
@@ -108,21 +108,16 @@ classdef graspEvaluator
         function [volume, epsilon] = findWrenchQuality(obj, forces, points, vertices, globalCOM, objCOM)
 
             %Find max object radius for scaling factor
-            
+
             r = max(vecnorm(vertices,2, 2));
             lamda = 1/r;
 
             wrench = obj.wrench3d(forces, points, globalCOM, lamda);
 
 
-            try
-                [chull, volume] = convhulln(wrench,obj.qhull_arguments);
-                epsilon = obj.estability(objCOM, wrench, chull);
+            [chull, volume] = convhulln(wrench,obj.qhull_arguments);
+            epsilon = obj.estability(objCOM, wrench, chull);
 
-            catch
-                warning("Error with ConvHull")
-
-            end
         end
 
 
@@ -140,10 +135,10 @@ classdef graspEvaluator
             [isInHull, epsilon] = inhull(point,wrenchT,chull, tol);
 
             % Calculate the epsilon stability
-            
-%             if epsilon<1e-9 %arbitrary threshold
-%                 epsilon = 0; %Wipe out errors in calculations
-%             end
+
+            %             if epsilon<1e-9 %arbitrary threshold
+            %                 epsilon = 0; %Wipe out errors in calculations
+            %             end
             if ~isInHull
                 epsilon = 0; %Wipe out errors in calculations
             end

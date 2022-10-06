@@ -159,12 +159,17 @@ blocks = max(1,floor(n/(memblock/nt)));
 aNr = repmat(aN,1,length(1:blocks:n));
 for i = 1:blocks
    j = i:blocks:n;
-   if size(aNr,2) ~= length(j),
+   if size(aNr,2) ~= length(j)
       aNr = repmat(aN,1,length(j));
    end
    in(j) = all((nrmls*testpts(j,:)' - aNr) >= -tol,1)';
+   %MODIFICATION - Find the minimum radius of epsilon sphere
+   %If all are >= 0 then point is inside, then find minimum distance to
+   %face
    if in(j)
-    epsilon(j) = abs(min(nrmls*testpts(j,:)' - aNr));
-
+       %Find the euclidian distance offset between the testpoint and the
+       %set of points a for each simplex face in the convhull
+       %epsilon radius is the smallest value for this
+       epsilon(j) = min(vecnorm(a - testpts(j,:), 2, 2));
    end
 end
