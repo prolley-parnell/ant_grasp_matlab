@@ -42,7 +42,7 @@ classdef InformationGain
             %Cost-Aware Information Gain Maximisation
             obj.sig1 = 0.7;
             obj.sig3 = 0.7;
-            obj.sigalpha = 1;
+            obj.sigalpha = 0.1;
             obj.mu3 = 0.2;
 
         end
@@ -67,7 +67,6 @@ classdef InformationGain
             psi1 = ones([nGoal,1]);
             psi2 = ones([nGoal,1]);
             psi3 = ones([nGoal,1]);
-            psi4v2 = ones([nGoal,1]);
             for i=1:nGoal
 
                 %For each goal, get the information gain measure
@@ -75,17 +74,14 @@ classdef InformationGain
                     psi1(i) = obj.calculatePsi1(goalPropStruct(i).endPt);
                 end
                 if obj.information_measures(2)
-                    psi2(i) = obj.calculatePsi2(goalPropStruct(i).cartesianPath);
+                    psi2(i) = obj.calculatePsi2v2(goalPropStruct(i).endPt, goalPropStruct(i).startPt);
                 end
                 if obj.information_measures(3)
                     psi3(i) = obj.calculatePsi3(goalPropStruct(i).endPt);
                 end
-                if obj.information_measures(4)
-                    psi4v2(i) = obj.calculatePsi4v2(goalPropStruct(i).jointPath);
-                end
 
             end
-            [psiProduct, goalIndex] = max(psi1.*psi2.*psi3.*psi4v2);
+            [psiProduct, goalIndex] = max(psi1.*psi2.*psi3);
             goalOut = goalPropStruct(goalIndex);
 
         end
@@ -105,25 +101,12 @@ classdef InformationGain
             psi1 = min(allpsi1);
 
         end
-        function psi2 = calculatePsi2(~, goalCartesianPath)
+
+        function psi2 = calculatePsi2v2(~, goalSample, currentPosition)
             %Current path considered is the direct distance and not the
             %true trajectory
-
-            nWaypoint = size(goalCartesianPath, 1);
-            totalPositionChange = zeros([1, size(goalCartesianPath,2)]);
-            for n = 1: nWaypoint-1
-                positionChange = abs(goalCartesianPath(n,:) - goalCartesianPath(n+1,:));
-                totalPositionChange = totalPositionChange + positionChange;
-            end
-            pathLength = vecnorm(totalPositionChange,2,2);
+            pathLength = vecnorm(goalSample-currentPosition,2,2);
             psi2 = 1 / pathLength;
-
-        end
-        function psi2v2 = calculatePsi2v2(~, currentPosition, goalPosition)
-            %Current path considered is the direct distance and not the
-            %true trajectory
-            pathLength = vecnorm(goalPosition-currentPosition,2,2);
-            psi2v2 = 1 / pathLength;
 
         end
 
@@ -135,15 +118,12 @@ classdef InformationGain
 
         end
 
-        function psi4v2 = calculatePsi4v2(obj, goalJointTraj)
+        function psi4v2 = calculatePsi4v2(obj, goalSample, goalJointTraj)
             %Sum the variation in joint pose across the trajectory
-            nPose = size(goalJointTraj,2);
-            totalJointChange = zeros([size(goalJointTraj,1),1]);
-            for n = 1: nPose-1
-                jointChange = abs(goalJointTraj(:,n) - goalJointTraj(:,n+1));
-                totalJointChange = totalJointChange + jointChange;
-            end
-            psi4v2 = exp(-sum(totalJointChange)/(obj.sigalpha)^2);
+            nPose = size(goalJointTraj,2)
+            for n = 1: nPose
+                
+
                 
         end
     end

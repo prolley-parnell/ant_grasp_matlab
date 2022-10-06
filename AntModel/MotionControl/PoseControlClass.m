@@ -101,7 +101,7 @@ classdef PoseControlClass
 
             %If limb is not in collision, store the free point
             if ~limbOut.collision_latch
-                limbOut.free_point = tbox.findEndEffectorGlobalPosition(obj.antTree, qIn, positionIn, limbOut.end_effector);
+                limbOut.free_point = tbox.findFKglobalPosition(obj.antTree, qIn, positionIn, limbOut.end_effector);
             end
 
             %Print collisions

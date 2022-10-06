@@ -70,7 +70,7 @@ classdef Ant
 
             for i = 1:length(names)
                 obj.limbs{i} = Limb(names{i}, types{i}, control_type{i}, colours{i}, end_effectors{i}, base_names{i}, obj.antTree, obj.position, RUNTIME_ARGS);
-                obj.limbs{i}.free_point = tbox.findEndEffectorGlobalPosition(obj.antTree, obj.q, obj.position, end_effectors{i});
+                obj.limbs{i}.free_point = tbox.findFKglobalPosition(obj.antTree, obj.q, obj.position, end_effectors{i});
             end
 
             obj.neckObj = Neck(obj.antTree,RUNTIME_ARGS);

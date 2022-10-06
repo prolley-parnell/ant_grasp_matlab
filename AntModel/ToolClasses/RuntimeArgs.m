@@ -196,7 +196,7 @@ classdef RuntimeArgs
 
             %Arguments required for the refinement of sampled points
             %For REFINE
-            obj.SEARCH_SPACE.REFINE.ARG = {'psi1', 'psi2','psi3'};
+            obj.SEARCH_SPACE.REFINE.ARG = {'psi1', 'psi2' ,'psi3', 'psi4'};
 
 
 
