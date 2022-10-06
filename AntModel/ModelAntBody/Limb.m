@@ -60,12 +60,6 @@ classdef Limb
             positionTF = tbox.modelPosition2GlobalTF(positionIn);
             %Find the combination of origin->full ant base -> subtree base
 
-%             %New rotation of subtree
-%             globalR = tform2rotm(positionTF) * tform2rotm(baseTF);
-%             %New translation
-%             globalT = (tform2rotm(positionTF) * tform2trvec(baseTF)') + tform2trvec(positionTF)';
-%             globalTF = [globalR,globalT; 0 0 0 1];
-
             globalTF = positionTF * baseTF;
 
                

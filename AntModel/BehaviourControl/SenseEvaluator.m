@@ -39,7 +39,7 @@ classdef SenseEvaluator
 
         function [ant, goal] = check(obj, ant, sensedData)
             goal = goalStruct();
-            %if ~isempty(sensedData)
+
             nContactPoints = length(ant.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
             if ~isempty(sensedData) && nContactPoints >= 0
 

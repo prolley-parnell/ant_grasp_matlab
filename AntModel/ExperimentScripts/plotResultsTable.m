@@ -2,10 +2,11 @@
 
 close all;
 clear all;
-addpath('ExperimentOutput');
+%addpath('ExperimentOutput');
 
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
-file_name = 'summarisegoalexcel.mat';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\IGEF_small2-30';
+folder_name2 = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefine2-40';
+file_name = 'summarisegoalqualityexcel.mat';
 
 matStruct = load([folder_name, '\', file_name]);
 resultsTable = matStruct.resultsTable;
@@ -41,7 +42,8 @@ for j = 1:variableNumber
     
     yyaxis left
     ylabel("Mean")
-    errorbar(numberOfContacts, meanT(:,j), minT(:,j), maxT(:,j))
+    %errorbar(numberOfContacts, meanT(:,j), minT(:,j), maxT(:,j))
+    plot(numberOfContacts, meanT(:,j));
 
     
 

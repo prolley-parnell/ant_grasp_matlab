@@ -109,7 +109,7 @@ classdef tbox
 
         end
 
-        function globalPosition = findEndEffectorGlobalPosition(RBTree, qIn, positionIn, endEffectorName)
+        function globalPosition = findFKglobalPosition(RBTree, qIn, positionIn, endEffectorName)
             %FINDENDEFFECTORGLOBALPOSITION Find the cartesian coordinates of an
             %end effector
             % Given the pose of the model, the position in the global frame of
@@ -120,10 +120,16 @@ classdef tbox
 
             global2baseTF = tbox.modelPosition2GlobalTF(positionIn);
 
-            %globalPosition = tform2trvec(base2EETF * global2baseTF);
             localEndPosition = tform2trvec(base2EETF);
             globalPosition = tbox.local2global(localEndPosition, global2baseTF);
 
+
+        end
+
+        function localPosition = findFKlocalPosition(RBsubTree,qIn,endEffectorName)
+            
+            base2EETF = getTransform(RBsubTree, qIn, endEffectorName);
+            localPosition = tform2trvec(base2EETF);            
 
         end
 
