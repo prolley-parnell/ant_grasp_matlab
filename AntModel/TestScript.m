@@ -50,7 +50,7 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
                 0, 1];
 
 RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
-RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
+%RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "straight"];
 
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
