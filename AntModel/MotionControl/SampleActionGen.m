@@ -13,31 +13,39 @@ classdef SampleActionGen
 
         gik
 
-        search_space
+        search_range
         search_config
-
+        refineSearch
 
     end
 
     methods
-        function obj = SampleActionGen(antTree, RATE, SEARCH_CONFIG)
+        function obj = SampleActionGen(fullTree, RUNTIME_ARGS)
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
-            obj.interval = RATE;
+            obj.interval = RUNTIME_ARGS.RATE;
             obj.maxvelocities = ones([10,1]) * deg2rad(100);
-            %Make the scape pedicel joint have a higher speed limit 
+            %Make the scape pedicel joint have a higher speed limit
             obj.maxvelocities([7 10]) = deg2rad(180);
 
-            obj.search_config = SEARCH_CONFIG;
-            obj.search_space = SEARCH_CONFIG.RANGE;
+            obj.search_config = RUNTIME_ARGS.SEARCH_SPACE;
+            obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE;
+
+            if strcmp(RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE, 'IG')
+                obj.refineSearch = InformationGain(RUNTIME_ARGS);
+            else
+                obj.refineSearch = struct.empty;
+            end
 
             %Initialise Generalized IK Solver
-            obj.gik = generalizedInverseKinematics('RigidBodyTree', antTree);
+            obj.gik = generalizedInverseKinematics('RigidBodyTree', fullTree);
 
             obj.gik.ConstraintInputs = {"joint", "pose"};
             obj.gik.SolverParameters.AllowRandomRestart = false;
 
         end
+
+
 
         function [antennaOut] = loadAntennaTrajectory(obj, antennaIn, qIn, positionIn)
 
@@ -45,44 +53,35 @@ classdef SampleActionGen
             %positions
             %Generate the next goal
             antennaOut = antennaIn;
-            goal = obj.randomGoalGen();
-            pattern = antennaIn.control_type(~strcmp(antennaIn.control_type, "goals")); %Find the name of the pattern
-
-            switch pattern
-
-                case "joint_traj"
-                    %antennaOut = antennaIn;
-                    waypointsGlobal = [antennaIn.free_point', goal'];
-                    %localModelTF = tbox.modelPosition2GlobalTF(positionIn);
-                    %waypointsLocal = tbox.global2local(waypointsGlobal, localModelTF);
-                    [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
-                    velocityLims = obj.maxvelocities(antennaIn.joint_mask==1)*obj.interval;
-                    antennaOut.trajectory_queue = obj.jointTrajectory(jointWaypoints, velocityLims);
-
-
-                otherwise
-
-                    waypointsGlobal = obj.generateWaypoints(antennaIn.free_point, goal, pattern);
-                    %Transform waypoints to be relative to the full
-                    %rigidBodyTree base_link rather than global coordinates
-                    %(for speed) antennaIn, points, positionIn, qIn
-                    localModelTF = tbox.modelPosition2GlobalTF(positionIn);
-                    waypointsLocal = tbox.global2local(waypointsGlobal, localModelTF);
-                    antennaOut = obj.trajfromWP(antennaIn, waypointsLocal, qIn);
-
-
+            if ~isempty(obj.refineSearch)
+                N = obj.refineSearch.n_sample;
+                goalArray = obj.randomGoalGen(N);
+            else
+                %Generate N random goals from the search space
+                goalArray = obj.randomGoalGen(1);
             end
 
+            %Turn the goal(s) in to trajectories
+            goalPropStruct = obj.generateGoalProp(antennaIn, qIn, positionIn, goalArray);
 
+
+            if ~isempty(obj.refineSearch)
+                goalPropStructOut = obj.refineSearch.refine(goalPropStruct);
+
+            else
+                goalPropStructOut = goalPropStruct(1);
+            end
+
+            antennaOut.trajectory_queue = goalPropStructOut.jointPath;
 
         end
 
         function [qTrajectory] = jointTrajectory(~, waypoints, velLimits)
-                    numSamples = 10;
+            numSamples = 10;
 
-                    [qTrajectory, ~, ~, ~, ~] = trapveltraj(waypoints, numSamples, 'PeakVelocity', velLimits);
-                    %Remove the duplicate position
-                    qTrajectory(:,1) = [];
+            [qTrajectory, ~, ~, ~, ~] = trapveltraj(waypoints, numSamples, 'PeakVelocity', velLimits);
+            %Remove the duplicate position
+            qTrajectory(:,1) = [];
 
 
         end
@@ -113,16 +112,9 @@ classdef SampleActionGen
 
             step_size = 0.07;
 
-
-
-
-
             waypoints(1,:) = [start_pt(1) : vector(1)*step_size : end_pt(1)];
             waypoints(2,:) = [start_pt(2) : vector(2)*step_size : end_pt(2)];
             waypoints(3,:) = [start_pt(3) : vector(3)*step_size : end_pt(3)];
-
-            %plot3(waypoints(1,:), waypoints(2,:), waypoints(3,:));
-
 
 
         end
@@ -146,17 +138,11 @@ classdef SampleActionGen
             waypoints(2,:) = [start_pt(2) : vector(2)/(length(t)-1) : end_pt(2)];
             waypoints(3,:) = [start_pt(3) : vector(3)/(length(t)-1) : end_pt(3)] + height;
 
-            %plot3(waypoints(1,:), waypoints(2,:), waypoints(3,:));
-
-
 
         end
 
 
         function waypoints = spiralPath(~, start_pt, end_pt)
-
-
-
 
             vector = end_pt - start_pt;
             distance = sqrt(sum(vector(:).^2));
@@ -181,27 +167,91 @@ classdef SampleActionGen
 
         end
 
-        function [goal] = randomGoalGen(obj)
+
+        function [goalTrajProperties] = generateGoalProp(obj, antennaIn, qIn, positionIn, goalArray)
+            %For N goals, get N trajectory structs with the cartesian end
+            %positions, and the joint positions to reach the path
+            goalTrajProperties = struct('startPt', [], 'endPt', [], 'cartesianPath', [], 'jointPath', []);
+
+            pattern = antennaIn.control_type(~strcmp(antennaIn.control_type, "goals")); %Find the name of the pattern
+
+            nGoal = size(goalArray,1);
+            for g = 1:nGoal
+                goalTrajProperties(g).startPt = antennaIn.free_point;
+                goalTrajProperties(g).endPt = goalArray(g,:);
+                switch pattern
+
+                    case "joint_traj"
+                        %If joint based, then gen joint first then
+                        %cartesian
+                        %Generate goals and their trajectories
+
+                        waypointsGlobal = [antennaIn.free_point', goalArray(g,:)'];
+                        [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
+                        velocityLims = obj.maxvelocities(antennaIn.joint_mask==1)*obj.interval;
+                        goalTrajProperties(g).jointPath = obj.jointTrajectory(jointWaypoints, velocityLims);
+                        nPose = size(goalTrajProperties(g).jointPath,2);
+
+                        %Initialise the output cartesian values
+                        if ~isempty(obj.refineSearch)
+                            if obj.refineSearch.information_measures(2)
+                                cartesianOut = nan([nPose,3]);
+
+                                for n = 1:nPose
+                                    % --- If code stops working after global
+                                    % position changes --%
+                                    %pose_n = antennaIn.applyMask(qIn, goalTrajProperties(g).jointPath(:,n));
+                                    %cartesianOut(n,:) = tbox.findFKglobalPosition(antennaIn.full_tree, pose_n, positionIn, antennaIn.end_effector);
+
+                                    % -- Assuming the code continues to work
+                                    % properly on the local scale (as subtrees
+                                    % are updated) -- %%
+                                    cartesianOut(n,:) = tbox.findFKlocalPosition(antennaIn.subtree, ...
+                                        goalTrajProperties(g).jointPath(:,n), ...
+                                        antennaIn.end_effector);
+                                end
+
+                                goalTrajProperties(g).cartesianPath = cartesianOut;
+                            end
+                        end
+
+
+                    otherwise
+                        %If cartesian based, gen cartesian then joint
+
+                        goalTrajProperties(g).cartesianPath = obj.generateWaypoints(antennaIn.free_point, goalArray(g,:), pattern);
+                        %Transform waypoints to be relative to the full
+                        %rigidBodyTree base_link rather than global coordinates
+                        %(for speed) antennaIn, points, positionIn, qIn
+                        localModelTF = tbox.modelPosition2GlobalTF(positionIn);
+                        waypointsLocal = tbox.global2local(goalTrajProperties(g).cartesianPath, localModelTF);
+                        goalTrajProperties(g).jointPath = obj.trajfromWP(antennaIn, waypointsLocal, qIn);
+
+
+                end
+
+            end
+
+        end
+
+        function [goal] = randomGoalGen(obj, nGoal)
             %Generate an antennal goal position in the world frame
 
-            switch class(obj.search_space)
+            switch class(obj.search_range)
 
                 case "gmdistribution"
-                    goal = random(obj.search_space, 1);
+                    goal = random(obj.search_range, nGoal);
 
                 case "double"
 
                     r = @(a, b, set) (a + (b-a).*set);
-                    %mid = mean(space_limits(1,:));
 
-                    init_val = rand([1, 3]);
-
-
-                    X = r(obj.search_space(1,1), obj.search_space(1,2), init_val(1));
-                    Y = r(obj.search_space(2,1), obj.search_space(2,2), init_val(2));
-                    Z = r(obj.search_space(3,1), obj.search_space(3,2), init_val(3));
+                    init_val = rand([nGoal, 3]);
 
 
+                    X = r(obj.search_range(1,1), obj.search_range(1,2), init_val(:,1));
+                    Y = r(obj.search_range(2,1), obj.search_range(2,2), init_val(:,2));
+                    Z = r(obj.search_range(3,1), obj.search_range(3,2), init_val(:,3));
 
                     goal = [X,Y,Z];
 
@@ -210,11 +260,7 @@ classdef SampleActionGen
         end
 
 
-
-
-
-
-        function outputObj = trajfromWP(obj, inputObj, waypoints, qIn)
+        function qTrajectory = trajfromWP(obj, inputObj, waypoints, qIn)
 
             poseTgt = constraintPoseTarget(inputObj.end_effector);
             poseTgt.ReferenceBody = inputObj.full_tree.BaseName;
@@ -231,31 +277,21 @@ classdef SampleActionGen
 
                 case 2
                     %then using cartesian goals (position)
-                    %Find the dimension of length of the waypoints ( 3 x n)
+                    %Convert the waypoints (n x3) in to transforms
+                    tform = trvec2tform(waypoints');
 
+                    %Find the dimension of length of the waypoints ( 3 x n)
                     poseTgt.Weights = [0 0.8];
 
-                    %Convert the waypoints (n x3) in to transforms
 
-                    tform = trvec2tform(waypoints');
 
             end
 
-
-
             qTrajectory = zeros([(length(qIn)), numWaypoints]);
-
             qTrajectory(:,1) = qIn;
 
-
-
-
             limitJointChange = constraintJointBounds(inputObj.full_tree);
-            %limitJointChange.Weights = inputObj.joint_mask';
-
-
-            maxJointChange = obj.maxvelocities.*inputObj.joint_mask*obj.interval*2;
-            %maxJointChange = obj.maxvelocities*obj.interval;
+            maxJointChange = obj.maxvelocities.*inputObj.joint_mask*obj.interval;
 
 
             for k = 2:numWaypoints
@@ -276,9 +312,16 @@ classdef SampleActionGen
 
             end
             qTrajectory(:,1) = [];
-            inputObj.trajectory_queue = qTrajectory;
+        end
 
-            outputObj = inputObj;
+        function obj = updateContactMemory(obj, contact_pointStruct)
+            if strcmp(obj.search_config.SAMPLE.MODE, "GM")
+                obj = obj.updateGM(contact_pointStruct);
+            end
+            if ~isempty(obj.refineSearch)
+                obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
+            end
+
         end
 
         function obj = updateGM(obj, contact_pointStruct)
@@ -292,7 +335,7 @@ classdef SampleActionGen
             I = eye(d,d);
             p = ones([1, n])/n;
             %variance of the distribution around each point
-            if strcmp(obj.search_config.VAR, "IPD")
+            if strcmp(obj.search_config.SAMPLE.VAR, "IPD")
                 if n > 1
                     distanceMAT = pdist2(points, points);
                     distanceMAT(distanceMAT==0) = nan;
@@ -304,63 +347,28 @@ classdef SampleActionGen
                     dist = minDist;
 
                 else
-
-
                     dist = 1;
-
                 end
-
                 sigma = I.* reshape(dist, [1 1 n]);
 
-
-
             else
-                if ~strcmp(class(obj.search_config.VAR), "double")
+                if ~strcmp(class(obj.search_config.SAMPLE.VAR), "double")
                     warning("The set variance is not a valid value - overwrite to 1")
-                    obj.search_config.VAR = 1;
+                    obj.search_config.SAMPLE.VAR = 1;
                 end
 
-                variance = obj.search_config.VAR;
+                variance = obj.search_config.SAMPLE.VAR;
 
 
                 sigma = repmat(I*variance, [1 1 n]);
             end
 
-
-
-
             gmObj = gmdistribution(points,sigma,p);
 
-            obj.search_space = gmObj;
+            obj.search_range = gmObj;
         end
-        function outputTrajectory = bodyGoal2Traj(obj, headIn, qIn, goalStructIn)
-
-            [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
-
-            % -- Apply the difference in rotation to the current pose of
-            % the head
-
-            sourcebody = 'base_link';
-            targetbody = headIn.end_effector;
-            currentPoseTF = getTransform(headIn.full_tree, qIn, targetbody, sourcebody);
-            base2EETF = getTransform(headIn.full_tree, homeConfiguration(headIn.full_tree), targetbody, sourcebody);
 
 
-
-            %goalPose_rotm = global2goalR * tform2rotm(base2EETF);
-            goalPose = rotm2tform(global2goalR) * base2EETF;
-
-
-            % -- interpolate between the current pose and the rotated pose
-            tSamples = 0:0.05:1;
-            [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
-
-
-
-            outputObj = obj.trajfromWP(headIn, waypoints, qIn);
-            outputTrajectory = outputObj.trajectory_queue;
-
-        end
         function outputTrajectory = loadNeckTrajectory(obj, neckIn, qIn, goalStructIn)
 
             [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
@@ -374,8 +382,6 @@ classdef SampleActionGen
             base2EETF = getTransform(neckIn.full_tree, homeConfiguration(neckIn.full_tree), targetbody, sourcebody);
 
 
-
-            %goalPose_rotm = global2goalR * tform2rotm(base2EETF);
             goalPose = rotm2tform(global2goalR) * base2EETF;
 
 
@@ -383,10 +389,7 @@ classdef SampleActionGen
             tSamples = 0:0.05:1;
             [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
 
-
-
-            outputObj = obj.trajfromWP(neckIn, waypoints, qIn);
-            outputTrajectory = outputObj.trajectory_queue;
+            outputTrajectory = obj.trajfromWP(neckIn, waypoints, qIn);
 
         end
 
@@ -407,7 +410,6 @@ classdef SampleActionGen
                         col = 1;
                     end
 
-                    
 
                     %Find the maximum open joint values
                     goal_joint_val = mandibleIn.joint_limits(:,col);
@@ -426,9 +428,6 @@ classdef SampleActionGen
                     mandibleOut.trajectory_queue = [];
 
                 end
-
-
-
 
                 successFlag = 1;
 

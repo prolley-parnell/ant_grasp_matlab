@@ -59,11 +59,11 @@ classdef CollisionObjects
 
 
         function obj = addStl(obj, ARGS)
+            
             %Import mesh from file
             meshObj = importGeometry(ARGS.FILE_PATH);
             %Scale mesh according to RUNTIME_ARGS
             scaled_mesh = scale(meshObj, ones([1,3])*ARGS.SCALE);
-
 
 
             %Find the centre point offset of the mesh
@@ -72,7 +72,7 @@ classdef CollisionObjects
             t_zero = trvec2tform(-centre_pt);
             %Zero the vertices so they are all about [0 0 0]
             scaled_zero_mesh = translate(scaled_mesh, tform2trvec(t_zero));
-            %scaled_zero_mesh = scaled_mesh.Vertices + tform2trvec(t_zero);
+
 
             %Add CollisionBody for mesh
             collision_mesh = collisionMesh(scaled_zero_mesh.Vertices);
@@ -88,10 +88,11 @@ classdef CollisionObjects
             %Add DiscreteGeometry object for mesh
             translate(scaled_zero_mesh, ARGS.POSITION);
             obj.discreteGeomHandle{end+1} = scaled_zero_mesh;
+            
 
             %Calculate the surface normals for each face
             [obj.DT{end+1}, obj.surfNorm{end+1}] = obj.collisionToDelaunay(scaled_zero_mesh);
-            
+
 
 
         end
@@ -116,6 +117,8 @@ classdef CollisionObjects
 %             hold on
 %             quiver3(P(:,1),P(:,2),P(:,3), ...
 %                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
+
+
 
         end
 
