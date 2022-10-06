@@ -193,24 +193,26 @@ classdef SampleActionGen
                         nPose = size(goalTrajProperties(g).jointPath,2);
 
                         %Initialise the output cartesian values
-                        if obj.refineSearch.information_measures(2)
-                            cartesianOut = nan([nPose,3]);
-                            
-                            for n = 1:nPose
-                                % --- If code stops working after global
-                                % position changes --%
-                                %pose_n = antennaIn.applyMask(qIn, goalTrajProperties(g).jointPath(:,n));
-                                %cartesianOut(n,:) = tbox.findFKglobalPosition(antennaIn.full_tree, pose_n, positionIn, antennaIn.end_effector);
+                        if ~isempty(obj.refineSearch)
+                            if obj.refineSearch.information_measures(2)
+                                cartesianOut = nan([nPose,3]);
 
-                                % -- Assuming the code continues to work
-                                % properly on the local scale (as subtrees
-                                % are updated) -- %%
-                                cartesianOut(n,:) = tbox.findFKlocalPosition(antennaIn.subtree, ...
-                                                    goalTrajProperties(g).jointPath(:,n), ...
-                                                    antennaIn.end_effector);
+                                for n = 1:nPose
+                                    % --- If code stops working after global
+                                    % position changes --%
+                                    %pose_n = antennaIn.applyMask(qIn, goalTrajProperties(g).jointPath(:,n));
+                                    %cartesianOut(n,:) = tbox.findFKglobalPosition(antennaIn.full_tree, pose_n, positionIn, antennaIn.end_effector);
+
+                                    % -- Assuming the code continues to work
+                                    % properly on the local scale (as subtrees
+                                    % are updated) -- %%
+                                    cartesianOut(n,:) = tbox.findFKlocalPosition(antennaIn.subtree, ...
+                                        goalTrajProperties(g).jointPath(:,n), ...
+                                        antennaIn.end_effector);
+                                end
+
+                                goalTrajProperties(g).cartesianPath = cartesianOut;
                             end
-                            
-                            goalTrajProperties(g).cartesianPath = cartesianOut;
                         end
 
 

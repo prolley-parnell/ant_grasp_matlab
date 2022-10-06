@@ -30,7 +30,7 @@ RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.1;
 %RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/tray.stl';
 
 
-RUNTIME_ARGS.BODY_MOTION_ENABLE = 1;
+RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 
 RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
@@ -49,7 +49,7 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
                 2.5, 3.5; ...
                 0, 1];
 
-RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
+RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
 %RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "straight"];
 
 %No need for a threshold, as it picks the best after 10 contacts, and no
