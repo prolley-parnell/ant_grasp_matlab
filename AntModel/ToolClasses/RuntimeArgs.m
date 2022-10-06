@@ -130,6 +130,7 @@ classdef RuntimeArgs
 
             obj.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
             obj.COLLISION_OBJ.POSITION = [0 3 0.5];
+            obj.COLLISION_OBJ.ROTATION = [0 0 0]; %roll pitch yaw
             obj.COLLISION_OBJ.SCALE = 0.15;
 
 
