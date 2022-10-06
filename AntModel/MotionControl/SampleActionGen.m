@@ -242,27 +242,22 @@ classdef SampleActionGen
 
                 case 2
                     %then using cartesian goals (position)
-                    %Find the dimension of length of the waypoints ( 3 x n)
+                    %Convert the waypoints (n x3) in to transforms
+                    tform = trvec2tform(waypoints');
 
+                    %Find the dimension of length of the waypoints ( 3 x n)
                     poseTgt.Weights = [0 0.8];
 
-                    %Convert the waypoints (n x3) in to transforms
 
-                    tform = trvec2tform(waypoints');
 
             end
 
 
 
             qTrajectory = zeros([(length(qIn)), numWaypoints]);
-
             qTrajectory(:,1) = qIn;
 
-
-
             limitJointChange = constraintJointBounds(inputObj.full_tree);
-
-
             maxJointChange = obj.maxvelocities.*inputObj.joint_mask*obj.interval;
 
 
@@ -342,34 +337,8 @@ classdef SampleActionGen
 
             obj.search_range = gmObj;
         end
-%         function outputTrajectory = bodyGoal2Traj(obj, headIn, qIn, goalStructIn)
-% 
-%             [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
-% 
-%             % -- Apply the difference in rotation to the current pose of
-%             % the head
-% 
-%             sourcebody = 'base_link';
-%             targetbody = headIn.end_effector;
-%             currentPoseTF = getTransform(headIn.full_tree, qIn, targetbody, sourcebody);
-%             base2EETF = getTransform(headIn.full_tree, homeConfiguration(headIn.full_tree), targetbody, sourcebody);
-% 
-% 
-% 
-%             %goalPose_rotm = global2goalR * tform2rotm(base2EETF);
-%             goalPose = rotm2tform(global2goalR) * base2EETF;
-% 
-% 
-%             % -- interpolate between the current pose and the rotated pose
-%             tSamples = 0:0.05:1;
-%             [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
-% 
-% 
-% 
-%             outputObj = obj.trajfromWP(headIn, waypoints, qIn);
-%             outputTrajectory = outputObj.trajectory_queue;
-% 
-%         end
+
+        
         function outputTrajectory = loadNeckTrajectory(obj, neckIn, qIn, goalStructIn)
 
             [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);

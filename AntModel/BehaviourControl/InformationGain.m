@@ -117,6 +117,11 @@ classdef InformationGain
             psi3 = sum(allpsi3);
 
         end
+
+        function psi4v2 = calculatePsi4v2(obj, currentPose, endPose)
+
+
+        end
     end
 end
 
