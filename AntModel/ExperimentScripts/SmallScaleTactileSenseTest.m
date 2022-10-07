@@ -21,8 +21,8 @@ RUNTIME_ARGS.disableWarnings();
 % Number of Iterations
 RUNTIME_ARGS.N_TRIALS = 50;
 
-%NumberOfPoints = [2:1:40];
-NumberOfPoints = [10:1:40];
+NumberOfPoints = [2:1:40];
+%NumberOfPoints = [10:1:40];
 
 nExperiment = length(NumberOfPoints);
 
@@ -63,11 +63,10 @@ for i = 1: nExperiment
 end
 
 tic
-% p = gcp;
-% parfevalOnAll(p,@warning, 0,'off');
-% opts = parforOptions(p);
-% parfor (n = 1:nExperiment, opts)
-for n = 1:nExperiment
+p = gcp;
+parfevalOnAll(p,@warning, 0,'off');
+opts = parforOptions(p);
+parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
 toc

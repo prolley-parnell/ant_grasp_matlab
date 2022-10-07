@@ -3,7 +3,7 @@
 %For each subfolder, sum the values for each excel trial
 clear all;
 %Import the folder name to process
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefine2-40';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefinePlankObj2-40';
 
 folderStruct = dir(folder_name);
 resultsTable = table();

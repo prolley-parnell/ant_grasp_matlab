@@ -4,7 +4,7 @@ close all;
 clear all;
 %addpath('ExperimentOutput');
 
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\IGEF_small2-30';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefinePlankObj2-40';
 folder_name2 = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefine2-40';
 file_name = 'summarisegoalqualityexcel.mat';
 
