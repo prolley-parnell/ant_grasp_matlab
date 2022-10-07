@@ -21,19 +21,20 @@ RUNTIME_ARGS.disableWarnings();
 % Number of Iterations
 RUNTIME_ARGS.N_TRIALS = 50;
 
-NumberOfPoints = [2:1:40];
-%NumberOfPoints = [9:1:40];
+%NumberOfPoints = [2:1:40];
+NumberOfPoints = [10:1:40];
 
 nExperiment = length(NumberOfPoints);
 
 RUNTIME_ARGS.RATE = 0.05;
-RUNTIME_ARGS.PLOT.ENABLE = [0 0];
+RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 
 RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.1;
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.05;
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
 RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 
@@ -51,35 +52,33 @@ RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 RUNTIME_ARGS.SENSE.THRESH = 0;
 
 
-
-%%
-%RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
 RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
 
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 for i = 1: nExperiment
-    RUNTIME_ARGS_i(i).TRIAL_NAME = ['noRefine2-40\', int2str(NumberOfPoints(i)), '_ContactPts_noRefine'];
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['noRefinePlankObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_noRefinePlank'];
     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 end
 
 tic
-p = gcp;
-parfevalOnAll(p,@warning, 0,'off');
-opts = parforOptions(p);
-parfor (n = 1:nExperiment, opts)
+% p = gcp;
+% parfevalOnAll(p,@warning, 0,'off');
+% opts = parforOptions(p);
+% parfor (n = 1:nExperiment, opts)
+for n = 1:nExperiment
     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
 toc
 
 
-% RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
+% RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
 % 
 % 
 % RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 % for i = 1: nExperiment
-%     RUNTIME_ARGS_i(i).TRIAL_NAME = ['norefine_small2-30\', int2str(NumberOfPoints(i)), '_ContactPts_IGEF'];
+%     RUNTIME_ARGS_i(i).TRIAL_NAME = ['IGEFrefinePlankObj2-30\', int2str(NumberOfPoints(i)), '_ContactPts_IGEFPlank'];
 %     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
 %     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 % end

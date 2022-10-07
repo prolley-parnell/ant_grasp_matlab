@@ -183,22 +183,34 @@ classdef graspEvaluator
                 if  sign(B(3)) == -1
                     cross_th = deg2rad(180) - cross_th;
                 end
+                
+                %[ERROR] cross(B,A) = [0 0 0] - Cannot be used in
+                %axang2rotm
+                %[Fix]
+                %If the cross axis is non-existent because the vector is in line with the Z axis
+                if all(~logical(cross(B,A)))
+                	rotAxis = [1 0 0]; %Give another standard axis of rotation (perpendicular to Z axis)
+                else
+                	rotAxis = cross(B,A);
+                end
 
-
-                R = axang2rotm([cross(B,A) cross_th]);
+                R = axang2rotm([rotAxis cross_th]);
                 cone = circ * R;
                 v = sum(cone,1)/8;
 
+                % Remove any rounding errors
+                tolflag = abs(v) < 10e-9;
+                v(tolflag) = 0;
+
+
                 % Cross product gives the acute angle but not necessarily the sign, so
                 % it could be aligned with the -ve cross product. This fixes this
-                if sign(v) ~= sign(vector(1:3))
+                if any(sign(v) ~= sign(vector(1:3)))
                     cone = -cone;
                 end
 
             else
-
                 cone = vector(1:3);
-
             end
 
         end
