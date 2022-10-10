@@ -161,6 +161,8 @@ classdef PoseControlClass
 
                 witness_pts = witnessPoints(3*body_i-2:3*body_i, 2*collision_i-1:2*collision_i);
                 pointOnObj = witness_pts(:,2);
+                %faceID = tsearchn(pointOnObj,env.DT{objID}.ConnectivityList,  env.DT{objID}.Points);
+                %faceID = pointLocation(env.DT{objID},pointOnObj');
                 faceID = nearestFace(env.discreteGeomHandle{objID}, pointOnObj');
                 surface_normals = env.surfNorm{objID}(faceID,:);
                 %collision_points = mean(witness_pts,2)';

@@ -34,7 +34,7 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 
 RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.05;
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
 RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 
@@ -52,12 +52,12 @@ RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 RUNTIME_ARGS.SENSE.THRESH = 0;
 
 
-RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
+RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
 
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 for i = 1: nExperiment
-    RUNTIME_ARGS_i(i).TRIAL_NAME = ['noRefinePlankObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_noRefinePlank'];
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['refineIGEFDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_refineIGEFDice'];
     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 end
