@@ -43,9 +43,9 @@ classdef SenseEvaluator
             nContactPoints = length(ant.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
             if ~isempty(sensedData) && nContactPoints >= 0
 
-                
+
                 obj = obj.calcCOC(ant.contact_points);
-                
+
                 switch(obj.mode)
                     %Move towards the first pair of contacts that are closer together than the mandible distance
                     case "closest_first_pair"
@@ -54,6 +54,8 @@ classdef SenseEvaluator
                         [obj, goal] = obj.firstPair(ant.contact_points, "max");
                     case "thresh_COC"
                     case "largest_wrench_vol"
+                    case "force_align"
+                        [obj, goal] = obj.bestAlign(ant.contact_points);
                     otherwise
                         warning("Evaluation method does not match provided functions")
                 end
@@ -99,11 +101,62 @@ classdef SenseEvaluator
 
                 if success_flag
                     obj.threshold = dist * 1.1;
-                    goal = goal.setcontact(points(idx(1:2),:));
+                    goal = goal.setcontact(contactStructs(idx(1:2)));
                 end
             end
         end
 
+        function [obj, goal] = bestAlign(obj, contactStruct)
+            goal = goalStruct();
+
+            %Cartesian contact points
+
+            [~, alignQuality, idx] = obj.findInterPointGraspAlign(contactStruct);
+            if ~isempty(idx)
+
+                obj.threshold = alignQuality * 1.1;
+                goal = goal.setcontact(contactStruct(idx(1:2)));
+            end
+        end
+
+        function [alignMat, bestAlign, idx] = findInterPointGraspAlign(obj, contactStruct)
+            %findInterPointGraspAlign find the alignment at a point of contact
+            %with the surface vector for a given opposing contact
+            idx = [];
+            pointArray = cat(1,contactStruct(:).point);
+            normArray = cat(1,contactStruct(:).normal);
+            nContact = size(pointArray,1);
+            alignMat = nan([nContact, nContact]);
+            type = "max"
+
+            %[distanceMAT, ~, ~] = obj.findInterPointDistance(pointArray, type);
+            for n = 1:nContact
+                for m = 1:nContact
+                    if n~= m
+                        contactPair = pointArray([n, m],:);
+                        forcePair = obj.genOpposeForces(contactPair);
+                        normalPair = normArray([n,m],:);
+
+                        alignPair = min(tbox.findSurfNormAlign(normalPair, forcePair));
+                        alignMat(n,m) = alignPair;
+                        alignMat(m,n) = alignPair;
+                    end
+
+                end
+
+
+            end
+            bestAlign = max(alignMat,[], 'all');
+            [r, c] = find(alignMat == bestAlign);
+            if length(r) > 2
+
+                [~, ~, distIdx] = obj.findInterPointDistance(pointArray(r,:), type);
+                idx = r(distIdx);
+
+            else
+                idx = [r(1), c(1)];
+            end
+        end
         function obj = calcCOC(obj, contactStruct)
             new_COC = mean(cat(1,contactStruct(:).point),1);
             if ~isempty(obj.COC.mean)
@@ -159,7 +212,7 @@ classdef SenseEvaluator
         end
 
 
-        function [forces] = genOpposeForces(obj, contacts)
+        function [forces] = genOpposeForces(~, contacts)
             %Generate a pair of forces that point in the direction of
             %the other contact point as if pinched in a vice
             contactA = contacts(1,:);
@@ -167,9 +220,7 @@ classdef SenseEvaluator
             force_a = contactB - contactA;
             forceA_norm = force_a/vecnorm(force_a);
             forceB_norm = -forceA_norm;
-            forceA = [forceA_norm,obj.force_applied];
-            forceB = [forceB_norm,obj.force_applied];
-            forces = [forceA;forceB];
+            forces = [forceA_norm;forceB_norm];
 
 
         end

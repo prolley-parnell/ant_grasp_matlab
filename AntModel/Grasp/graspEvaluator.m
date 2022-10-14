@@ -46,11 +46,40 @@ classdef graspEvaluator
             %point locations
             forces = obj.genOpposeForces(A, B);
             vertices = environmentClass.objectHandles{idx}.Vertices;
+            normAlignArray = tbox.findSurfNormAlign(goalObj.contact_norm, forces);
+
+            qualityObj.normAlign = min(normAlignArray);
 
             [qualityObj.volume, qualityObj.epsilon] = obj.findWrenchQuality(forces, [A;B], vertices, globalCOM, objCOM);
 
 
         end
+
+%         function alignMeasure = findSurfNormAlign(~, surfaceNormal, forceVector)
+%             %findSurfNormAlign, gives the proportion of the normal vector at
+%             %the point of contact that is contained within the force applied at
+%             %that contact point, can check for multiple normal/force pairs
+%             %Input: surfaceNormal nx3 unit vector for the normal at point of
+%             %contact
+%             % forceVector nx4 non unit vector with (i,1:3) containing the
+%             % direction of force applied, and (i,4) containing the magnitude of
+%             % force
+%             nForce = size(forceVector,1);
+%             nNorm = size(surfaceNormal, 1);
+%             alignMeasure = nan([nNorm,1]);
+%             if nForce ~= nNorm
+%                 warning('Must provide the same number of normals as force vectors');
+%                 return
+%             end
+% 
+%             for n = 1 : nNorm
+%                 %ensure both surf norm and force are unit vectors
+%                 forceVec_n = -forceVector(n, 1:3)/norm(forceVector(n, 1:3));
+%                 normVec_n = surfaceNormal(n,:) / norm(surfaceNormal(n,:));
+%                 alignMeasure(n) = dot(forceVec_n, normVec_n) / norm(forceVec_n);
+% 
+%             end
+%         end
 
         function distance = axis2COM(~, pointA, pointB, COM)
 
@@ -183,15 +212,15 @@ classdef graspEvaluator
                 if  sign(B(3)) == -1
                     cross_th = deg2rad(180) - cross_th;
                 end
-                
+
                 %[ERROR] cross(B,A) = [0 0 0] - Cannot be used in
                 %axang2rotm
                 %[Fix]
                 %If the cross axis is non-existent because the vector is in line with the Z axis
                 if all(~logical(cross(B,A)))
-                	rotAxis = [1 0 0]; %Give another standard axis of rotation (perpendicular to Z axis)
+                    rotAxis = [1 0 0]; %Give another standard axis of rotation (perpendicular to Z axis)
                 else
-                	rotAxis = cross(B,A);
+                    rotAxis = cross(B,A);
                 end
 
                 R = axang2rotm([rotAxis cross_th]);

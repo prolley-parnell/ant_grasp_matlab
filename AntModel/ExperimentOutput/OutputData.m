@@ -65,7 +65,7 @@ classdef OutputData
 
             contactsTable = cell2table(vertcat(obj.contact_data{:}));
 
-            contactsTable.Properties.VariableNames =  {'Time', 'Contact Location', 'Contact Limb'};
+            contactsTable.Properties.VariableNames =  {'Time', 'Contact Location', 'Surface Normal', 'Contact Limb'};
 
 
             replayTable = cell2table(vertcat(obj.replay_data{:}));
@@ -121,7 +121,7 @@ classdef OutputData
 
             if ~isempty(contactStructArray)
                 for i = 1:size(contactStructArray,2)
-                    obj.contact_data{end+1} = {time, contactStructArray(i).point, contactStructArray(i).limb};
+                    obj.contact_data{end+1} = {time, contactStructArray(i).point, contactStructArray(i).normal, contactStructArray(i).limb};
                 end
 
             end
