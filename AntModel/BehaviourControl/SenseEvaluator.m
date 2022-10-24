@@ -127,7 +127,7 @@ classdef SenseEvaluator
             normArray = cat(1,contactStruct(:).normal);
             nContact = size(pointArray,1);
             alignMat = nan([nContact, nContact]);
-            type = "max"
+            type = "max";
 
             %[distanceMAT, ~, ~] = obj.findInterPointDistance(pointArray, type);
             for n = 1:nContact

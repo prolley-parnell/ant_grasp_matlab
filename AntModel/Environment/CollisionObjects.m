@@ -110,6 +110,17 @@ classdef CollisionObjects
             DT = delaunayTriangulation(x,y,z);
             [T,Xb] = freeBoundary(DT);
             FBT = triangulation(T,Xb);
+
+%                         %Plotting
+%             P = incenter(FBT);
+%             F = faceNormal(FBT);
+%             trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
+%                 'FaceColor','cyan','FaceAlpha',0.8);
+%             axis equal
+%             hold on
+%             quiver3(P(:,1),P(:,2),P(:,3), ...
+%                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
+
             
 
             %[triangTetrIdx, triangulationObj, DTsurfaceNormal] = obj.delaunayToTriang(DT);

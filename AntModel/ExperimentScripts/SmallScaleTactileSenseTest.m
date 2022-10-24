@@ -1,6 +1,10 @@
 %% Set the environment by closing any previous figures and variables
+diary lastDiaryFile
+
 close all;
 clear;
+
+
 
 modelFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\';
 scriptFolder = pwd;
@@ -27,13 +31,13 @@ NumberOfPoints = [2:1:40];
 nExperiment = length(NumberOfPoints);
 
 RUNTIME_ARGS.RATE = 0.05;
-RUNTIME_ARGS.PLOT.ENABLE = [1 0];
+RUNTIME_ARGS.PLOT.ENABLE = [0 0];
 
 RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.05;
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.16;
 RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
 RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
@@ -50,6 +54,7 @@ RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
+RUNTIME_ARGS.SENSE.MODE = "force_align";
 
 
 RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
@@ -57,7 +62,7 @@ RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 for i = 1: nExperiment
-    RUNTIME_ARGS_i(i).TRIAL_NAME = ['refineIGEFDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_refineIGEFDice'];
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['refineIGEFAlignDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_refineIGEFAlignDice'];
     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 end
@@ -72,21 +77,23 @@ end
 toc
 
 
-% RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
-% 
-% 
-% RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
-% for i = 1: nExperiment
-%     RUNTIME_ARGS_i(i).TRIAL_NAME = ['IGEFrefinePlankObj2-30\', int2str(NumberOfPoints(i)), '_ContactPts_IGEFPlank'];
-%     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
-%     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
-% end
-% 
-% tic
-% p = gcp;
-% parfevalOnAll(p,@warning, 0,'off');
-% opts = parforOptions(p);
-% for n = 1:nExperiment
-%     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
-% end
-% toc
+RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
+
+RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
+
+for i = 1: nExperiment
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['noRefineAlignDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_noRefineAlignDice'];
+    RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
+    RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
+end
+
+tic
+p = gcp;
+parfevalOnAll(p,@warning, 0,'off');
+opts = parforOptions(p);
+for n = 1:nExperiment
+    [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
+end
+toc
+
+diary off
