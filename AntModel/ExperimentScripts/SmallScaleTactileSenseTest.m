@@ -44,7 +44,7 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
 % ------------- Antenna Motion -------------- %
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "GM";
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "fixed";
 RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.VAR = 0.5;
 RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-1, 1; ...
     2.5, 3.5; ...
@@ -55,26 +55,6 @@ RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
 RUNTIME_ARGS.SENSE.MODE = "force_align";
-
-
-RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
-
-
-RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
-for i = 1: nExperiment
-    RUNTIME_ARGS_i(i).TRIAL_NAME = ['refineIGEFAlignDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_refineIGEFAlignDice'];
-    RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
-    RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
-end
-
-tic
-p = gcp;
-parfevalOnAll(p,@warning, 0,'off');
-opts = parforOptions(p);
-parfor (n = 1:nExperiment, opts)
-    [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
-end
-toc
 
 
 RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
@@ -91,7 +71,7 @@ tic
 p = gcp;
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
-for n = 1:nExperiment
+parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
 toc
