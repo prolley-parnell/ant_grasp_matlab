@@ -55,31 +55,6 @@ classdef graspEvaluator
 
         end
 
-%         function alignMeasure = findSurfNormAlign(~, surfaceNormal, forceVector)
-%             %findSurfNormAlign, gives the proportion of the normal vector at
-%             %the point of contact that is contained within the force applied at
-%             %that contact point, can check for multiple normal/force pairs
-%             %Input: surfaceNormal nx3 unit vector for the normal at point of
-%             %contact
-%             % forceVector nx4 non unit vector with (i,1:3) containing the
-%             % direction of force applied, and (i,4) containing the magnitude of
-%             % force
-%             nForce = size(forceVector,1);
-%             nNorm = size(surfaceNormal, 1);
-%             alignMeasure = nan([nNorm,1]);
-%             if nForce ~= nNorm
-%                 warning('Must provide the same number of normals as force vectors');
-%                 return
-%             end
-% 
-%             for n = 1 : nNorm
-%                 %ensure both surf norm and force are unit vectors
-%                 forceVec_n = -forceVector(n, 1:3)/norm(forceVector(n, 1:3));
-%                 normVec_n = surfaceNormal(n,:) / norm(surfaceNormal(n,:));
-%                 alignMeasure(n) = dot(forceVec_n, normVec_n) / norm(forceVec_n);
-% 
-%             end
-%         end
 
         function distance = axis2COM(~, pointA, pointB, COM)
 
@@ -151,7 +126,7 @@ classdef graspEvaluator
 
 
 
-        function [epsilon] = estability(obj, point, wrenchT,chull)
+        function [epsilon] = estability(~, point, wrenchT,chull)
             %ESTABILITY Find the largest radius circle that fits within the 6D wrench
             %space
             % If point is within hull, find the minimum distance between point and hull
@@ -161,16 +136,12 @@ classdef graspEvaluator
             end
 
             tol = 1.e-13*mean(abs(wrenchT(:)));
-            [isInHull, epsilon] = inhull(point,wrenchT,chull, tol);
+            [~, epsilon] = inhull(point,wrenchT,chull, tol);
 
-            % Calculate the epsilon stability
-
-            %             if epsilon<1e-9 %arbitrary threshold
-            %                 epsilon = 0; %Wipe out errors in calculations
-            %             end
-            if ~isInHull
+            if epsilon<1e-9 %arbitrary threshold
                 epsilon = 0; %Wipe out errors in calculations
             end
+
         end
 
 
