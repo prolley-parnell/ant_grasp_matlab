@@ -69,11 +69,14 @@ for i = 1: nExperiment
 end
 
 tic
-p = gcp;
+p = parpool('threads');
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
+
+R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
+
 parfor (n = 1:nExperiment, opts)
-    [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
+    [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 toc
 
