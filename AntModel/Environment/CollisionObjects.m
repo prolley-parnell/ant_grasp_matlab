@@ -11,6 +11,7 @@ classdef CollisionObjects
         discreteGeomHandle
         surfNorm
         DT
+        FBT
         COM
         RUNTIME_ARGS
 
@@ -24,6 +25,7 @@ classdef CollisionObjects
             obj.discreteGeomHandle = {};
             obj.surfNorm = {};
             obj.DT = {};
+            obj.FBT = {};
             obj.COM = {};
             obj = obj.addStl(RUNTIME_ARGS.COLLISION_OBJ);
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
@@ -59,7 +61,7 @@ classdef CollisionObjects
 
 
         function obj = addStl(obj, ARGS)
-            
+
             %Import mesh from file
             meshObj = importGeometry(ARGS.FILE_PATH);
             %Scale mesh according to RUNTIME_ARGS
@@ -88,16 +90,16 @@ classdef CollisionObjects
             %Add DiscreteGeometry object for mesh
             translate(scaled_zero_mesh, ARGS.POSITION);
             obj.discreteGeomHandle{end+1} = scaled_zero_mesh;
-            
+
 
             %Calculate the surface normals for each face
-            [obj.DT{end+1}, obj.surfNorm{end+1}] = obj.collisionToDelaunay(scaled_zero_mesh);
+            [obj.DT{end+1}, obj.FBT{end+1}] = obj.collisionToDelaunay(scaled_zero_mesh);
 
 
 
         end
 
-        function [TR, F] = collisionToDelaunay(~, mesh)
+        function [DT, FBT] = collisionToDelaunay(obj, mesh)
             %% Generate Delaunay Triangulation representation for
             % surface normal vectors
 
@@ -107,10 +109,11 @@ classdef CollisionObjects
 
             DT = delaunayTriangulation(x,y,z);
             [T,Xb] = freeBoundary(DT);
-            TR = triangulation(T,Xb);
+            FBT = triangulation(T,Xb);
 
-%             P = incenter(TR);
-            F = faceNormal(TR);
+%                         %Plotting
+%             P = incenter(FBT);
+%             F = faceNormal(FBT);
 %             trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
 %                 'FaceColor','cyan','FaceAlpha',0.8);
 %             axis equal
@@ -118,10 +121,85 @@ classdef CollisionObjects
 %             quiver3(P(:,1),P(:,2),P(:,3), ...
 %                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
 
+            
+
+            %[triangTetrIdx, triangulationObj, DTsurfaceNormal] = obj.delaunayToTriang(DT);
+
+
+
 
 
         end
 
+        function [triangTetrIdx, triangulationObj, DTsurfaceNormal] = delaunayToTriang(~, delaunayObj)
+            %delaunayToTriang - given a tetrahedal connectivity list, and a
+            %free boundary from triangulation, find which triangulations
+            %match the tetrahedra
+            
+            [T,Xb] = freeBoundary(delaunayObj);
+            triangulationObj = triangulation(T,Xb);
+            triangConnection = triangulationObj.ConnectivityList;
+            delaunaytetra = delaunayObj.ConnectivityList;
+
+            % Split the tetrahedrons in to triangles
+            tetLabel = [1:size(delaunaytetra,1)]';
+            tetMix = [tetLabel, delaunaytetra];
+            facets = [tetMix(:,[1 2 3 4]);tetMix(:,[1 2 3 5]);tetMix(:,[1 2 4 5]);tetMix(:,[1 3 4 5])];
+            facets(:,2:4) = sort(facets(:,2:4),2);
+            facets = sortrows(facets,[2,3,4]);
+            duploc = find(all(diff(facets(:,2:4),1) == 0,2));
+            facets([duploc;duploc + 1],:) = [];
+
+
+            %Find the surface normal of the triangulation
+            F = faceNormal(triangulationObj);
+
+            %Find the surface normal of the tetrahedra
+            %Find which labelled triangle facet matches the DT triang
+            %(same numbers, just different order)
+            orderTriang = sort(triangConnection,2);
+            [~, facetIdx] = ismember(orderTriang, facets(:,2:4), "rows");
+            triangTetrIdx = facets(facetIdx,1);
+
+            matchedTriangNorm = [triangTetrIdx, F];
+            sortedTriangNorm = sortrows(matchedTriangNorm);
+
+            %Find the average
+            DTsurfaceNormal = 1;
+
+            %Plotting
+            P = incenter(triangulationObj);
+            trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
+                'FaceColor','cyan','FaceAlpha',0.8);
+            axis equal
+            hold on
+            quiver3(P(:,1),P(:,2),P(:,3), ...
+                F(:,1),F(:,2),F(:,3),0.5,'color','r');
+
+
+        end
+
+        function [triangOrder,nnew] = sortFaces(~, triangArray, vertexArray , normalArray)
+            triangOrder = triangArray;
+            nnew= normalArray*0;
+            for j=1:size(triangArray,1)
+                v1 = vertexArray(triangArray(j,3),:)- vertexArray(triangArray(j,2),:);
+                v2 = vertexArray(triangArray(j,2),:) - vertexArray(triangArray(j,1),:);
+ 
+
+                nvek=cross(v2,v1); %calculate normal vectors
+                nvek=nvek/norm(nvek);
+                nnew(j,:) = nvek;
+                dot(nvek, normalArray(j,:))
+                if dot(nvek, normalArray(j,:))<0
+                    triangOrder(j,:)=[triangArray(j,3), triangArray(j,2), triangArray(j,1)];
+                    nnew(j,:)=-nvek;
+                end
+
+            end
+
+        end
     end
+
 end
 

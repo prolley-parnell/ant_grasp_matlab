@@ -198,6 +198,8 @@ classdef RuntimeArgs
             %For REFINE
             obj.SEARCH_SPACE.REFINE.ARG = {'psi1', 'psi2' ,'psi3', 'psi4'};
 
+            obj.SEARCH_SPACE.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
+
 
 
 

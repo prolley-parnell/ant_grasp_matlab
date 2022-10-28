@@ -9,6 +9,9 @@ classdef graspQuality
         %and the true centre of mass of the object
         volume(1,1) double = 0 %Volume of the Grasp Wrench Space represented as a convex hull
         % of the force approximation vectors that result from 
+        normAlign(1,1) double = 0 %Scalar between -1 and 1 to indicate how much of the surface 
+        % normal at the points of contact are aligned with the force
+        % vectors
     end
 
     methods
@@ -17,9 +20,9 @@ classdef graspQuality
         end
 
         function qualityTable = convert2table(obj)
-            qualityCell = {obj.volume, obj.epsilon, obj.com_offset};
+            qualityCell = {obj.volume, obj.epsilon, obj.com_offset, obj.normAlign};
             qualityTable = cell2table(qualityCell);
-            qualityTable.Properties.VariableNames = {'Volume', 'Epsilon', 'COM Offset'};
+            qualityTable.Properties.VariableNames = {'Volume', 'Epsilon', 'COM Offset', 'normAlign'};
         end
     end
 end

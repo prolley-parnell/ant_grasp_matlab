@@ -36,14 +36,14 @@ classdef InformationGain
             obj.information_measures = any(measureFlag,1);
 
             %number of samples to evaluate for finding the highest information gain
-            obj.n_sample = 3;
+            obj.n_sample = 5;
     
             %Parameters set by Active Tactile Exploration Based on
             %Cost-Aware Information Gain Maximisation
-            obj.sig1 = 0.7;
-            obj.sig3 = 0.7;
-            obj.sigalpha = 1;
-            obj.mu3 = 0.2;
+            obj.sig1 = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(1);
+            obj.sig3 = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(2);
+            obj.sigalpha = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(3);
+            obj.mu3 = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(4);
 
         end
 

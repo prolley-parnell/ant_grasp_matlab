@@ -127,9 +127,9 @@ classdef tbox
         end
 
         function localPosition = findFKlocalPosition(RBsubTree,qIn,endEffectorName)
-            
+
             base2EETF = getTransform(RBsubTree, qIn, endEffectorName);
-            localPosition = tform2trvec(base2EETF);            
+            localPosition = tform2trvec(base2EETF);
 
         end
 
@@ -231,8 +231,80 @@ classdef tbox
 
             headPoseRMat = pitchR * rollR;
             %[TODO] Convert angles to euler Z Y X (default) eul2rotm([X Y Z])
-            
 
+
+        end
+
+        function normalV = findNormalCollision(delaunayTriang, pointOnObj)
+            %findNormalCollision for a given contact point on a
+            %delaunayTriangulation object, and the object, find the normal
+            %to the surface at the point of contact.
+            %Input:
+            %pointOnObj nx3 cartesian where n is number of sample points
+
+            nPoint = size(pointOnObj,1);
+            normalV = nan(size(pointOnObj));
+            for n = 1:nPoint
+                nearVertID = nearestNeighbor(delaunayTriang, pointOnObj(n,:));
+                nearV_neighbours = vertexAttachments(delaunayTriang,nearVertID);
+                repTestPt = repmat(pointOnObj(n,:), length(nearV_neighbours{:}'),1);
+                B = cartesianToBarycentric(delaunayTriang, nearV_neighbours{:}', repTestPt);
+                % resolves issues with values that are 0 being marked at -0
+                % (12 sig.fig.)
+                roundB = round(B, 12);
+                faceFlag = ismember(sign(roundB), [1 1 1], "rows");
+                if ~any(faceFlag)
+                    % If the point lies on a vertex or edge         
+                    [zeroRow, ~] = find(sign(roundB) == 0);
+                    zeroN = length(zeroRow);
+                    if zeroN == 2
+                        %If two Barycentric values are 0, then the point is
+                        %on an edge
+                        twoFaceID = nearV_neighbours{:}(zeroRow);
+                        twoFaceNorm = faceNormal(delaunayTriang, twoFaceID');
+                        normalV(n,:) = mean(twoFaceNorm,1);
+                    else
+                        %If more than 2, or less than 2 values are 0, then
+                        %get the normal of the nearest vertex instead
+                        normalV(n,:) = vertexNormal(delaunayTriang, nearVertID);
+                    end
+                elseif length(find(faceFlag == 1)) > 1
+                    disp('Serious Issue here - point inside two triangles')
+                else
+
+                    faceID = nearV_neighbours{:}(faceFlag');
+                    normalV(n,:) = faceNormal(delaunayTriang,faceID');
+                end
+
+
+            end
+
+        end
+
+        function alignMeasure = findSurfNormAlign(surfaceNormal, forceVector)
+            %findSurfNormAlign, gives the proportion of the normal vector at
+            %the point of contact that is contained within the force applied at
+            %that contact point, can check for multiple normal/force pairs
+            %Input: surfaceNormal nx3 unit vector for the normal at point of
+            %contact
+            % forceVector nx4 non unit vector with (i,1:3) containing the
+            % direction of force applied, and (i,4) containing the magnitude of
+            % force
+            nForce = size(forceVector,1);
+            nNorm = size(surfaceNormal, 1);
+            alignMeasure = nan([nNorm,1]);
+            if nForce ~= nNorm
+                warning('Must provide the same number of normals as force vectors');
+                return
+            end
+
+            for n = 1 : nNorm
+                %ensure both surf norm and force are unit vectors
+                forceVec_n = -forceVector(n, 1:3)/norm(forceVector(n, 1:3));
+                normVec_n = surfaceNormal(n,:) / norm(surfaceNormal(n,:));
+                alignMeasure(n) = dot(forceVec_n, normVec_n) / norm(forceVec_n);
+
+            end
         end
 
         function plotRange(limit)

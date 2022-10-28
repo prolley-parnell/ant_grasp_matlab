@@ -162,7 +162,12 @@ for i = 1:blocks
    if size(aNr,2) ~= length(j)
       aNr = repmat(aN,1,length(j));
    end
-   in(j) = all((nrmls*testpts(j,:)' - aNr) >= -tol,1)';
+   %Modification - all(A) returns logical 1 if A is an empty matrix
+   %in(j) = all((nrmls*testpts(j,:)' - aNr) >= -tol,1)';
+   withinTolArray = (nrmls*testpts(j,:)' - aNr) >= -tol;
+   if ~isempty(withinTolArray)
+        in(j) = all(withinTolArray,1)';
+   end
    %MODIFICATION - Find the minimum radius of epsilon sphere
    %If all are >= 0 then point is inside, then find minimum distance to
    %face
@@ -171,5 +176,6 @@ for i = 1:blocks
        %set of points a for each simplex face in the convhull
        %epsilon radius is the smallest value for this
        epsilon(j) = min(vecnorm(a - testpts(j,:), 2, 2));
+
    end
 end

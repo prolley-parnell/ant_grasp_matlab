@@ -46,11 +46,15 @@ classdef graspEvaluator
             %point locations
             forces = obj.genOpposeForces(A, B);
             vertices = environmentClass.objectHandles{idx}.Vertices;
+            normAlignArray = tbox.findSurfNormAlign(goalObj.contact_norm, forces);
+
+            qualityObj.normAlign = min(normAlignArray);
 
             [qualityObj.volume, qualityObj.epsilon] = obj.findWrenchQuality(forces, [A;B], vertices, globalCOM, objCOM);
 
 
         end
+
 
         function distance = axis2COM(~, pointA, pointB, COM)
 
@@ -122,7 +126,7 @@ classdef graspEvaluator
 
 
 
-        function [epsilon] = estability(obj, point, wrenchT,chull)
+        function [epsilon] = estability(~, point, wrenchT,chull)
             %ESTABILITY Find the largest radius circle that fits within the 6D wrench
             %space
             % If point is within hull, find the minimum distance between point and hull
@@ -132,16 +136,12 @@ classdef graspEvaluator
             end
 
             tol = 1.e-13*mean(abs(wrenchT(:)));
-            [isInHull, epsilon] = inhull(point,wrenchT,chull, tol);
+            [~, epsilon] = inhull(point,wrenchT,chull, tol);
 
-            % Calculate the epsilon stability
-
-            %             if epsilon<1e-9 %arbitrary threshold
-            %                 epsilon = 0; %Wipe out errors in calculations
-            %             end
-            if ~isInHull
+            if epsilon<1e-9 %arbitrary threshold
                 epsilon = 0; %Wipe out errors in calculations
             end
+
         end
 
 
@@ -184,21 +184,33 @@ classdef graspEvaluator
                     cross_th = deg2rad(180) - cross_th;
                 end
 
+                %[ERROR] cross(B,A) = [0 0 0] - Cannot be used in
+                %axang2rotm
+                %[Fix]
+                %If the cross axis is non-existent because the vector is in line with the Z axis
+                if all(~logical(cross(B,A)))
+                    rotAxis = [1 0 0]; %Give another standard axis of rotation (perpendicular to Z axis)
+                else
+                    rotAxis = cross(B,A);
+                end
 
-                R = axang2rotm([cross(B,A) cross_th]);
+                R = axang2rotm([rotAxis cross_th]);
                 cone = circ * R;
                 v = sum(cone,1)/8;
 
+                % Remove any rounding errors
+                tolflag = abs(v) < 10e-9;
+                v(tolflag) = 0;
+
+
                 % Cross product gives the acute angle but not necessarily the sign, so
                 % it could be aligned with the -ve cross product. This fixes this
-                if sign(v) ~= sign(vector(1:3))
+                if any(sign(v) ~= sign(vector(1:3)))
                     cone = -cone;
                 end
 
             else
-
                 cone = vector(1:3);
-
             end
 
         end

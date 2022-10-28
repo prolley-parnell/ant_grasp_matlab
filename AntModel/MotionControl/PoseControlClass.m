@@ -161,9 +161,12 @@ classdef PoseControlClass
 
                 witness_pts = witnessPoints(3*body_i-2:3*body_i, 2*collision_i-1:2*collision_i);
                 pointOnObj = witness_pts(:,2);
-                faceID = nearestFace(env.discreteGeomHandle{objID}, pointOnObj');
-                surface_normals = env.surfNorm{objID}(faceID,:);
-                %collision_points = mean(witness_pts,2)';
+
+                surface_normals = tbox.findNormalCollision(env.FBT{objID}, pointOnObj');
+%                 faceID = pointLocation(env.DT{objID},pointOnObj');
+%                 faceID = nearestFace(env.discreteGeomHandle{objID}, pointOnObj');
+%                 surface_normals = env.surfNorm{objID}(faceID,:);
+
                 collision_points = pointOnObj';
 
             elseif min_dist>=0.08

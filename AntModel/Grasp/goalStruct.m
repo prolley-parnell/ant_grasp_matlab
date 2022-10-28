@@ -12,6 +12,7 @@ classdef goalStruct
         contact_point_array = nan([2,3],"double")
         alignment_axis = nan([1,3],"double")
         goal_z_axis = nan([1,3],"double")
+        contact_norm = nan([2,3], "double")
 
     end
     properties (SetAccess = private, GetAccess = protected)
@@ -26,18 +27,15 @@ classdef goalStruct
 
         end
 
-        function obj = setcontact(obj, pointArray)
+        function obj = setcontact(obj, contactStructArray)
             %Validate point size [TODO]
-            dim3 = find(size(pointArray)==3);
-            if dim3 == 1
-                pointArray = pointArray';
-            elseif dim3 ~= 2
-                pointArray = reshape(pointArray, [], 3);
-            end
+            pointArray = cat(1,contactStructArray(:).point);
+            normArray = cat(1,contactStructArray(:).normal);
             obj.emptyFlag = false;
             obj.contact_point_array = pointArray;
             obj.contact_axis = pointArray(1,:) - pointArray(2,:);
             obj.midpoint = mean(pointArray, 1);
+            obj.contact_norm = normArray;
         end
 
         function flag = isempty(obj)
@@ -70,10 +68,12 @@ classdef goalStruct
             axis = obj.contact_axis;
             a = obj.contact_point_array(1,:);
             b = obj.contact_point_array(2,:);
+            norm_a = obj.contact_norm(1,:);
+            norm_b = obj.contact_norm(2,:);
 
-            goalCell = [{time, mp, axis, a, b}];
+            goalCell = [{time, mp, axis, a, norm_a, b, norm_b}];
             goalTable = cell2table(goalCell);
-            goalTable.Properties.VariableNames = {'Time', 'Midpoint', 'Contact Axis', 'Point A', 'Point B'};
+            goalTable.Properties.VariableNames = {'Time', 'Midpoint', 'Contact Axis', 'Point A', 'Surf Norm A', 'Point B', 'Surf Norm B'};
 
             if ~isempty(obj.qualityObj)
                 qualityTable = obj.qualityObj.convert2table();
