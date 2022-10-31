@@ -4,7 +4,7 @@ close all;
 clear all;
 
 
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\noRefineAlignDiceObj2-40';
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\TunedIGEFAlignDiceObj2-40';
 file_name = 'experimentStatTable.mat';
 
 matStruct = load([folder_name, '\', file_name]);

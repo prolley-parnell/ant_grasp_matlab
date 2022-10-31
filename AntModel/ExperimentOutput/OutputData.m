@@ -31,7 +31,7 @@ classdef OutputData
             %file location provided in RUNTIME_ARGS
             day = datestr(now, 'dd-mm-yy_HH-MM');
             caller = dbstack;
-            modelDir = pwd;
+            modelDir = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel';
             obj.script_folder = [modelDir, '\ExperimentOutput\', caller(end).name,'\', RUNTIME_ARGS.TRIAL_NAME,'_', day];
 
             if RUNTIME_ARGS.RECORD.ENABLE

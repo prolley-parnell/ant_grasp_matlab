@@ -99,6 +99,33 @@ classdef CollisionObjects
 
         end
 
+
+        function obj = addMultiStl(obj, ARGS)
+            %ADDMULTISTL Add multiple STLs from a folder path
+            folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
+            allVerticesArray = [];
+            nSTL = length(folderStruct);
+            meshObjArray = cell([1,nSTL]);
+            for i = 1:nSTL
+                    %Import mesh from file
+                    meshObjArray{i} = importGeometry([ARGS.FILE_PATH,'\',folderStruct(i).name]);
+                    %Scale mesh according to RUNTIME_ARGS
+                    scaled_mesh = scale(meshObjArray{i}, ones([1,3])*ARGS.SCALE);
+                    
+                    allVerticesArray = cat(1,allVerticesArray,scaled_mesh.Vertices);
+                    
+            end
+
+            COM = mean(allVerticesArray,1);
+
+            %Translate all vertices so the total mean COM is at 0 0 0
+                    
+
+
+
+            
+        end
+
         function [DT, FBT] = collisionToDelaunay(obj, mesh)
             %% Generate Delaunay Triangulation representation for
             % surface normal vectors
@@ -111,17 +138,17 @@ classdef CollisionObjects
             [T,Xb] = freeBoundary(DT);
             FBT = triangulation(T,Xb);
 
-%                         %Plotting
-%             P = incenter(FBT);
-%             F = faceNormal(FBT);
-%             trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
-%                 'FaceColor','cyan','FaceAlpha',0.8);
-%             axis equal
-%             hold on
-%             quiver3(P(:,1),P(:,2),P(:,3), ...
-%                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
+            %                         %Plotting
+            %             P = incenter(FBT);
+            %             F = faceNormal(FBT);
+            %             trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
+            %                 'FaceColor','cyan','FaceAlpha',0.8);
+            %             axis equal
+            %             hold on
+            %             quiver3(P(:,1),P(:,2),P(:,3), ...
+            %                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
 
-            
+
 
             %[triangTetrIdx, triangulationObj, DTsurfaceNormal] = obj.delaunayToTriang(DT);
 
@@ -135,7 +162,7 @@ classdef CollisionObjects
             %delaunayToTriang - given a tetrahedal connectivity list, and a
             %free boundary from triangulation, find which triangulations
             %match the tetrahedra
-            
+
             [T,Xb] = freeBoundary(delaunayObj);
             triangulationObj = triangulation(T,Xb);
             triangConnection = triangulationObj.ConnectivityList;
@@ -185,7 +212,7 @@ classdef CollisionObjects
             for j=1:size(triangArray,1)
                 v1 = vertexArray(triangArray(j,3),:)- vertexArray(triangArray(j,2),:);
                 v2 = vertexArray(triangArray(j,2),:) - vertexArray(triangArray(j,1),:);
- 
+
 
                 nvek=cross(v2,v1); %calculate normal vectors
                 nvek=nvek/norm(nvek);
