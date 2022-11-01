@@ -3,8 +3,8 @@ classdef CollisionObjects
     %Generates and contains the handles to all of the objects within the
     %world
     % REQUIREMENTS: Matlab's Partial Differential Equation Toolbox
-    % Changelog - Emily Rolley-Parnell 21/09/2022 - Adding normal vectors
-    % to the object handles and a DiscreteGeometry object for each object
+    % Changelog - Emily Rolley-Parnell 31/10/2022 - Adding the capability
+    % to import multiple STL
 
     properties
         objectHandles
@@ -27,7 +27,7 @@ classdef CollisionObjects
             obj.DT = {};
             obj.FBT = {};
             obj.COM = {};
-            obj = obj.addStl(RUNTIME_ARGS.COLLISION_OBJ);
+            obj = obj.addMultiStl(RUNTIME_ARGS.COLLISION_OBJ);
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
             obj = obj.plotObjects();
@@ -105,21 +105,48 @@ classdef CollisionObjects
             folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
             allVerticesArray = [];
             nSTL = length(folderStruct);
-            meshObjArray = cell([1,nSTL]);
+            rejectPile = [];
+            scaledMeshArray = cell([1,nSTL]);
             for i = 1:nSTL
                     %Import mesh from file
-                    meshObjArray{i} = importGeometry([ARGS.FILE_PATH,'\',folderStruct(i).name]);
+                    meshObj = importGeometry([ARGS.FILE_PATH,'\',folderStruct(i).name]);
                     %Scale mesh according to RUNTIME_ARGS
-                    scaled_mesh = scale(meshObjArray{i}, ones([1,3])*ARGS.SCALE);
-                    
-                    allVerticesArray = cat(1,allVerticesArray,scaled_mesh.Vertices);
-                    
+                    scaledMeshArray{i} = scale(meshObj, ones([1,3])*ARGS.SCALE);
+                    if scaledMeshArray{i}.NumFaces < 4
+                        rejectPile(end+1) = i;
+                    else
+                        allVerticesArray = cat(1,allVerticesArray,scaledMeshArray{i}.Vertices);
+                    end
             end
 
-            COM = mean(allVerticesArray,1);
+            CentreOfMass = mean(allVerticesArray,1);
+            
+            %Remove any STL files that are too small
+            scaledMeshArray(rejectPile) = [];
+            
+            nSTL_Pruned = length(scaledMeshArray);
+            translateMeshArray = cell([1,nSTL_Pruned]);
+            for j=1:nSTL_Pruned
 
-            %Translate all vertices so the total mean COM is at 0 0 0
-                    
+                %Translate all vertices so the total mean COM is at 0 0 0
+                translateMeshArray{j} = translate(scaledMeshArray{j}, -CentreOfMass);
+
+                %Store the Centre of mass for every STL as the full object COM
+                obj.COM{j} = CentreOfMass;
+
+                %Convert the translated meshes to CollisionObjects
+                collision_mesh = collisionMesh(translateMeshArray{j}.Vertices);
+                collision_mesh.Pose = trvec2tform(ARGS.POSITION);
+
+                obj.objectHandles{j} = collision_mesh;
+
+                %Add DiscreteGeometry object for mesh
+                translate(translateMeshArray{j}, ARGS.POSITION);
+
+                %Calculate the surface normals for each face
+                [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateMeshArray{j});
+
+            end
 
 
 
@@ -150,7 +177,7 @@ classdef CollisionObjects
 
 
 
-            %[triangTetrIdx, triangulationObj, DTsurfaceNormal] = obj.delaunayToTriang(DT);
+
 
 
 
