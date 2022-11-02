@@ -105,61 +105,74 @@ classdef CollisionObjects
             folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
             allVerticesArray = [];
             nSTL = length(folderStruct);
-            rejectPile = [];
-            scaledMeshArray = cell([1,nSTL]);
+            scaleHminmax = nan([nSTL,2]);
+            %rejectPile = [];
+            %scaledMeshArray = cell([1,nSTL]);
+            model = cell([1, nSTL]);
             for i = 1:nSTL
-                    %Import mesh from file
-                    meshObj = importGeometry([ARGS.FILE_PATH,'\',folderStruct(i).name]);
-                    %Scale mesh according to RUNTIME_ARGS
-                    scaledMeshArray{i} = scale(meshObj, ones([1,3])*ARGS.SCALE);
-                    if scaledMeshArray{i}.NumFaces < 4
-                        rejectPile(end+1) = i;
-                    else
-                        allVerticesArray = cat(1,allVerticesArray,scaledMeshArray{i}.Vertices);
-                    end
+                %initialise a PDE object
+                model{i} = createpde();
+                %Import mesh from file
+                importGeometry(model{i}, [ARGS.FILE_PATH,'\',folderStruct(i).name]);
+                %Scale mesh according to RUNTIME_ARGS
+                scale(model{i}.Geometry, ones([1,3])*ARGS.SCALE);
+                scaledMesh = generateMesh(model{i}, GeometricOrder="linear");
+                scaleHminmax(i,:) = [scaledMesh.MinElementSize, scaledMesh.MaxElementSize];
+                %                     if scaledMeshArray{i}.NumFaces < 4
+                %                         rejectPile(end+1) = i;
+                %                     else
+                %                         allVerticesArray = cat(1,allVerticesArray,scaledMeshArray{i}.Vertices);
+                %                     end
+                allVerticesArray = cat(1,allVerticesArray,scaledMesh.Nodes');
             end
 
             CentreOfMass = mean(allVerticesArray,1);
-            
+
             %Remove any STL files that are too small
-            scaledMeshArray(rejectPile) = [];
-            
-            nSTL_Pruned = length(scaledMeshArray);
-            translateMeshArray = cell([1,nSTL_Pruned]);
-            for j=1:nSTL_Pruned
+            %scaledMeshArray(rejectPile) = [];
+
+            %nSTL_Pruned = length(scaledMeshArray);
+            %translateMeshArray = cell([1,nSTL_Pruned]);
+            %for j=1:nSTL_Pruned
+            for j=1:nSTL
+
 
                 %Translate all vertices so the total mean COM is at 0 0 0
-                translateMeshArray{j} = translate(scaledMeshArray{j}, -CentreOfMass);
+                translate(model{j}.Geometry, -CentreOfMass);
+                zeroMesh = generateMesh(model{j}, GeometricOrder="linear", Hmin=scaleHminmax(j,1)*10);
+
 
                 %Store the Centre of mass for every STL as the full object COM
                 obj.COM{j} = CentreOfMass;
 
                 %Convert the translated meshes to CollisionObjects
-                collision_mesh = collisionMesh(translateMeshArray{j}.Vertices);
+                collision_mesh = collisionMesh(zeroMesh.Nodes');
                 collision_mesh.Pose = trvec2tform(ARGS.POSITION);
 
                 obj.objectHandles{j} = collision_mesh;
 
                 %Add DiscreteGeometry object for mesh
-                translate(translateMeshArray{j}, ARGS.POSITION);
+                %translate(model{j}.Geometry, ARGS.POSITION);
+                %translateMesh = generateMesh(model{j}, GeometricOrder="linear", Hmin=scaleHminmax(j,1)*10);
+                translateNode = zeroMesh.Nodes' + ARGS.POSITION;
 
                 %Calculate the surface normals for each face
-                [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateMeshArray{j});
+                [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateNode);
 
             end
 
 
 
-            
+
         end
 
-        function [DT, FBT] = collisionToDelaunay(obj, mesh)
+        function [DT, FBT] = collisionToDelaunay(~, vertices)
             %% Generate Delaunay Triangulation representation for
             % surface normal vectors
 
-            x = mesh.Vertices(:,1);
-            y = mesh.Vertices(:,2);
-            z = mesh.Vertices(:,3);
+            x = vertices(:,1);
+            y = vertices(:,2);
+            z = vertices(:,3);
 
             DT = delaunayTriangulation(x,y,z);
             [T,Xb] = freeBoundary(DT);

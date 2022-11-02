@@ -123,9 +123,9 @@ classdef PoseControlClass
                 if ~isnan(collision_points)
                     figure(figure_n)
                     hold on;
-                    plot3(collision_points(1), collision_points(2), collision_points(3),'o','MarkerSize',5, 'Color', colour)
+                    plot3(collision_points(:,1), collision_points(:,2), collision_points(:,3),'o','MarkerSize',5, 'Color', colour)
                     quiver3(collision_points(:,1),collision_points(:,2),collision_points(:,3), ...
-                        surface_normal(:,1),surface_normal(:,2),surface_normal(:,3),0.5,'color','[0.368 0 0.251]');
+                        surface_normal(:,1),surface_normal(:,2),surface_normal(:,3),'off','color','[0.368 0 0.251]');
                     hold off;
                 end
             end
@@ -148,14 +148,14 @@ classdef PoseControlClass
 
             if any(isnan(dist))
                 warning("RigidBodyTree %s intersection with CollisionObject", limbIn.name)
-                limbIn.collision_latch = 1;
+                limbOut.collision_latch = 1;
 
             elseif and(~isempty(body_i), ~limbIn.collision_latch)
                 if obj.RUNTIME_ARGS.TERMPRINT
                     disp("collision!")
                 end
 
-                limbIn.collision_latch = 1;
+                limbOut.collision_latch = 1;
 
                 %[body_i, collision_i] = ind2sub(size(dist), ind);
                 nCollision = length(collision_i);
@@ -168,7 +168,7 @@ classdef PoseControlClass
                 collision_points = pointOnObj;
 
             elseif min_dist>=0.08
-                limbIn.collision_latch = 0;
+                limbOut.collision_latch = 0;
             end
         end
 
