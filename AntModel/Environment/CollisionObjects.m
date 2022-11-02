@@ -102,7 +102,11 @@ classdef CollisionObjects
 
         function obj = addMultiStl(obj, ARGS)
             %ADDMULTISTL Add multiple STLs from a folder path
-            folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
+            if isfolder(ARGS.FILE_PATH)
+                folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
+            else
+                folderStruct = dir(ARGS.FILE_PATH);
+            end
             allVerticesArray = [];
             nSTL = length(folderStruct);
             scaleHminmax = nan([nSTL,2]);
@@ -113,7 +117,7 @@ classdef CollisionObjects
                 %initialise a PDE object
                 model{i} = createpde();
                 %Import mesh from file
-                importGeometry(model{i}, [ARGS.FILE_PATH,'\',folderStruct(i).name]);
+                importGeometry(model{i}, [folderStruct(i).folder,'\',folderStruct(i).name]);
                 %Scale mesh according to RUNTIME_ARGS
                 scale(model{i}.Geometry, ones([1,3])*ARGS.SCALE);
                 scaledMesh = generateMesh(model{i}, GeometricOrder="linear");
@@ -139,7 +143,7 @@ classdef CollisionObjects
 
                 %Translate all vertices so the total mean COM is at 0 0 0
                 translate(model{j}.Geometry, -CentreOfMass);
-                zeroMesh = generateMesh(model{j}, GeometricOrder="linear", Hmin=scaleHminmax(j,1)*10);
+                zeroMesh = generateMesh(model{j}, GeometricOrder="linear", Hgrad=1.99, Hmax=scaleHminmax(j,2)*50, Hmin=scaleHminmax(j,1)*8);
 
 
                 %Store the Centre of mass for every STL as the full object COM
