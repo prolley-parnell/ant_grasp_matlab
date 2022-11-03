@@ -81,7 +81,7 @@ classdef Ant
                 obj.poseController.actionGen.refineSearch.mu3 = obj.findMaxMandibleDist;
             end
 
-            obj.senseEval = SenseEvaluator(RUNTIME_ARGS, obj.findMaxMandibleDist);
+            obj.senseEval = graspSynthesis(RUNTIME_ARGS, obj.findMaxMandibleDist);
             obj.graspEval = graspEvaluator(RUNTIME_ARGS);
             obj.mandible_state = 0;
             obj.grasp_complete = 0;
