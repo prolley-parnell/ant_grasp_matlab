@@ -56,12 +56,13 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
 RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
 RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "curve"];
 
-RUNTIME_ARGS.SENSE.MODE = "force_align";
+%RUNTIME_ARGS.SENSE.MODE = "force_align";
+RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
-RUNTIME_ARGS.SENSE.MINIMUM_N = 15;
+RUNTIME_ARGS.SENSE.MINIMUM_N = 10;
 
 [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS);
 

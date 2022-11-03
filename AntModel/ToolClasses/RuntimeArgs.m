@@ -220,6 +220,14 @@ classdef RuntimeArgs
             %with equal forces in the direction of the opposing point being
             %considered, pick the pair that generates the largest wrench
             %space volume
+
+            %New sense.mode method:
+            %Which qualities are evaluated of the contact points to
+            %synthesise a grasp
+            %Cell array containing any of the following: 'dist', 'align'
+            %'dist' - Scores the contact points based on their distance
+            %'align' - measures the alignment of the grasp forces with the
+            %surface normal
             obj.SENSE.MODE = "furthest_first_pair";
             obj.SENSE.THRESH = 0.6;
 
