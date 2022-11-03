@@ -149,14 +149,14 @@ classdef PoseControlClass
 
             if any(isnan(dist))
                 warning("RigidBodyTree %s intersection with CollisionObject", limbIn.name)
-                limbIn.collision_latch = 1;
+                limbOut.collision_latch = 1;
 
             elseif and(min_dist < 0.08, ~limbIn.collision_latch)
                 if obj.RUNTIME_ARGS.TERMPRINT
                     disp("collision!")
                 end
 
-                limbIn.collision_latch = 1;
+                limbOut.collision_latch = 1;
 
                 [body_i, collision_i] = ind2sub(size(dist), ind);
 
@@ -171,7 +171,7 @@ classdef PoseControlClass
                 collision_points = pointOnObj';
 
             elseif min_dist>=0.08
-                limbIn.collision_latch = 0;
+                limbOut.collision_latch = 0;
             end
         end
 
