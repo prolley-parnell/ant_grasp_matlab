@@ -58,7 +58,7 @@ classdef PoseControlClass
                 ant.plotAnt()
                 %If limb is not in collision, store the free point
                 [limbs{i}, dataStruct] = obj.tactileSenseEval(limbs{i}, ant.q, ant.position, env);
-                contactStructArray = [contactStructArray;dataStruct];
+                contactStructArray = [contactStructArray;dataStruct{:}];
 
 
 
@@ -94,7 +94,7 @@ classdef PoseControlClass
         end
 
         function [limbOut, dataStruct] = tactileSenseEval(obj, limbIn, qIn, positionIn, env)
-            dataStruct = struct.empty;
+            dataStruct = cell.empty;
 
             %Check for collisions
             [limbOut, contact_point, surface_normal] = obj.collisionCheck(limbIn, qIn, env);
@@ -111,7 +111,10 @@ classdef PoseControlClass
                 if contains(limbOut.name, "Mandible")
                     disp("Mand Contact")
                 end
-                dataStruct = struct("point", contact_point, "normal", surface_normal, "limb", limbOut.name);
+                nCP = size(contact_point,1);
+                for i=1:nCP
+                    dataStruct{i} = struct("point", contact_point(i,:), "normal", surface_normal(i,:), "limb", limbOut.name);
+                end
             end
 
         end

@@ -8,8 +8,6 @@ classdef CollisionObjects
 
     properties
         objectHandles
-        discreteGeomHandle
-        surfNorm
         DT
         FBT
         COM
@@ -22,8 +20,6 @@ classdef CollisionObjects
             %COLLISIONOBJECTS Construct an instance of this class
             %  add all of the desired collision objects then show them
             obj.objectHandles = {};
-            obj.discreteGeomHandle = {};
-            obj.surfNorm = {};
             obj.DT = {};
             obj.FBT = {};
             obj.COM = {};
@@ -102,16 +98,39 @@ classdef CollisionObjects
 
         function obj = addMultiStl(obj, ARGS)
             %ADDMULTISTL Add multiple STLs from a folder path
+
+            %Check whether a mat file has already been generated for this
+            %mesh
+
             if isfolder(ARGS.FILE_PATH)
+                matFileName = [ARGS.FILE_PATH, '\meshMatSave.mat'];
+                matStruct = dir(matFileName);
+                if ~isempty(matStruct)
+                    loadMat = load(matFileName);
+                    obj.objectHandles = loadMat.objectHandles_save;
+                    obj.DT = loadMat.DT_save;
+                    obj.FBT = loadMat.FBT_save;
+                    obj.COM = loadMat.COM_save;
+                    return
+                end
                 folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
             else
                 folderStruct = dir(ARGS.FILE_PATH);
+                fileName = split(folderStruct.name, '.');
+                matFileName = [folderStruct(1).folder, '\', fileName{1},'_meshMatSave.mat'];
+                matStruct = dir(matFileName);
+                if ~isempty(matStruct)
+                    loadMat = load(matFileName);
+                    obj.objectHandles = loadMat.objectHandles_save;
+                    obj.DT = loadMat.DT_save;
+                    obj.FBT = loadMat.FBT_save;
+                    obj.COM = loadMat.COM_save;
+                    return
+                end
             end
             allVerticesArray = [];
             nSTL = length(folderStruct);
-            scaleHminmax = nan([nSTL,2]);
-            %rejectPile = [];
-            %scaledMeshArray = cell([1,nSTL]);
+
             model = cell([1, nSTL]);
             for i = 1:nSTL
                 %initialise a PDE object
@@ -121,52 +140,47 @@ classdef CollisionObjects
                 %Scale mesh according to RUNTIME_ARGS
                 scale(model{i}.Geometry, ones([1,3])*ARGS.SCALE);
                 scaledMesh = generateMesh(model{i}, GeometricOrder="linear");
-                scaleHminmax(i,:) = [scaledMesh.MinElementSize, scaledMesh.MaxElementSize];
-                %                     if scaledMeshArray{i}.NumFaces < 4
-                %                         rejectPile(end+1) = i;
-                %                     else
-                %                         allVerticesArray = cat(1,allVerticesArray,scaledMeshArray{i}.Vertices);
-                %                     end
                 allVerticesArray = cat(1,allVerticesArray,scaledMesh.Nodes');
             end
 
             CentreOfMass = mean(allVerticesArray,1);
 
-            %Remove any STL files that are too small
-            %scaledMeshArray(rejectPile) = [];
-
-            %nSTL_Pruned = length(scaledMeshArray);
-            %translateMeshArray = cell([1,nSTL_Pruned]);
-            %for j=1:nSTL_Pruned
             for j=1:nSTL
 
-
+                
                 %Translate all vertices so the total mean COM is at 0 0 0
-                translate(model{j}.Geometry, -CentreOfMass);
-                zeroMesh = generateMesh(model{j}, GeometricOrder="linear", Hgrad=1.99, Hmax=scaleHminmax(j,2)*50, Hmin=scaleHminmax(j,1)*8);
+                zeroMesh = model{j}.Mesh.Nodes' - CentreOfMass;
+                
+                k = convhulln(zeroMesh);
+                %Need to remove indices not referenced by convhill
+                newVertIdx = unique(k);
+                newVertexArray = zeroMesh(newVertIdx,:);
 
 
                 %Store the Centre of mass for every STL as the full object COM
                 obj.COM{j} = CentreOfMass;
 
                 %Convert the translated meshes to CollisionObjects
-                collision_mesh = collisionMesh(zeroMesh.Nodes');
+                collision_mesh = collisionMesh(newVertexArray);
                 collision_mesh.Pose = trvec2tform(ARGS.POSITION);
 
                 obj.objectHandles{j} = collision_mesh;
 
-                %Add DiscreteGeometry object for mesh
-                %translate(model{j}.Geometry, ARGS.POSITION);
-                %translateMesh = generateMesh(model{j}, GeometricOrder="linear", Hmin=scaleHminmax(j,1)*10);
-                translateNode = zeroMesh.Nodes' + ARGS.POSITION;
+                %Translate to the object pose for the DT calculations        
+                translateNode = newVertexArray + ARGS.POSITION;
 
                 %Calculate the surface normals for each face
                 [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateNode);
 
+                
+
             end
-
-
-
+            %Save the generated meshes to be loaded later
+            objectHandles_save = obj.objectHandles;
+            DT_save = obj.DT;
+            FBT_save = obj.FBT;
+            COM_save = obj.COM;
+            save(matFileName, 'objectHandles_save', 'DT_save', 'FBT_save', 'COM_save');
 
         end
 
