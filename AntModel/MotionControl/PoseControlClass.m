@@ -59,7 +59,7 @@ classdef PoseControlClass
                 ant.plotAnt()
                 %If limb is not in collision, store the free point
                 [limbs{i}, dataStruct] = obj.tactileSenseEval(limbs{i}, ant.q, ant.position, env);
-                contactStructArray = [contactStructArray;dataStruct];
+                contactStructArray = [contactStructArray;dataStruct{:}];
 
 
 
@@ -95,7 +95,7 @@ classdef PoseControlClass
         end
 
         function [limbOut, dataStruct] = tactileSenseEval(obj, limbIn, qIn, positionIn, env)
-            dataStruct = struct.empty;
+            dataStruct = cell.empty;
 
             %Check for collisions
             [limbOut, contact_point, surface_normal] = obj.collisionCheck(limbIn, qIn, env);
@@ -113,7 +113,10 @@ classdef PoseControlClass
                 if contains(limbOut.name, "Mandible")
                     disp("Mand Contact")
                 end
-                dataStruct = struct("point", contact_point, "normal", surface_normal, "limb", limbOut.name);
+                nCP = size(contact_point,1);
+                for i=1:nCP
+                    dataStruct{i} = struct("point", contact_point(i,:), "normal", surface_normal(i,:), "limb", limbOut.name);
+                end
             end
 
         end
@@ -125,9 +128,9 @@ classdef PoseControlClass
                 if ~isnan(collision_points)
                     figure(figure_n)
                     hold on;
-                    plot3(collision_points(1), collision_points(2), collision_points(3),'o','MarkerSize',5, 'Color', colour)
+                    plot3(collision_points(:,1), collision_points(:,2), collision_points(:,3),'o','MarkerSize',5, 'Color', colour)
                     quiver3(collision_points(:,1),collision_points(:,2),collision_points(:,3), ...
-                        surface_normal(:,1),surface_normal(:,2),surface_normal(:,3),0.5,'color','[0.368 0 0.251]');
+                        surface_normal(:,1),surface_normal(:,2),surface_normal(:,3),'off','color','[0.368 0 0.251]');
                     hold off;
                 end
             end
@@ -138,38 +141,36 @@ classdef PoseControlClass
         function [limbOut, collision_points, surface_normals] = collisionCheck(obj, limbIn, q, env)
 
             collision_points = nan;
-            objID = 1;
-            surface_normals = nan;
+            %objID = 1;
+            surface_normals = nan([1,3]);
             subpose = q(limbIn.joint_mask == 1);
             subtree = limbIn.subtree;
             limbOut = limbIn;
             [areIntersecting, dist ,witnessPoints] = checkCollision(subtree, subpose, env.objectHandles, 'IgnoreSelfCollision','on', 'Exhaustive', 'off');
 
-            [min_dist, ind] = min(dist);
-
+            [min_dist, ~] = min(dist);
+            [body_i, collision_i] = ind2sub(size(dist), find(dist < 0.08));
 
             if any(isnan(dist))
                 warning("RigidBodyTree %s intersection with CollisionObject", limbIn.name)
                 limbOut.collision_latch = 1;
 
-            elseif and(min_dist < 0.08, ~limbIn.collision_latch)
+            elseif and(~isempty(body_i), ~limbIn.collision_latch)
                 if obj.RUNTIME_ARGS.TERMPRINT
                     disp("collision!")
                 end
 
                 limbOut.collision_latch = 1;
 
-                [body_i, collision_i] = ind2sub(size(dist), ind);
-
-                witness_pts = witnessPoints(3*body_i-2:3*body_i, 2*collision_i-1:2*collision_i);
-                pointOnObj = witness_pts(:,2);
-
-                surface_normals = tbox.findNormalCollision(env.FBT{objID}, pointOnObj');
-%                 faceID = pointLocation(env.DT{objID},pointOnObj');
-%                 faceID = nearestFace(env.discreteGeomHandle{objID}, pointOnObj');
-%                 surface_normals = env.surfNorm{objID}(faceID,:);
-
-                collision_points = pointOnObj';
+                %[body_i, collision_i] = ind2sub(size(dist), ind);
+                nCollision = length(collision_i);
+                pointOnObj = nan([nCollision, 3]);
+                for i = 1:nCollision
+                    witness_pts = witnessPoints(3*body_i(i)-2:3*body_i(i), 2*collision_i(i)-1:2*collision_i(i));
+                    pointOnObj(i,:) = witness_pts(:,2)';
+                    surface_normals(i,:) = tbox.findNormalCollision(env.FBT{collision_i(i)}, pointOnObj(i,:));
+                end
+                collision_points = pointOnObj;
 
             elseif min_dist>=0.08
                 limbOut.collision_latch = 0;

@@ -117,7 +117,7 @@ classdef Ant
             % Update goals
             %If SenseEval indicates to move
             if ~goal.isempty() && ~obj.grasp_complete
-                
+
                 goal = goal.setalignment2goal(obj.position);
                 goal.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
@@ -169,14 +169,16 @@ classdef Ant
         end
 
         function obj = addContact(obj, contactStruct)
-            if ~isempty(contactStruct)
-                obj.contact_points(end+1).point = contactStruct.point;
-                obj.contact_points(end).normal = contactStruct.normal;
-                obj.contact_points(end).limb = contactStruct.limb;
+            for n = 1:length(contactStruct)
+                if ~isempty(contactStruct)
+                    obj.contact_points(end+1).point = contactStruct{n}.point;
+                    obj.contact_points(end).normal = contactStruct{n}.normal;
+                    obj.contact_points(end).limb = contactStruct{n}.limb;
 
-                length_difference = length(obj.contact_points) - obj.memory_size;
-                if length_difference > 0
-                    obj.contact_points(1:length_difference) = [];
+                    length_difference = length(obj.contact_points) - obj.memory_size;
+                    if length_difference > 0
+                        obj.contact_points(1:length_difference) = [];
+                    end
                 end
             end
         end

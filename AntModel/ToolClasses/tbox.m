@@ -270,6 +270,20 @@ classdef tbox
                     end
                 elseif length(find(faceFlag == 1)) > 1
                     disp('Serious Issue here - point inside two triangles')
+                    %Point within two triangles connected by a single
+                    %vertex with a small enough difference in angle that
+                    %the point is contained within both triangles
+                    %Or these shoddy triangulations have overlapping faces
+                    %Find which is the closest
+                    %Find the closer of the two triangles
+                    doubleFaceID = nearV_neighbours{:}(faceFlag == 1);
+                    centrePoints = incenter(delaunayTriang, doubleFaceID');
+                    distance = vecnorm(centrePoints - pointOnObj(n,:) ,2,2);
+                    [~, min_id] = min(distance);
+                    
+                    normalV(n,:) = faceNormal(delaunayTriang, doubleFaceID(min_id));
+                    
+
                 else
 
                     faceID = nearV_neighbours{:}(faceFlag');

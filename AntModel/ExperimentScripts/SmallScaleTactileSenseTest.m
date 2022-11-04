@@ -67,9 +67,9 @@ for i = 1: nExperiment
     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 end
-
+delete(gcp('nocreate'))
 tic
-p = parpool('threads');
+p = parpool();
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
 

@@ -18,7 +18,7 @@ RUNTIME_ARGS = RuntimeArgs();
 
 %% ----------- Experiment Set up
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.N_TRIALS = 5;
 RUNTIME_ARGS.RATE = 0.01;
 RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 
@@ -26,7 +26,7 @@ RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.16;
-%RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/weird_shape.stl';
+%RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
 
 
 RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
