@@ -57,13 +57,10 @@ RUNTIME_ARGS.SENSE.THRESH = 0;
 RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 
 
-%RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
-%RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
-
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 
 for i = 1: nExperiment
-    RUNTIME_ARGS_i(i).TRIAL_NAME = ['TunedIGEFAlignDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_TunedIGEFAlignDice'];
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['DistAndAlignDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_DistAndAlignDice'];
     RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
     RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
 end

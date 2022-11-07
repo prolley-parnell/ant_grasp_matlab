@@ -64,7 +64,7 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [0.1 0.6;...
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
-RUNTIME_ARGS.SENSE.MINIMUM_N = 10;
+RUNTIME_ARGS.SENSE.MINIMUM_N = 15;
 
 [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS);
 
