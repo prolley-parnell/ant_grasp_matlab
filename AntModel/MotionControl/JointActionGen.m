@@ -81,7 +81,7 @@ classdef JointActionGen
         function [trajectory, velocity] = trapVelGen(obj, jointWaypoints, jointID)
             %Check whether the start and end position are different
             nJoint = size(jointWaypoints,1);
-            roundWP = round(jointWaypoints,5);
+            roundWP = round(jointWaypoints,2);
             equalFlag = roundWP(:,1) == roundWP(:,2);
             waypoints = jointWaypoints;
             waypoints(equalFlag,:) = []
@@ -107,8 +107,8 @@ classdef JointActionGen
 
         function [waypoints] = genSweepWP(obj, antennaIn)
             activeRange = [0.2 0.8;...
-                            0.1 0.8;...
-                            0.1 0.9];
+                            0.2 0.8;...
+                            0.3 0.7];
             limitRange = antennaIn.joint_limits(:, 2) - antennaIn.joint_limits(:, 1);
 
             restrictJointLimit = activeRange.*limitRange + antennaIn.joint_limits(:, 1);
