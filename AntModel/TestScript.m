@@ -18,7 +18,7 @@ RUNTIME_ARGS = RuntimeArgs();
 
 %% ----------- Experiment Set up
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 5;
+RUNTIME_ARGS.N_TRIALS = 1;
 RUNTIME_ARGS.RATE = 0.01;
 RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 
@@ -53,10 +53,8 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
                 2.5, 3.5; ...
                 0, 1];
 
-RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
-RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "curve"];
+RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
-%RUNTIME_ARGS.SENSE.MODE = "force_align";
 RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 
 RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [0.1 0.6;...

@@ -192,7 +192,7 @@ classdef RuntimeArgs
 
             %Method for refining the potential samling points
             %DEFAULT: 'IG' - Information Gain
-            obj.SEARCH_SPACE.REFINE.MODE = 'IG';
+            obj.SEARCH_SPACE.REFINE.MODE = '';
 
             %Arguments required for the refinement of sampled points
             %For REFINE

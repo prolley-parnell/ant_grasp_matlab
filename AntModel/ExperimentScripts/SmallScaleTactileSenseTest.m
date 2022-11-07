@@ -54,11 +54,11 @@ RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
-RUNTIME_ARGS.SENSE.MODE = "force_align";
+RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 
 
-RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = 'IG';
-RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
+%RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE = '';
+%RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
 

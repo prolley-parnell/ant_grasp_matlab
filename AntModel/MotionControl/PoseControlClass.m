@@ -59,8 +59,7 @@ classdef PoseControlClass
                 ant.plotAnt()
                 %If limb is not in collision, store the free point
                 [limbs{i}, dataStruct] = obj.tactileSenseEval(limbs{i}, ant.q, ant.position, env);
-                contactStructArray = [contactStructArray;dataStruct{:}];
-
+                contactStructArray = cat(1,contactStructArray, [dataStruct{:}]');
 
 
                 switch(limbs{i}.type)
