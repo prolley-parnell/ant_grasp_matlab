@@ -1,0 +1,454 @@
+Parallel pool using the 'DELL XPS 15 ERP' profile is shutting down.
+Starting parallel pool (parpool) using the 'DELL XPS 15 ERP' profile ...
+
+{Operation terminated by user during <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.getJavaFutureResult')" style="font-weight:bold">parallel.internal.getJavaFutureResult</a>
+
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.pool.JavaBackedSession/waitForSessionCreation', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\JavaBackedSession.m', 267)" style="font-weight:bold">parallel.internal.pool.JavaBackedSession/waitForSessionCreation</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\JavaBackedSession.m',267,0)">line 267</a>)
+                [gotSession, session] = parallel.internal.getJavaFutureResult(...
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.pool.JavaBackedSession/waitForConnections', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\JavaBackedSession.m', 148)" style="font-weight:bold">parallel.internal.pool.JavaBackedSession/waitForConnections</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\JavaBackedSession.m',148,0)">line 148</a>)
+            obj.Session = obj.waitForSessionCreation(sessionFuture, connectionCounter, ...
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.pool.AbstractInteractiveClient/start', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\AbstractInteractiveClient.m', 136)" style="font-weight:bold">parallel.internal.pool.AbstractInteractiveClient/start</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\AbstractInteractiveClient.m',136,0)">line 136</a>)
+                    session.waitForConnections(spmdInitialized, sessionInfo, obj.buildCheckFcn());
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.pool.AbstractClusterPool>iStartClient', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\@AbstractClusterPool\AbstractClusterPool.m', 882)" style="font-weight:bold">parallel.internal.pool.AbstractClusterPool>iStartClient</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\@AbstractClusterPool\AbstractClusterPool.m',882,0)">line 882</a>)
+spmdInitialized = client.start(sessionBuildFcn, sessionInfo, numWorkers, cluster, ...
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.pool.AbstractClusterPool.hBuildPool', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\@AbstractClusterPool\AbstractClusterPool.m', 636)" style="font-weight:bold">parallel.internal.pool.AbstractClusterPool.hBuildPool</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\@AbstractClusterPool\AbstractClusterPool.m',636,0)">line 636</a>)
+                iStartClient(client, sessionInfo, forceSpmdEnabled, cluster, supportRestart, argsList);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parallel.internal.pool.doParpool', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\doParpool.m', 22)" style="font-weight:bold">parallel.internal.pool.doParpool</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\+parallel\+internal\+pool\doParpool.m',22,0)">line 22</a>)
+    pool = parallel.internal.pool.AbstractClusterPool.hBuildPool(constructorArgs{:});
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('parpool', 'C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\parpool.m', 123)" style="font-weight:bold">parpool</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\parallel\cluster\parpool.m',123,0)">line 123</a>)
+    pool = parallel.internal.pool.doParpool(varargin{:});
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SmallScaleTactileSenseTest', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\SmallScaleTactileSenseTest.m', 69)" style="font-weight:bold">SmallScaleTactileSenseTest</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\SmallScaleTactileSenseTest.m',69,0)">line 69</a>)
+p = parpool();
+} 
+SmallScaleTactileSenseTest
+{Operation terminated by user during <a href="matlab:matlab.internal.language.introspective.errorDocCallback('validatestring>checkString')" style="font-weight:bold">validatestring>checkString</a>
+
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('validatestring', 'C:\Program Files\MATLAB\R2022a\toolbox\matlab\lang\validatestring.m', 13)" style="font-weight:bold">validatestring</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\matlab\lang\validatestring.m',13,0)">line 13</a>)
+        out = checkString(in, validStrings, optional_inputs);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rigidBodyJoint', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\rigidBodyJoint.m', 155)" style="font-weight:bold">rigidBodyJoint</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\rigidBodyJoint.m',155,0)">line 155</a>)
+                jointtype = validatestring(jtype, ...
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.manip.internal.RigidBody', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBody.m', 96)" style="font-weight:bold">robotics.manip.internal.RigidBody</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBody.m',96,0)">line 96</a>)
+                obj.JointInternal = rigidBodyJoint(jname, jtype);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.manip.internal.RigidBody/copy', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBody.m', 189)" style="font-weight:bold">robotics.manip.internal.RigidBody/copy</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBody.m',189,0)">line 189</a>)
+            newbody = robotics.manip.internal.RigidBody(obj.NameInternal);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.manip.internal.RigidBodyTree/addBody', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBodyTree.m', 256)" style="font-weight:bold">robotics.manip.internal.RigidBodyTree/addBody</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBodyTree.m',256,0)">line 256</a>)
+            body = copy(bodyin);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.manip.internal.RigidBodyTree/copy', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBodyTree.m', 558)" style="font-weight:bold">robotics.manip.internal.RigidBodyTree/copy</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\RigidBodyTree.m',558,0)">line 558</a>)
+                    newrobot.addBody(body, parent.Name);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('rigidBodyTree/copy', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\rigidBodyTree.m', 364)" style="font-weight:bold">rigidBodyTree/copy</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\rigidBodyTree.m',364,0)">line 364</a>)
+            newRobotInternal = obj.TreeInternal.copy();
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('inverseKinematics/set.RigidBodyTree', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m', 483)" style="font-weight:bold">inverseKinematics/set.RigidBodyTree</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m',483,0)">line 483</a>)
+                rbt = copy(rigidbodytree);
+
+In matlab.system.SystemProp/parseInputs
+
+In matlab.system.SystemProp/setProperties
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('inverseKinematics', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m', 253)" style="font-weight:bold">inverseKinematics</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m',253,0)">line 253</a>)
+                setProperties(obj,nargin,varargin{:});
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('Limb/findIKforGlobalPt', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Limb.m', 198)" style="font-weight:bold">Limb/findIKforGlobalPt</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Limb.m',198,0)">line 198</a>)
+                ik = inverseKinematics('RigidBodyTree', obj.subtree);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SampleActionGen/generateGoalProp', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m', 190)" style="font-weight:bold">SampleActionGen/generateGoalProp</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m',190,0)">line 190</a>)
+                        [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SampleActionGen/loadAntennaTrajectory', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m', 65)" style="font-weight:bold">SampleActionGen/loadAntennaTrajectory</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m',65,0)">line 65</a>)
+            goalPropStruct = obj.generateGoalProp(antennaIn, qIn, positionIn, goalArray);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('PoseControlClass/moveAntenna', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m', 187)" style="font-weight:bold">PoseControlClass/moveAntenna</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m',187,0)">line 187</a>)
+                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('PoseControlClass/updateLimbs', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m', 66)" style="font-weight:bold">PoseControlClass/updateLimbs</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m',66,0)">line 66</a>)
+                        [obj, limbs{i}, qLocal] = obj.moveAntenna(limbs{i}, ant.q, ant.position);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('PoseControlClass/updatePose', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m', 37)" style="font-weight:bold">PoseControlClass/updatePose</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m',37,0)">line 37</a>)
+            [ant, contactStructArray] = obj.updateLimbs(ant, env, motionFlag);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('Ant/update', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Ant.m', 107)" style="font-weight:bold">Ant/update</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Ant.m',107,0)">line 107</a>)
+            [obj, sensedData] = obj.poseController.updatePose(obj, env, motionFlag);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('AntModelFunction', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MainScript\AntModelFunction.m', 45)" style="font-weight:bold">AntModelFunction</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MainScript\AntModelFunction.m',45,0)">line 45</a>)
+        [ant, sensedDataArray, goalObj] = ant.update(env);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SmallScaleTactileSenseTest', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\SmallScaleTactileSenseTest.m', 78)" style="font-weight:bold">SmallScaleTactileSenseTest</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\SmallScaleTactileSenseTest.m',78,0)">line 78</a>)
+    [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
+} 
+SmallScaleTactileSenseTest
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Ant.m',96,1)">96  </a>                show(obj.antTree, obj.q ,'Parent', gca, 'Position', obj.position, 'PreservePlot',false, 'Collisions', 'off', 'Visual', 'on', 'FastUpdate',true);
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',56,1)">56  </a>            if isempty(sensedData) 
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',56,1)">56  </a>            if isempty(sensedData) 
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',56,1)">56  </a>            if isempty(sensedData) 
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',58,1)">58  </a>            elseif nContactThresh <= 0
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbquit all; end
+SmallScaleTactileSenseTest
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',58,1)">58  </a>            elseif nContactThresh < 0
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',58,1)">58  </a>            elseif nContactThresh < 0
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\BehaviourControl\graspSynthesis.m',94,1)">94  </a>            if obj.quality*1.1 < bestQuality
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbquit; end
+SmallScaleTactileSenseTest
+{Operation terminated by user during <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.manip.internal.RigidBodyTree/efficientFKAndJacobianForIK')" style="font-weight:bold">robotics.manip.internal.RigidBodyTree/efficientFKAndJacobianForIK</a>
+
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.manip.internal.IKHelpers.computeCost', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\IKHelpers.m', 22)" style="font-weight:bold">robotics.manip.internal.IKHelpers.computeCost</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\+robotics\+manip\+internal\IKHelpers.m',22,0)">line 22</a>)
+            [T, J] = efficientFKAndJacobianForIK(treeInternal, x, bodyName);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.core.internal.DampedBFGSwGradientProjection/solveInternal', 'C:\Program Files\MATLAB\R2022a\toolbox\shared\robotics\robotutils\+robotics\+core\+internal\DampedBFGSwGradientProjection.m', 320)" style="font-weight:bold">robotics.core.internal.DampedBFGSwGradientProjection/solveInternal</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\shared\robotics\robotutils\+robotics\+core\+internal\DampedBFGSwGradientProjection.m',320,0)">line 320</a>)
+                [costNew,~,~, obj.ExtraArgs] = obj.CostFcn(x+gamma*s0, obj.ExtraArgs);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('robotics.core.internal.NLPSolverInterface/solve', 'C:\Program Files\MATLAB\R2022a\toolbox\shared\robotics\robotutils\+robotics\+core\+internal\NLPSolverInterface.m', 144)" style="font-weight:bold">robotics.core.internal.NLPSolverInterface/solve</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\shared\robotics\robotutils\+robotics\+core\+internal\NLPSolverInterface.m',144,0)">line 144</a>)
+                [xSol, exitFlag, err, iter] = solveInternal(obj);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('inverseKinematics/solve', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m', 313)" style="font-weight:bold">inverseKinematics/solve</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m',313,0)">line 313</a>)
+            [qvSolRaw, sol] = obj.Solver.solve(iniGuessVec);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('inverseKinematics/stepImpl', 'C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m', 159)" style="font-weight:bold">inverseKinematics/stepImpl</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2022a\toolbox\robotics\robotmanip\inverseKinematics.m',159,0)">line 159</a>)
+            [QSol, solutionInfo] = solve(obj, initialGuess);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('Limb/findIKforGlobalPt', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Limb.m', 199)" style="font-weight:bold">Limb/findIKforGlobalPt</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Limb.m',199,0)">line 199</a>)
+                [configSol,solInfo] = ik(obj.end_effector,goalPose,weights,initialguess);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SampleActionGen/generateGoalProp', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m', 190)" style="font-weight:bold">SampleActionGen/generateGoalProp</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m',190,0)">line 190</a>)
+                        [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SampleActionGen/loadAntennaTrajectory', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m', 65)" style="font-weight:bold">SampleActionGen/loadAntennaTrajectory</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\SampleActionGen.m',65,0)">line 65</a>)
+            goalPropStruct = obj.generateGoalProp(antennaIn, qIn, positionIn, goalArray);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('PoseControlClass/moveAntenna', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m', 187)" style="font-weight:bold">PoseControlClass/moveAntenna</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m',187,0)">line 187</a>)
+                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('PoseControlClass/updateLimbs', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m', 66)" style="font-weight:bold">PoseControlClass/updateLimbs</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m',66,0)">line 66</a>)
+                        [obj, limbs{i}, qLocal] = obj.moveAntenna(limbs{i}, ant.q, ant.position);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('PoseControlClass/updatePose', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m', 37)" style="font-weight:bold">PoseControlClass/updatePose</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MotionControl\PoseControlClass.m',37,0)">line 37</a>)
+            [ant, contactStructArray] = obj.updateLimbs(ant, env, motionFlag);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('Ant/update', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Ant.m', 107)" style="font-weight:bold">Ant/update</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ModelAntBody\Ant.m',107,0)">line 107</a>)
+            [obj, sensedData] = obj.poseController.updatePose(obj, env, motionFlag);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('AntModelFunction', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MainScript\AntModelFunction.m', 45)" style="font-weight:bold">AntModelFunction</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\MainScript\AntModelFunction.m',45,0)">line 45</a>)
+        [ant, sensedDataArray, goalObj] = ant.update(env);
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('SmallScaleTactileSenseTest', 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\SmallScaleTactileSenseTest.m', 78)" style="font-weight:bold">SmallScaleTactileSenseTest</a> (<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\SmallScaleTactileSenseTest.m',78,0)">line 78</a>)
+    [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
+} 
+SmallScaleTactileSenseTest
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ToolClasses\tbox.m',271,1)">271 </a>                elseif length(find(faceFlag == 1)) > 1
+rng
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+     Type: 'twister'
+     Seed: 1199422449
+    State: [625×1 uint32]
+
+rand
+
+ans =
+
+    0.2251
+
+round(rand * 100,0)
+
+ans =
+
+    70
+
+round(rand * 100,0)
+
+ans =
+
+    24
+
+doubleTriang_file_name = ['./double_triangle.mat', int2str(round(rand * 100,0))]
+
+doubleTriang_file_name =
+
+    './double_triangle.mat47'
+
+doubleTriang_file_name = ['./double_triangle_',int2str(round(rand * 100,0)), '.mat'];
+doubleTriang_file_name = ['./double_triangle_',int2str(round(rand * 100,0)), '.mat']
+
+doubleTriang_file_name =
+
+    './double_triangle_66.mat'
+
+doubleTriang_file_name = ['./double_triangle_',int2str(round(rand * 100,0)), '.mat']
+
+doubleTriang_file_name =
+
+    './double_triangle_80.mat'
+
+doubleTriang_file_name = ['./double_triangle_',int2str(round(rand * 100,0)), '.mat']
+
+doubleTriang_file_name =
+
+    './double_triangle_57.mat'
+
+doubleTriang_file_name = ['./double_triangle_',int2str(round(rand * 100,0)), '.mat']
+
+doubleTriang_file_name =
+
+    './double_triangle_50.mat'
+
+if system_dependent('IsDebugMode')==1, dbquit all; end
+save(doubleTriang_file_name)
+{Unrecognized function or variable 'doubleTriang_file_name'.
+} 
+help save
+ <strong>save</strong> Save workspace variables to file. 
+    <strong>save</strong>(FILENAME) stores all variables from the current workspace in a
+    MATLAB formatted binary file (MAT-file) called FILENAME. Specify 
+    FILENAME as a character vector or a string scalar. For example, specify
+    FILENAME as 'myFile.mat' or "myFile.mat".
+ 
+    <strong>save</strong>(FILENAME,VARIABLES) stores only the specified variables. Specify 
+    FILENAME and VARIABLES as character vectors or string scalars.
+ 
+    <strong>save</strong>(FILENAME,'-struct',STRUCTNAME,FIELDNAMES) stores the fields of the
+    specified scalar structure as individual variables in the file. If you 
+    include the optional FIELDNAMES, the <strong>save</strong> function stores only the
+    specified fields of the structure.  You cannot specify VARIABLES and 
+    the '-struct' keyword in the same call to <strong>save</strong>.
+ 
+    <strong>save</strong>(FILENAME, ..., '-append') adds new variables to an existing file.
+    You can specify '-append' with additional inputs such as VARIABLES,
+    '-struct', FORMAT, or VERSION.
+ 
+    <strong>save</strong>(FILENAME, ..., FORMAT) saves in the specified format: '-mat' or
+    '-ascii'.
+    You can specify FORMAT with additional inputs such as VARIABLES,
+    '-struct', '-append', or VERSION.
+ 
+    <strong>save</strong>(FILENAME, ..., VERSION) saves to MAT-files in the specified
+    version: '-v4', '-v6', '-v7', or '-v7.3'.
+    You can specify VERSION with additional inputs such as VARIABLES,
+    '-struct', '-append', '-nocompression', or FORMAT.
+ 
+    <strong>save</strong>(FILENAME, ..., '-nocompression', '-v7.3') saves to MAT-files version 7.3
+    without compression.
+    You can specify '-nocompression' with additional inputs such as VARIABLES and
+    '-append'. This option is supported for MAT-files version 7 and above.
+ 
+    <strong>save</strong> FILENAME ... is the command form of the syntax, for convenient 
+    saving from the command line.  With command syntax, you do not need to
+    enclose FILENAME in single or double quotation marks.  Separate inputs 
+    with spaces instead of commas.  Do not use command syntax if inputs 
+    such as FILENAME are variables.
+ 
+    Inputs:
+ 
+    FILENAME: If you do not specify FILENAME, the <strong>save</strong> function saves to a
+    file named matlab.mat.  If FILENAME does not include an extension and 
+    the value of format is '-mat' (the default), MATLAB appends .mat. If 
+    filename does not include a full path, MATLAB saves in the current
+    folder. You must have permission to write to the file.
+ 
+    VARIABLES:  Save only selected variables from the workspace.
+    Use one of the following forms:
+ 
+        V1, V2, ...              Save the listed variables. Use the '*'
+                                 wildcard to match patterns.  For example,
+                                 save('A*') saves all variables that start
+                                 with A.
+        '-regexp', EXPRESSIONS   Save only the variables that match the
+                                 specified regular expressions. <strong>save</strong> treats
+                                 all inputs as regular expressions except
+                                 the optional FILENAME and STRUCTNAME.  The
+                                 FILENAME input must appear first.  For
+                                 more information on regular expressions,
+                                 type "doc regexp" at the command prompt.
+ 
+    '-struct', STRUCTNAME, FIELDNAMES:  Save the fields of a scalar
+    structure as individual variables in the file.  FIELDNAMES is optional; 
+    specify to save only selected fields.  FIELDNAMES use the same forms as
+    VARIABLES.
+ 
+    '-append': Add data to an existing file.  For MAT-files, '-append' adds
+    new variables to the file or replaces the saved values of existing
+    variables with values in the workspace.  For ASCII files, '-append'
+    adds data to the end of the file.
+ 
+    FORMAT: Specify the format of the file, regardless of any specified
+    extension.  Use one of the following combinations:
+ 
+        '-mat'                        Binary MAT-file format (default).
+        '-ascii'                      8-digit ASCII format.
+        '-ascii', '-tabs'             Tab-delimited 8-digit ASCII format.
+        '-ascii', '-double'           16-digit ASCII format.
+        '-ascii', '-double', '-tabs'  Tab-delimited 16-digit ASCII format.
+ 
+        For ASCII file formats, the <strong>save</strong> function has the following
+        limitations:
+        * Each variable must be a two-dimensional double or char array.
+        * MATLAB translates characters to their corresponding internal
+          ASCII codes.  For example, 'abc' appears in an ASCII file as:
+              9.7000000e+001  9.8000000e+001  9.9000000e+001
+        * The output includes only the real component of complex numbers.
+        * If you plan to use the LOAD function to read the file, all
+          variables must have the same number of columns.
+ 
+    '-nocompression': Save data to a MAT-file without compression. The
+    '-nocompression' option is only supported for MAT-files version 7 and above.
+ 
+    VERSION: Create a MAT-file that you can load into an earlier version of
+    MATLAB or that supports specific features.  The following table shows 
+    the available MAT-file version options and the corresponding supported
+    features.
+ 
+             | Can Load in  |
+    Option   | Versions     | Supported Features
+    ---------+--------------+----------------------------------------------
+    '-v7.3'  | 7.3 or later | Version 7.0 features plus support for
+             |              | data items greater than or equal to 2GB on
+             |              | 64-bit systems.
+    ---------+--------------+----------------------------------------------
+    '-v7'    | 7.0 or later | Version 6 features plus data compression and
+             |              | Unicode character encoding. Saving variables
+             |              | without compression is also supported using 
+             |              | the '-nocompression' flag.
+    ---------+--------------+----------------------------------------------
+    '-v6'    | 5 or later   | Version 4 features plus N-dimensional arrays,
+             |              | cell and structure arrays, and variable names
+             |              | greater than 19 characters
+    ---------+--------------+----------------------------------------------
+    '-v4'    | all          | Two-dimensional double, character, and
+             |              | sparse arrays
+ 
+    If any data items require features that the specified version does not
+    support, MATLAB does not save those items and issues a warning. You 
+    cannot specify a version later than your version of MATLAB software.
+ 
+    To view or set the default version for MAT-files, select
+    File > Preferences > General > MAT-Files.
+ 
+    Examples:
+ 
+    % Save all variables from the workspace to test.mat:
+    save test.mat
+ 
+    % Save two variables, where FILENAME is a variable:
+    savefile = 'pqfile.mat';
+    p = rand(1, 10);
+    q = ones(10);
+    save(savefile, 'p', 'q');
+ 
+    % Save the fields of a structure as individual variables:
+    s1.a = 12.7;
+    s1.b = {'abc', [4 5; 6 7]};
+    s1.c = 'Hello!';
+    save('newstruct.mat', '-struct', 's1');
+ 
+    % Save variables whose names contain digits:
+    save myfile.mat -regexp \d
+ 
+    See also <a href="matlab:help load -displayBanner">load</a>, <a href="matlab:help matfile -displayBanner">matfile</a>, <a href="matlab:help whos -displayBanner">whos</a>, <a href="matlab:help regexp -displayBanner">regexp</a>, <a href="matlab:help hgsave -displayBanner">hgsave</a>, <a href="matlab:help saveas -displayBanner">saveas</a>, <a href="matlab:help workspace -displayBanner">workspace</a>, <a href="matlab:help clear -displayBanner">clear</a>.
+
+    <a href="matlab:doc save">Documentation for save</a>
+    <a href="matlab:matlab.internal.language.introspective.overloads.displayOverloads('save')">Other functions named save</a>
+
+doubleTriang_file_name = ['./double_triangle_',int2str(round(rand * 100,0)), '.mat'];
+save(doubleTriang_file_name)
+load('double_triangle_76.mat')
+time
+{Unrecognized function or variable 'time'.
+} 
+now
+
+ans =
+
+   7.3883e+05
+
+datestr(now, 'dd-mm-yy_HH-MM');
+datestr(now, 'dd-mm-yy_HH-MM')
+
+ans =
+
+    '08-11-22_10-26'
+
+datestr(now, 'HH-MM')
+
+ans =
+
+    '10-26'
+
+datestr(now, 'HH:MM')
+
+ans =
+
+    '10:26'
+
+datestr(now, 'HH-MM')
+
+ans =
+
+    '10-26'
+
+['./double_triangle_',datestr(now, 'HH-MM'), '.mat']
+
+ans =
+
+    './double_triangle_10-27.mat'
+
+SmallScaleTactileSenseTest
+Starting parallel pool (parpool) using the 'DELL XPS 15 ERP' profile ...
+Connected to the parallel pool (number of workers: 8).
+Serious Issue here - point inside two triangles
+Elapsed time is 21502.973591 seconds.

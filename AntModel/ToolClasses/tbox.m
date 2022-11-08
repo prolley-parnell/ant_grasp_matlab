@@ -282,6 +282,12 @@ classdef tbox
                     [~, min_id] = min(distance);
                     
                     normalV(n,:) = faceNormal(delaunayTriang, doubleFaceID(min_id));
+
+                    %Save all instances where the function finds the point
+                    %in two triangles, assign the time to differentiate and
+                    %not overwrite
+                    doubleTriang_file_name = ['./double_triangle_',datestr(now, 'HH-MM'), '.mat'];
+                    save(doubleTriang_file_name)
                     
 
                 else

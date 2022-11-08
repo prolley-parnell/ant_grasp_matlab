@@ -73,7 +73,9 @@ opts = parforOptions(p);
 R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
 
 parfor (n = 1:nExperiment, opts)
+%for n = 1:nExperiment
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
+    %[exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
 toc
 

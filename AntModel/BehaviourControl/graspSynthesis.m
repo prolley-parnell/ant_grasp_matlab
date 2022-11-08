@@ -55,7 +55,7 @@ classdef graspSynthesis
             nContactThresh = length(antIn.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
             if isempty(sensedData) 
                 return
-            elseif nContactThresh <= 0
+            elseif nContactThresh < 0
                 return
             else
                 nMeasures = length(obj.synth_method);
@@ -91,11 +91,11 @@ classdef graspSynthesis
 
             %Only update to a new goal if the goal is 10% better than the
             %last
-            if obj.quality*1.1 < bestQuality
+            %if obj.quality*1.1 < bestQuality
                 [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);        
                 goalOut = goalOut.setcontact(antIn.contact_points([a,b]));
                 obj.quality = bestQuality;
-            end
+            %end
             antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
 
             antOut.senseEval = obj;
