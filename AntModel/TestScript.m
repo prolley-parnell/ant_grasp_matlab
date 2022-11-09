@@ -59,6 +59,10 @@ RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "curve"];
 %RUNTIME_ARGS.SENSE.MODE = "force_align";
 RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 
+RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [0.1 0.6;...
+                0.4 0.8;...
+                0.9 0.45]; %The middle joint of the antenna is at its maximum closure at 100%
+
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;

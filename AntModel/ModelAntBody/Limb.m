@@ -14,6 +14,7 @@ classdef Limb
         subtree
         full_tree
         free_point
+        free_pose
         trajectory_queue
         collision_latch
         control_type

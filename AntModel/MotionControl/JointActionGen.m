@@ -16,6 +16,8 @@ classdef JointActionGen
         search_config
         refineSearch
 
+        home_pose
+
     end
 
     methods
@@ -23,11 +25,13 @@ classdef JointActionGen
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
             obj.interval = RUNTIME_ARGS.RATE;
-            obj.maxvelocities = ones([10,1]) * deg2rad(180);
+            obj.maxvelocities = ones([10,1]) * deg2rad(3) / obj.interval;
             %Make the scape pedicel joint have a higher speed limit
-            obj.maxvelocities([7 10]) = deg2rad(230);
+            obj.maxvelocities([7 10]) = deg2rad(7) / obj.interval;
 
             obj.maxacceleration = [1.5, 0, -1.5];
+
+            obj.home_pose = RUNTIME_ARGS.ANT_POSE;
 
             obj.search_config = RUNTIME_ARGS.SEARCH_SPACE;
             obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE;
@@ -42,38 +46,36 @@ classdef JointActionGen
 
 
 
-        function [antennaOut] = loadAntennaTrajectory(obj, antennaIn, qIn, positionIn)
+        function [antennaOut] = loadAntennaTrajectory(obj, antennaIn)
             %loadAntennaTrajectory
             antennaOut = antennaIn;
 
-            trajectoryQueue = obj.generateJointTrajectory(antennaIn, qIn);
+            trajectoryQueue = obj.generateJointTrajectory(antennaIn);
 
             antennaOut.trajectory_queue = trajectoryQueue;
 
         end
 
-        function [qTrajectory] = generateJointTrajectory(obj, antennaIn, qIn)
+
+        function [qTrajectory] = generateJointTrajectory(obj, antennaIn)
             %generateJointTrajectory given the method of sweeping, generate
             %the next full joint trajectory path for the antenna given the
             %velocity limits for each joint
-            homeQ = homeConfiguration(antennaIn.subtree);
-            maskedQ = qIn(antennaIn.joint_mask == 1);
-            jointIDArray = find(antennaIn.joint_mask == 1);
-            %Phase 1 - Prime the antenna to be back near the home position
-            qTrajectory_P1 = obj.trapVelGen([maskedQ,homeQ], jointIDArray);
 
-            %Phase 2 - Generate waypoints for the different phases of the
-            %sweeping motion
-            waypoints = [qTrajectory_P1(:,end), obj.genSweepWP(antennaIn)];
+            maskedQ_free_pose = antennaIn.free_pose;
+
+            jointIDArray = find(antennaIn.joint_mask == 1);
+            qTrajectory = maskedQ_free_pose;
+
+            waypoints = [maskedQ_free_pose, obj.genSweepWP(antennaIn)];
             nPath = size(waypoints,2)-1;
             for i = 1:nPath
                 waypoint_i = waypoints(:,i:i+1);
-                qTrajectory_P2 = obj.trapVelGen(waypoint_i, jointIDArray);
+                subTrajectory = obj.trapVelGen(waypoint_i, jointIDArray);
+                qTrajectory = cat(2, qTrajectory, subTrajectory);
             end
 
-            %qTrajectory_P2 = obj.trapVelGen([qTrajectory_P1(:,end), waypoints], jointIDArray);
-
-            qTrajectory = [qTrajectory_P1, qTrajectory_P2];
+            qTrajectory(:,1) = [];
 
 
         end
@@ -81,83 +83,60 @@ classdef JointActionGen
         function [trajectory, velocity] = trapVelGen(obj, jointWaypoints, jointID)
             %Check whether the start and end position are different
             nJoint = size(jointWaypoints,1);
+            trajectoryCell = cell([nJoint,1]);
+            velocityCell = cell([nJoint,1]);
+
             roundWP = round(jointWaypoints,2);
             equalFlag = roundWP(:,1) == roundWP(:,2);
-            waypoints = jointWaypoints;
-            waypoints(equalFlag,:) = []
-            if isempty(waypoints)
+
+            if all(equalFlag)
                 trajectory = [];
                 velocity = [];
             else
-            
-            [q, qd, ~, t] = trapveltraj(waypoints,500,...
-                PeakVelocity=obj.maxvelocities(jointID(~equalFlag)),...
-                AccelTime=obj.interval*5);
-            div_t = t / obj.interval;
-            round_div_t = round(div_t);
-            [~, i_first_unique] = unique(round_div_t, 'stable');
-            trajectory = ones([nJoint, length(i_first_unique)+1]).*jointWaypoints(:,end);
-            
-            trajectory(~equalFlag,:) = [q(:,i_first_unique), q(:,end)];
-            
-            velocity = zeros(size(trajectory));
-            velocity(~equalFlag,:) = [qd(:,i_first_unique), qd(:,end)];
+                nSample = nan(nJoint,1);
+                for n=1:nJoint
+                    if ~equalFlag(n)
+                        [q, qd, ~, t] = trapveltraj(jointWaypoints(n,:),500,...
+                            PeakVelocity=obj.maxvelocities(jointID(n)));
+                        div_t = t / obj.interval;
+                        round_div_t = round(div_t);
+                        [~, i_first_unique] = unique(round_div_t, 'stable');
+
+                        trajectoryCell{n} = [q(i_first_unique), q(end)];
+                        velocityCell{n} = [qd(i_first_unique), qd(end)];
+                        nSample(n) = length(trajectoryCell{n});
+                    end
+                end
+
+                trajLength = max(nSample);
+                trajectory = ones([nJoint, trajLength]).*jointWaypoints(:,end);
+
+                velocity = zeros(size(trajectory));
+                for m=1:nJoint
+                    if ~isempty(trajectoryCell{m})
+                        trajectory(m,[1:nSample(m)]) = trajectoryCell{m};
+                        velocity(m,[1:nSample(m)]) = velocityCell{m};
+                    end
+                end
             end
         end
 
         function [waypoints] = genSweepWP(obj, antennaIn)
-            activeRange = [0.2 0.8;...
-                            0.2 0.8;...
-                            0.3 0.7];
-            limitRange = antennaIn.joint_limits(:, 2) - antennaIn.joint_limits(:, 1);
+            activeRange =  obj.search_range;
+            limitRange = abs(antennaIn.joint_limits(:, 2) - antennaIn.joint_limits(:, 1));
 
             restrictJointLimit = activeRange.*limitRange + antennaIn.joint_limits(:, 1);
 
-            a = restrictJointLimit(1:2, 1);
-            b = restrictJointLimit(1:2, 2);
+            minAB = restrictJointLimit(1:2, 1);
+            maxAB = restrictJointLimit(1:2, 2);
             r = @(a, b, set) (a + (b-a).*set);
-            init_val = rand([2,1]);
-            jointBase = r(a,b,init_val);
-            
-            joint3lims = restrictJointLimit(3,:);
+            randomScale = rand([2,1]);
+            jointAB = r(minAB,maxAB,randomScale);
 
-            outPath = [jointBase;joint3lims(2)];
-            sweepIn = [jointBase;joint3lims(1)];
+            outPath = [jointAB;restrictJointLimit(3,2)];
+            sweepIn = [jointAB;restrictJointLimit(3,1)];
 
             waypoints = [outPath, sweepIn];
-            
-
-        end
-
-        function [trajectory, v] = customTrapVel(obj, jointWaypoints, jointID)
-            %Looking to find a set of intermediate waypoints that match the
-            %velocity and accelleration limits but doesn't enforce a time
-            %length - assumes using max accelleration - for a single joint and
-            %two way points
-
-            velocityLim = obj.maxvelocities(jointID);
-            diff = abs(jointWaypoints(2) - jointWaypoints(1));
-            direction = sign(jointWaypoints(2) - jointWaypoints(1));
-            tolerance = diff*0.05;
-            approxSampleN = round(diff / (velocityLim*0.5*obj.interval));
-            trajectory = nan([approxSampleN,1]);
-            trajectory(1) = jointWaypoints(1);
-            u = 0; %Initial velocity
-            i = 1;
-            accelORdecel = 1; %1 or 3 to indicate acceleration or deceleration
-            while diff > tolerance
-                s = u*obj.interval + 0.5*(obj.interval^2)*obj.maxacceleration(accelORdecel); %displacement
-                trajectory(i+1) = trajectory(i) + s*direction;
-                diff = abs(trajectory(i+1) - jointWaypoints(2));
-
-                v = min(velocityLim, u + obj.interval*obj.maxacceleration(accelORdecel));
-
-                u = v;
-                i = i+1;
-
-            end
-
-
 
 
         end

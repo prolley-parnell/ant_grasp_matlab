@@ -103,6 +103,7 @@ classdef PoseControlClass
             %If limb is not in collision, store the free point
             if ~limbOut.collision_latch
                 limbOut.free_point = tbox.findFKglobalPosition(obj.antTree, qIn, positionIn, limbOut.end_effector);
+                limbOut.free_pose = qIn(limbOut.joint_mask==1);
             end
 
             %Print collisions
@@ -185,7 +186,7 @@ classdef PoseControlClass
             if or(antennaIn.collision_latch, isempty(antennaIn.trajectory_queue))
                 %If in collision then reset first
                 %try
-                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
+                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn);
                 %catch
                  %   warning("Antenna trajectory could not be loaded")
                 %end
