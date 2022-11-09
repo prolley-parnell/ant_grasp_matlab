@@ -14,12 +14,12 @@ rng('shuffle');
 RUNTIME_ARGS = RuntimeArgs();
 
 % Warnings are automatically enabled
-%RUNTIME_ARGS.disableWarnings();
+RUNTIME_ARGS.disableWarnings();
 
 %% ----------- Experiment Set up
 % Number of Iterations
 RUNTIME_ARGS.N_TRIALS = 1;
-RUNTIME_ARGS.RATE = 0.01;
+RUNTIME_ARGS.RATE = 0.05;
 RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 
 RUNTIME_ARGS.PRINTOUT.ENABLE = 0;

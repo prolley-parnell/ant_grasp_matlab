@@ -235,7 +235,7 @@ classdef tbox
 
         end
 
-        function normalV = findNormalCollision(delaunayTriang, pointOnObj)
+        function normalV = findNormalCollision(fbTriang, pointOnObj)
             %findNormalCollision for a given contact point on a
             %delaunayTriangulation object, and the object, find the normal
             %to the surface at the point of contact.
@@ -245,13 +245,14 @@ classdef tbox
             nPoint = size(pointOnObj,1);
             normalV = nan(size(pointOnObj));
             for n = 1:nPoint
-                nearVertID = nearestNeighbor(delaunayTriang, pointOnObj(n,:));
-                nearV_neighbours = vertexAttachments(delaunayTriang,nearVertID);
+                nearVertID = nearestNeighbor(fbTriang, pointOnObj(n,:));
+                nearV_neighbours = vertexAttachments(fbTriang,nearVertID);
                 repTestPt = repmat(pointOnObj(n,:), length(nearV_neighbours{:}'),1);
-                B = cartesianToBarycentric(delaunayTriang, nearV_neighbours{:}', repTestPt);
+                B = cartesianToBarycentric(fbTriang, nearV_neighbours{:}', repTestPt);
                 % resolves issues with values that are 0 being marked at -0
-                % (12 sig.fig.)
-                roundB = round(B, 12);
+                % (9 sig.fig.)
+                roundB = round(B, 9);
+                
                 faceFlag = ismember(sign(roundB), [1 1 1], "rows");
                 if ~any(faceFlag)
                     % If the point lies on a vertex or edge         
@@ -261,27 +262,35 @@ classdef tbox
                         %If two Barycentric values are 0, then the point is
                         %on an edge
                         twoFaceID = nearV_neighbours{:}(zeroRow);
-                        twoFaceNorm = faceNormal(delaunayTriang, twoFaceID');
+                        twoFaceNorm = faceNormal(fbTriang, twoFaceID');
                         normalV(n,:) = mean(twoFaceNorm,1);
                     else
                         %If more than 2, or less than 2 values are 0, then
                         %get the normal of the nearest vertex instead
-                        normalV(n,:) = vertexNormal(delaunayTriang, nearVertID);
+                        normalV(n,:) = vertexNormal(fbTriang, nearVertID);
                     end
                 elseif length(find(faceFlag == 1)) > 1
                     disp('Serious Issue here - point inside two triangles')
-                    %Point within two triangles connected by a single
-                    %vertex with a small enough difference in angle that
-                    %the point is contained within both triangles
-                    %Or these shoddy triangulations have overlapping faces
-                    %Find which is the closest
-                    %Find the closer of the two triangles
-                    doubleFaceID = nearV_neighbours{:}(faceFlag == 1);
-                    centrePoints = incenter(delaunayTriang, doubleFaceID');
-                    distance = vecnorm(centrePoints - pointOnObj(n,:) ,2,2);
-                    [~, min_id] = min(distance);
-                    
-                    normalV(n,:) = faceNormal(delaunayTriang, doubleFaceID(min_id));
+                    %Point within two triangles due to rounding error
+                    %Check the distance between the nearest vertex and the
+                    %test point
+                    nearV_cartesian = fbTriang.Points(nearVertID, :);
+                    nearV_dist = vecnorm(nearV_cartesian - pointOnObj(n,:), 2, 2);
+
+                    if round(nearV_dist, 10) == 0
+                        %The point of contact is on the vertex
+                        normalV(n,:) = vertexNormal(fbTriang, nearVertID);
+                    else
+                        %If not on the vertex, then the issue is still
+                        %unclear so use the normal of the closest face
+
+                        doubleFaceID = nearV_neighbours{:}(faceFlag == 1);
+                        centrePoints = incenter(fbTriang, doubleFaceID');
+                        distance = vecnorm(centrePoints - pointOnObj(n,:) ,2,2);
+                        [~, min_id] = min(distance);
+
+                        normalV(n,:) = faceNormal(fbTriang, doubleFaceID(min_id));
+                    end
 
                     %Save all instances where the function finds the point
                     %in two triangles, assign the time to differentiate and
@@ -291,9 +300,8 @@ classdef tbox
                     
 
                 else
-
                     faceID = nearV_neighbours{:}(faceFlag');
-                    normalV(n,:) = faceNormal(delaunayTriang,faceID');
+                    normalV(n,:) = faceNormal(fbTriang,faceID');
                 end
 
 
