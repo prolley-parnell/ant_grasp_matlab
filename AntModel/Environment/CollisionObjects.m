@@ -3,13 +3,11 @@ classdef CollisionObjects
     %Generates and contains the handles to all of the objects within the
     %world
     % REQUIREMENTS: Matlab's Partial Differential Equation Toolbox
-    % Changelog - Emily Rolley-Parnell 21/09/2022 - Adding normal vectors
-    % to the object handles and a DiscreteGeometry object for each object
+    % Changelog - Emily Rolley-Parnell 31/10/2022 - Adding the capability
+    % to import multiple STL
 
     properties
         objectHandles
-        discreteGeomHandle
-        surfNorm
         DT
         FBT
         COM
@@ -22,12 +20,10 @@ classdef CollisionObjects
             %COLLISIONOBJECTS Construct an instance of this class
             %  add all of the desired collision objects then show them
             obj.objectHandles = {};
-            obj.discreteGeomHandle = {};
-            obj.surfNorm = {};
             obj.DT = {};
             obj.FBT = {};
             obj.COM = {};
-            obj = obj.addStl(RUNTIME_ARGS.COLLISION_OBJ);
+            obj = obj.addMultiStl(RUNTIME_ARGS.COLLISION_OBJ);
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
             obj = obj.plotObjects();
@@ -99,31 +95,120 @@ classdef CollisionObjects
 
         end
 
-        function [DT, FBT] = collisionToDelaunay(obj, mesh)
+
+        function obj = addMultiStl(obj, ARGS)
+            %ADDMULTISTL Add multiple STLs from a folder path
+
+            %Check whether a mat file has already been generated for this
+            %mesh
+
+            if isfolder(ARGS.FILE_PATH)
+                matFileName = [ARGS.FILE_PATH, '\meshMatSave.mat'];
+                matStruct = dir(matFileName);
+                if ~isempty(matStruct)
+                    loadMat = load(matFileName);
+                    obj.objectHandles = loadMat.objectHandles_save;
+                    obj.DT = loadMat.DT_save;
+                    obj.FBT = loadMat.FBT_save;
+                    obj.COM = loadMat.COM_save;
+                    return
+                end
+                folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
+            else
+                folderStruct = dir(ARGS.FILE_PATH);
+                fileName = split(folderStruct.name, '.');
+                matFileName = [folderStruct(1).folder, '\', fileName{1},'_meshMatSave.mat'];
+                matStruct = dir(matFileName);
+                if ~isempty(matStruct)
+                    loadMat = load(matFileName);
+                    obj.objectHandles = loadMat.objectHandles_save;
+                    obj.DT = loadMat.DT_save;
+                    obj.FBT = loadMat.FBT_save;
+                    obj.COM = loadMat.COM_save;
+                    return
+                end
+            end
+            allVerticesArray = [];
+            nSTL = length(folderStruct);
+
+            model = cell([1, nSTL]);
+            for i = 1:nSTL
+                %initialise a PDE object
+                model{i} = createpde();
+                %Import mesh from file
+                importGeometry(model{i}, [folderStruct(i).folder,'\',folderStruct(i).name]);
+                %Scale mesh according to RUNTIME_ARGS
+                scale(model{i}.Geometry, ones([1,3])*ARGS.SCALE);
+                scaledMesh = generateMesh(model{i}, GeometricOrder="linear");
+                allVerticesArray = cat(1,allVerticesArray,scaledMesh.Nodes');
+            end
+
+            CentreOfMass = mean(allVerticesArray,1);
+
+            for j=1:nSTL
+
+                
+                %Translate all vertices so the total mean COM is at 0 0 0
+                zeroMesh = model{j}.Mesh.Nodes' - CentreOfMass;
+                
+                k = convhulln(zeroMesh);
+                %Need to remove indices not referenced by convhill
+                newVertIdx = unique(k);
+                newVertexArray = zeroMesh(newVertIdx,:);
+
+
+                %Store the Centre of mass for every STL as the full object COM
+                obj.COM{j} = CentreOfMass;
+
+                %Convert the translated meshes to CollisionObjects
+                collision_mesh = collisionMesh(newVertexArray);
+                collision_mesh.Pose = trvec2tform(ARGS.POSITION);
+
+                obj.objectHandles{j} = collision_mesh;
+
+                %Translate to the object pose for the DT calculations        
+                translateNode = newVertexArray + ARGS.POSITION;
+
+                %Calculate the surface normals for each face
+                [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateNode);
+
+                
+
+            end
+            %Save the generated meshes to be loaded later
+            objectHandles_save = obj.objectHandles;
+            DT_save = obj.DT;
+            FBT_save = obj.FBT;
+            COM_save = obj.COM;
+            save(matFileName, 'objectHandles_save', 'DT_save', 'FBT_save', 'COM_save');
+
+        end
+
+        function [DT, FBT] = collisionToDelaunay(~, vertices)
             %% Generate Delaunay Triangulation representation for
             % surface normal vectors
 
-            x = mesh.Vertices(:,1);
-            y = mesh.Vertices(:,2);
-            z = mesh.Vertices(:,3);
+            x = vertices(:,1);
+            y = vertices(:,2);
+            z = vertices(:,3);
 
             DT = delaunayTriangulation(x,y,z);
             [T,Xb] = freeBoundary(DT);
             FBT = triangulation(T,Xb);
 
-%                         %Plotting
-%             P = incenter(FBT);
-%             F = faceNormal(FBT);
-%             trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
-%                 'FaceColor','cyan','FaceAlpha',0.8);
-%             axis equal
-%             hold on
-%             quiver3(P(:,1),P(:,2),P(:,3), ...
-%                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
+            %                         %Plotting
+            %             P = incenter(FBT);
+            %             F = faceNormal(FBT);
+            %             trisurf(T,Xb(:,1),Xb(:,2),Xb(:,3), ...
+            %                 'FaceColor','cyan','FaceAlpha',0.8);
+            %             axis equal
+            %             hold on
+            %             quiver3(P(:,1),P(:,2),P(:,3), ...
+            %                 F(:,1),F(:,2),F(:,3),0.5,'color','r');
 
-            
 
-            %[triangTetrIdx, triangulationObj, DTsurfaceNormal] = obj.delaunayToTriang(DT);
+
+
 
 
 
@@ -135,7 +220,7 @@ classdef CollisionObjects
             %delaunayToTriang - given a tetrahedal connectivity list, and a
             %free boundary from triangulation, find which triangulations
             %match the tetrahedra
-            
+
             [T,Xb] = freeBoundary(delaunayObj);
             triangulationObj = triangulation(T,Xb);
             triangConnection = triangulationObj.ConnectivityList;
@@ -185,7 +270,7 @@ classdef CollisionObjects
             for j=1:size(triangArray,1)
                 v1 = vertexArray(triangArray(j,3),:)- vertexArray(triangArray(j,2),:);
                 v2 = vertexArray(triangArray(j,2),:) - vertexArray(triangArray(j,1),:);
- 
+
 
                 nvek=cross(v2,v1); %calculate normal vectors
                 nvek=nvek/norm(nvek);
