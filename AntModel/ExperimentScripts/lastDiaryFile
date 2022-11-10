@@ -1,0 +1,7 @@
+Starting parallel pool (parpool) using the 'DELL XPS 15 ERP' profile ...
+Connected to the parallel pool (number of workers: 8).
+Elapsed time is 1611.046389 seconds.
+Elapsed time is 1537.485100 seconds.
+Elapsed time is 1503.343431 seconds.
+IdleTimeout has been reached.
+Parallel pool using the 'DELL XPS 15 ERP' profile is shutting down.
