@@ -7,7 +7,7 @@
 *.asv
 
 #Matlab drive files
-*.MATLABDriveTag
+.MATLABDriveTag
 
 # OSX / *nix default autosave extension
 *.m~
