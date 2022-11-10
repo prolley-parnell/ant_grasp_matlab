@@ -1,3 +1,5 @@
+%Plot multiple results files on the same graph
+
 %Plot the results from the resultsTable file
 
 close all;
