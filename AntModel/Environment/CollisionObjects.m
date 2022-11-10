@@ -36,7 +36,7 @@ classdef CollisionObjects
                     figure(1)
                     hold on;
                     [~, patch] = show(obj.objectHandles{i});
-                    patch.FaceAlpha = 0.2;
+                    patch.FaceAlpha = 0.4;
                     hold off;
                 end
             end

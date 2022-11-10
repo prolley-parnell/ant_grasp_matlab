@@ -37,21 +37,15 @@ RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.16;
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
 RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
 RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 
 RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
 % ------------- Antenna Motion -------------- %
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "fixed";
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.VAR = 0.5;
-RUNTIME_ARGS.SEARCH_SPACE.RANGE = [-1, 1; ...
-    2.5, 3.5; ...
-    0, 1];
-RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
-%No need for a threshold, as it picks the best after 10 contacts, and no
+%No need for a threshold, as it picks the best after n contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
 RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
@@ -73,10 +67,47 @@ opts = parforOptions(p);
 R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
 
 parfor (n = 1:nExperiment, opts)
-%for n = 1:nExperiment
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
-    %[exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS_i(n));
 end
 toc
 
-diary off
+%%
+
+RUNTIME_ARGS.SENSE.MODE = {'dist'};
+
+RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
+
+for i = 1: nExperiment
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['DistOnlyDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_DistOnlyDice'];
+    RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
+    RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
+end
+
+tic
+R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
+
+parfor (n = 1:nExperiment, opts)
+    [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
+end
+toc
+
+
+%%
+
+RUNTIME_ARGS.SENSE.MODE = {'align'};
+
+RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
+
+for i = 1: nExperiment
+    RUNTIME_ARGS_i(i).TRIAL_NAME = ['AlignOnlyDiceObj2-40\', int2str(NumberOfPoints(i)), '_ContactPts_AlignOnlyDice'];
+    RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
+    RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
+end
+
+tic
+R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
+
+parfor (n = 1:nExperiment, opts)
+    [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
+end
+toc

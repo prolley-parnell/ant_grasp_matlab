@@ -23,7 +23,7 @@ classdef JointActionGen
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
             obj.interval = RUNTIME_ARGS.RATE;
-            obj.maxvelocities = ones([10,1]) * deg2rad(4) / obj.interval;
+            obj.maxvelocities = ones([10,1]) * deg2rad(5) / obj.interval;
             %Make the scape pedicel joint have a higher speed limit
             obj.maxvelocities([7 10]) = deg2rad(9) / obj.interval;
 

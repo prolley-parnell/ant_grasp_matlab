@@ -141,6 +141,7 @@ classdef PoseControlClass
 
             collision_points = nan;
             %objID = 1;
+            distThreshold = 0.09;
             surface_normals = nan([1,3]);
             subpose = q(limbIn.joint_mask == 1);
             subtree = limbIn.subtree;
@@ -148,7 +149,7 @@ classdef PoseControlClass
             [areIntersecting, dist ,witnessPoints] = checkCollision(subtree, subpose, env.objectHandles, 'IgnoreSelfCollision','on', 'Exhaustive', 'off');
 
             [min_dist, ~] = min(dist);
-            [body_i, collision_i] = ind2sub(size(dist), find(dist < 0.08));
+            [body_i, collision_i] = ind2sub(size(dist), find(dist < distThreshold));
 
             if any(isnan(dist))
                 warning("RigidBodyTree %s intersection with CollisionObject", limbIn.name)
@@ -171,7 +172,7 @@ classdef PoseControlClass
                 end
                 collision_points = pointOnObj;
 
-            elseif min_dist>=0.08
+            elseif min_dist>=distThreshold
                 limbOut.collision_latch = 0;
             end
         end
