@@ -24,9 +24,9 @@ classdef SampleActionGen
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
             obj.interval = RUNTIME_ARGS.RATE;
-            obj.maxvelocities = ones([10,1]) * deg2rad(100);
+            obj.maxvelocities = ones([10,1]) * deg2rad(3) / obj.interval;
             %Make the scape pedicel joint have a higher speed limit
-            obj.maxvelocities([7 10]) = deg2rad(180);
+            obj.maxvelocities([7 10]) = deg2rad(7) / obj.interval;
 
             obj.search_config = RUNTIME_ARGS.SEARCH_SPACE;
             obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE;
@@ -76,12 +76,20 @@ classdef SampleActionGen
 
         end
 
-        function [qTrajectory] = jointTrajectory(~, waypoints, velLimits)
-            numSamples = 10;
+        function [qTrajectory] = jointTrajectory(obj, waypoints, velLimits)
+            %numSamples = 10;
+            numSamples = 500;
+            [q, ~, ~, t] = trapveltraj(waypoints,numSamples,...
+                PeakVelocity=velLimits);
+            div_t = t / obj.interval;
+            round_div_t = round(div_t);
+            [~, i_first_unique] = unique(round_div_t, 'stable');
 
-            [qTrajectory, ~, ~, ~, ~] = trapveltraj(waypoints, numSamples, 'PeakVelocity', velLimits);
+            qTrajectory = [q(:,i_first_unique), q(:,end)];
+
+            %[qTrajectory, ~, ~, ~, ~] = trapveltraj(waypoints, numSamples, 'PeakVelocity', velLimits);
             %Remove the duplicate position
-            qTrajectory(:,1) = [];
+            %qTrajectory(:,1) = [];
 
 
         end
@@ -188,7 +196,8 @@ classdef SampleActionGen
 
                         waypointsGlobal = [antennaIn.free_point', goalArray(g,:)'];
                         [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
-                        velocityLims = obj.maxvelocities(antennaIn.joint_mask==1)*obj.interval;
+                        %velocityLims = obj.maxvelocities(antennaIn.joint_mask==1)*obj.interval;
+                        velocityLims = obj.maxvelocities(antennaIn.joint_mask==1);
                         goalTrajProperties(g).jointPath = obj.jointTrajectory(jointWaypoints, velocityLims);
                         nPose = size(goalTrajProperties(g).jointPath,2);
 

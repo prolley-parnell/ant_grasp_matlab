@@ -78,10 +78,6 @@ classdef Ant
             obj.contact_points = struct.empty;
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
 
-            if ~isempty(obj.poseController.actionGen.refineSearch)
-                obj.poseController.actionGen.refineSearch.mu3 = obj.findMaxMandibleDist;
-            end
-
             obj.senseEval = graspSynthesis(RUNTIME_ARGS, obj.findMaxMandibleDist);
             obj.graspEval = graspEvaluator(RUNTIME_ARGS);
             obj.mandible_state = 0;

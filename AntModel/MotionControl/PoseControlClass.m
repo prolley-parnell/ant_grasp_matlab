@@ -21,7 +21,7 @@ classdef PoseControlClass
         function obj = PoseControlClass(antTree, RUNTIME_ARGS)
             %MOTIONCLASS
             %obj.actionGen = SampleActionGen(antTree, RUNTIME_ARGS);
-            obj.actionGen = JointActionGen(antTree, RUNTIME_ARGS);
+            obj.actionGen = JointActionGen(RUNTIME_ARGS);
 
             obj.antTree = antTree;
 
@@ -182,14 +182,12 @@ classdef PoseControlClass
         function [obj, antennaOut, qOut] = moveAntenna(obj, antennaIn, qIn, globalPosition)
             qOut = qIn;
             antennaOut = antennaIn;
-            successFlag = 0;
+
             if or(antennaIn.collision_latch, isempty(antennaIn.trajectory_queue))
-                %If in collision then reset first
-                %try
-                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn);
-                %catch
-                 %   warning("Antenna trajectory could not be loaded")
-                %end
+                    %For antenna joint sweep control
+                    %antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn);
+                    %For point to point control
+                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
             end
 
             [antennaOut, q, successFlag] = tbox.popTrajectory(antennaOut);

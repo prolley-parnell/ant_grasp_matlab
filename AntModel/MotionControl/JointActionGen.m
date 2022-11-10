@@ -8,9 +8,7 @@ classdef JointActionGen
     properties
         interval
 
-        %weights
         maxvelocities
-        maxacceleration
 
         search_range
         search_config
@@ -21,20 +19,18 @@ classdef JointActionGen
     end
 
     methods
-        function obj = JointActionGen(fullTree, RUNTIME_ARGS)
+        function obj = JointActionGen(RUNTIME_ARGS)
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
             obj.interval = RUNTIME_ARGS.RATE;
-            obj.maxvelocities = ones([10,1]) * deg2rad(3) / obj.interval;
+            obj.maxvelocities = ones([10,1]) * deg2rad(4) / obj.interval;
             %Make the scape pedicel joint have a higher speed limit
-            obj.maxvelocities([7 10]) = deg2rad(7) / obj.interval;
-
-            obj.maxacceleration = [1.5, 0, -1.5];
+            obj.maxvelocities([7 10]) = deg2rad(9) / obj.interval;
 
             obj.home_pose = RUNTIME_ARGS.ANT_POSE;
 
             obj.search_config = RUNTIME_ARGS.SEARCH_SPACE;
-            obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE;
+            obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.JOINT.RANGE;
 
             if strcmp(RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE, 'IG')
                 obj.refineSearch = InformationGain(RUNTIME_ARGS);
@@ -46,7 +42,7 @@ classdef JointActionGen
 
 
 
-        function [antennaOut] = loadAntennaTrajectory(obj, antennaIn)
+        function [antennaOut] = loadAntennaTrajectory(obj, antennaIn, ~, ~)
             %loadAntennaTrajectory
             antennaOut = antennaIn;
 
@@ -144,7 +140,7 @@ classdef JointActionGen
 
 
         function obj = updateContactMemory(obj, contact_pointStruct)
-            if strcmp(obj.search_config.SAMPLE.MODE, "GM")
+            if strcmp(obj.search_config.JOINT.MODE, "GM")
                 obj = obj.updateGM(contact_pointStruct);
             end
             if ~isempty(obj.refineSearch)
@@ -164,7 +160,7 @@ classdef JointActionGen
             I = eye(d,d);
             p = ones([1, n])/n;
             %variance of the distribution around each point
-            if strcmp(obj.search_config.SAMPLE.VAR, "IPD")
+            if strcmp(obj.search_config.JOINT.VAR, "IPD")
                 if n > 1
                     distanceMAT = pdist2(points, points);
                     distanceMAT(distanceMAT==0) = nan;
@@ -181,7 +177,7 @@ classdef JointActionGen
                 sigma = I.* reshape(dist, [1 1 n]);
 
             else
-                if ~strcmp(class(obj.search_config.SAMPLE.VAR), "double")
+                if ~strcmp(class(obj.search_config.JOINT.VAR), "double")
                     warning("The set variance is not a valid value - overwrite to 1")
                     obj.search_config.SAMPLE.VAR = 1;
                 end
@@ -251,8 +247,7 @@ classdef JointActionGen
                     %Remove the duplicate position
                     q(:,1) = [];
                     mandibleOut.trajectory_queue = q;
-                    %mandibleOut.trajectory_queue =
-                    %obj.jointtrajectory(startQ, endQ, velLimits)
+
                 else
                     mandibleOut.trajectory_queue = [];
 
