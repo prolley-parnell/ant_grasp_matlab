@@ -19,15 +19,17 @@ names = {'Volume', 'Epsilon', 'COMOffset', 'Surface Alignment'};
 
 
 meanTableCell = cell([1,nFolder]);
-experimentLegend = cell([1,nFolder]);;
+varTableCell = cell([1,nFolder]);
+numberOfContactCell = cell([1,nFolder]);
+experimentLegend = {'Distance and Alignment', 'Distance Only', 'Alignment Only'};
 
 for m=1:nFolder
 
     matStruct = load([folder_name{m}, '\', file_name]);
     statTable = matStruct.statTable;
 
-    experimentName = split(folder_name{m}, '\')
-    experimentLegend{m} = experimentName(end,:);
+    %experimentName = split(folder_name{m}, '\');
+    %experimentLegend{m} = experimentName{end};
 
     for i=1:length(statTable.Properties.RowNames)
         name_split = split(statTable.Properties.RowNames(i),'_');
@@ -37,14 +39,15 @@ for m=1:nFolder
 
 
     meanT = [statTable.meanVolume, statTable.meanEpsilon, statTable.meanCOMOffset, statTable.meanNormAlign];
-    % varT = [statTable.varVolume, statTable.varEpsilon, statTable.varCOMOffset, statTable.varNormAlign];
+    varT = [statTable.varVolume, statTable.varEpsilon, statTable.varCOMOffset, statTable.varNormAlign];
     % minT = [statTable.minmaxVolume(:,1), statTable.minmaxEpsilon(:,1), statTable.minmaxOffset(:,1), statTable.minmaxNormAlign(:,1)];
     % maxT = [statTable.minmaxVolume(:,2), statTable.minmaxEpsilon(:,2), statTable.minmaxOffset(:,2), statTable.minmaxNormAlign(:,2)];
 
     [NoC_ordered, i_ordered] = sort(numberOfContacts);
 
-    numberOfContacts = NoC_ordered;
-    meanTableCell{m} = [numberOfContacts, meanT(i_ordered,:)];
+    numberOfContactCell{m} = NoC_ordered;
+    meanTableCell{m} = meanT(i_ordered,:);
+    varTableCell{m} = varT(i_ordered,:);
     % varT = varT(i_ordered,:);
     % minT = minT(i_ordered,:);
     % maxT = maxT(i_ordered,:);
@@ -53,34 +56,51 @@ for m=1:nFolder
 
 end
 
+% newcolors = [0.83 0.14 0.14
+%     1.00 0.54 0.00
+%     0.47 0.25 0.80
+%     0.25 0.80 0.54];
+
+newcolors = [1.00 0.54 0.00
+    0.47 0.25 0.80
+    0.25 0.80 0.54];
+
+colororder(newcolors)
+styleCell = {'-', '--', '-.'};
+
+fg = tiledlayout(variableNumber,1)
+
+for i = 1:variableNumber
+    nexttile
+    for j = 1:nFolder
+
+        hold on
+        title(names{i}, 'FontAngle', 'italic', 'FontWeight','normal')
 
 
+        meanExpData = meanTableCell{j};
 
-    tiledlayout(variableNumber,1)
-    for i = 1:variableNumber
-        for j = 1:nFolder
-            nexttile
-            hold on
-            title(names{i})
-            
-            ylabel("Mean")
-            meanExpData = meanTableCell{j}(:,2:end);
-            expContact = meanTableCell{j}(:,1);
-            plot(expContact, meanExpData(:,i), 'DisplayName', experimentLegend{j});
+        expContact = numberOfContactCell{j};
+        plot(expContact, meanExpData(:,i),styleCell{j}, 'DisplayName', experimentLegend{j});
 
-            % yyaxis right
-            % ylabel("Variance")
-            % varplot = [numberOfContacts, varT(:,j)];
+        %             yyaxis right
+        %             ylabel("Variance")
+        %             varExpData = varTableCell{j};
+        %
+        %             plot(expContact,varExpData(:,i), ':');
 
-            % plot(varplot(:,1),varplot(:,2));
-            % hold off
 
-        end
-        hold off
     end
-    hold on
-        xlabel("Number of Contacts");
-        hold off
+
+    hold off
+
+end
+
+hold on
+title(fg, {'"Reach and Pull" with';'Direct Contact Point Analysis'}, 'FontWeight', 'Bold')
+xlabel(fg, "Number of Contacts");
+ylabel(fg, "Mean Value")
+hold off
 
 
 
