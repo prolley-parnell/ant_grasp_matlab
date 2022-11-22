@@ -6,22 +6,25 @@ close all;
 clear all;
 
 
-folder_name{1} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\DistAndAlignDiceObj2-40';
-folder_name{2} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\DistOnlyDiceObj2-40';
-folder_name{3} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\AlignOnlyDiceObj2-40';
+% folder_name{1} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\DistAndAlignDiceObj2-40';
+% folder_name{2} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\DistOnlyDiceObj2-40';
+% folder_name{3} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\AlignOnlyDiceObj2-40';
+folder_name{1} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\refineIGEFAlignDiceObj2-40';
+folder_name{2} = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\TunedIGEFAlignDiceObj2-40';
+
 
 nFolder = length(folder_name);
 
 file_name = 'experimentStatTable.mat';
 
 variableNumber = 4;
-names = {'Volume', 'Epsilon', 'COMOffset', 'Surface Alignment'};
+names = {'Grasp Wrench Volume', 'Epsilon', 'Centre Of Mass Offset', 'Force Alignment'};
 
 
 meanTableCell = cell([1,nFolder]);
 varTableCell = cell([1,nFolder]);
 numberOfContactCell = cell([1,nFolder]);
-experimentLegend = {'Distance and Alignment', 'Distance Only', 'Alignment Only'};
+experimentLegend = {'Untuned IGEF', 'Tuned IGEF'};
 
 for m=1:nFolder
 
@@ -69,6 +72,11 @@ colororder(newcolors)
 styleCell = {'-', '--', '-.'};
 
 fg = tiledlayout(variableNumber,1)
+nContact = nan([1,nFolder]);
+for l = 1:nFolder
+    nContact(l) =  length(numberOfContactCell{l});
+end
+maxNContact = min(nContact);
 
 for i = 1:variableNumber
     nexttile
@@ -81,7 +89,7 @@ for i = 1:variableNumber
         meanExpData = meanTableCell{j};
 
         expContact = numberOfContactCell{j};
-        plot(expContact, meanExpData(:,i),styleCell{j}, 'DisplayName', experimentLegend{j});
+        plot(expContact(1:maxNContact), meanExpData(1:maxNContact,i),styleCell{j}, 'DisplayName', experimentLegend{j});
 
         %             yyaxis right
         %             ylabel("Variance")
@@ -97,7 +105,7 @@ for i = 1:variableNumber
 end
 
 hold on
-title(fg, {'"Reach and Pull" with';'Direct Contact Point Analysis'}, 'FontWeight', 'Bold')
+title(fg, {'IGEF Tuned vs Untuned for Alignment Grasps'}, 'FontWeight', 'Bold')
 xlabel(fg, "Number of Contacts");
 ylabel(fg, "Mean Value")
 hold off

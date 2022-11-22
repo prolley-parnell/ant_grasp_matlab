@@ -4,8 +4,7 @@
 clear all;
 %Import the folder name to process
 
-folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\DistOnlyDiceObj2-40';
-
+folder_name = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction\refineIGEFAlignDiceObj2-40';
 folderStruct = dir(folder_name);
 
 resultArray = [];

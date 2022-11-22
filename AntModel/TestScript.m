@@ -25,10 +25,10 @@ RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 RUNTIME_ARGS.RECORD.ENABLE = 0;
 
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
+
 RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
-%RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
-
-
 RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
 % RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.02;
 % RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
@@ -55,7 +55,7 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
 
 RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
-RUNTIME_ARGS.SENSE.MODE = {'dist'};
+RUNTIME_ARGS.SENSE.MODE = {'dist', 'align'};
 
 RUNTIME_ARGS.SEARCH_SPACE.JOINT.RANGE = [0 0.6;...
                 0.15 0.8;...
@@ -68,7 +68,7 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated
 RUNTIME_ARGS.SENSE.THRESH = 0;
-RUNTIME_ARGS.SENSE.MINIMUM_N = 20;
+RUNTIME_ARGS.SENSE.MINIMUM_N = 7;
 
 [exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS);
 
