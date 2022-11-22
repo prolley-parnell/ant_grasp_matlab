@@ -172,7 +172,7 @@ classdef RuntimeArgs
             %sample points
             %Mode options: "fixed", "GM" (Gaussian Model)
             %obj.SEARCH_SPACE.SAMPLE.MODE = "fixed";
-            obj.SEARCH_SPACE.SAMPLE.MODE = "GM";
+            obj.SEARCH_SPACE.SAMPLE.MODE = "fixed";
 
             %Var is only used in the Gaussian Model (GM) mode
             %The variance around each point of contact that combine to make
@@ -182,11 +182,22 @@ classdef RuntimeArgs
             %Or set the variance to be a scalar e.g. 0.5
             obj.SEARCH_SPACE.SAMPLE.VAR = "0.5";
 
-            %Range is only used if mode = "fixed"
+            %Range is only used if mode = "fixed" and for before contact is
+            %made
             %[Xmin Xmax Ymin Ymax Zmin Zmax]
             obj.SEARCH_SPACE.SAMPLE.RANGE = [-2, 2; ...
                 2, 4; ...
                 0, 1];
+
+            % Search space for the joint range of operation when using
+            % antenna sweeping and joint based control
+            obj.SEARCH_SPACE.JOINT.RANGE = [0 0.6;...
+                0.15 0.8;...
+                0.9 0.45];
+
+            % Whether the range of motion updates to reflect contacts
+            % [TODO]
+            obj.SEARCH_SPACE.JOINT.MODE = "fixed";
 
 
 
@@ -228,8 +239,8 @@ classdef RuntimeArgs
             %'dist' - Scores the contact points based on their distance
             %'align' - measures the alignment of the grasp forces with the
             %surface normal
-            obj.SENSE.MODE = "furthest_first_pair";
-            obj.SENSE.THRESH = 0.6;
+            obj.SENSE.MODE = {'dist','align'};
+            obj.SENSE.THRESH = 0;
 
             %The number of contact points that must be collected before the
             %first goal evaluation is carried out.

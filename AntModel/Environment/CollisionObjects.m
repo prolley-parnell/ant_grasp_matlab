@@ -36,7 +36,7 @@ classdef CollisionObjects
                     figure(1)
                     hold on;
                     [~, patch] = show(obj.objectHandles{i});
-                    patch.FaceAlpha = 0.2;
+                    patch.FaceAlpha = 0.4;
                     hold off;
                 end
             end
@@ -158,7 +158,10 @@ classdef CollisionObjects
 
 
                 %Store the Centre of mass for every STL as the full object COM
-                obj.COM{j} = CentreOfMass;
+                %Set as [0 0 0] as the shapes are already offset by the
+                %mean centrepoint of the entire shape - not necessarily the
+                %same as the centrepoint of the subshape
+                obj.COM{j} = [0 0 0];
 
                 %Convert the translated meshes to CollisionObjects
                 collision_mesh = collisionMesh(newVertexArray);

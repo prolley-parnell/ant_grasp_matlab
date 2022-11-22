@@ -21,7 +21,7 @@ classdef PoseControlClass
         function obj = PoseControlClass(antTree, RUNTIME_ARGS)
             %MOTIONCLASS
             %obj.actionGen = SampleActionGen(antTree, RUNTIME_ARGS);
-            obj.actionGen = JointActionGen(antTree, RUNTIME_ARGS);
+            obj.actionGen = JointActionGen(RUNTIME_ARGS);
 
             obj.antTree = antTree;
 
@@ -141,6 +141,7 @@ classdef PoseControlClass
 
             collision_points = nan;
             %objID = 1;
+            distThreshold = 0.09;
             surface_normals = nan([1,3]);
             subpose = q(limbIn.joint_mask == 1);
             subtree = limbIn.subtree;
@@ -148,7 +149,7 @@ classdef PoseControlClass
             [areIntersecting, dist ,witnessPoints] = checkCollision(subtree, subpose, env.objectHandles, 'IgnoreSelfCollision','on', 'Exhaustive', 'off');
 
             [min_dist, ~] = min(dist);
-            [body_i, collision_i] = ind2sub(size(dist), find(dist < 0.08));
+            [body_i, collision_i] = ind2sub(size(dist), find(dist < distThreshold));
 
             if any(isnan(dist))
                 warning("RigidBodyTree %s intersection with CollisionObject", limbIn.name)
@@ -171,7 +172,7 @@ classdef PoseControlClass
                 end
                 collision_points = pointOnObj;
 
-            elseif min_dist>=0.08
+            elseif min_dist>=distThreshold
                 limbOut.collision_latch = 0;
             end
         end
@@ -182,14 +183,12 @@ classdef PoseControlClass
         function [obj, antennaOut, qOut] = moveAntenna(obj, antennaIn, qIn, globalPosition)
             qOut = qIn;
             antennaOut = antennaIn;
-            successFlag = 0;
+
             if or(antennaIn.collision_latch, isempty(antennaIn.trajectory_queue))
-                %If in collision then reset first
-                %try
-                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn);
-                %catch
-                 %   warning("Antenna trajectory could not be loaded")
-                %end
+                    %For antenna joint sweep control
+                    %antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn);
+                    %For point to point control
+                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
             end
 
             [antennaOut, q, successFlag] = tbox.popTrajectory(antennaOut);
