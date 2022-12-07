@@ -42,7 +42,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
 
         tic;
 
-        [ant, sensedDataArray, goalObj] = ant.update(env);
+        [ant, sensedDataArray, goalObj, costStruct] = ant.update(env);
         if ant.grasp_complete == 1
             exitFlag = 1;
         end
@@ -56,7 +56,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
         end
 
         if ~fileHandlerIsEmpty
-            fileHandler = fileHandler.addTimeStep(trial_time, sensedDataArray, ant.q, ant.position, goalObj);
+            fileHandler = fileHandler.addTimeStep(trial_time, sensedDataArray, ant.q, ant.position, goalObj, costStruct);
         end
 
         trial_time = trial_time + RUNTIME_ARGS.RATE;

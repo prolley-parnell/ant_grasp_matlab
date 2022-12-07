@@ -235,6 +235,8 @@ classdef tbox
 
         end
 
+
+
         function normalV = findNormalCollision(fbTriang, pointOnObj)
             %findNormalCollision for a given contact point on a
             %delaunayTriangulation object, and the object, find the normal
@@ -280,6 +282,7 @@ classdef tbox
                     if round(nearV_dist, 10) == 0
                         %The point of contact is on the vertex
                         normalV(n,:) = vertexNormal(fbTriang, nearVertID);
+
                     else
                         %If not on the vertex, then the issue is still
                         %unclear so use the normal of the closest face
@@ -302,6 +305,91 @@ classdef tbox
                 else
                     faceID = nearV_neighbours{:}(faceFlag');
                     normalV(n,:) = faceNormal(fbTriang,faceID');
+                end
+
+
+            end
+
+        end
+
+
+
+        function [pointOnObj, normalVArray, vertIDArray, faceIDArray] = findPointOnObjNormalID(fbTriang, samplePoint)
+            %findNormalCollision for a given contact point on a
+            %delaunayTriangulation object, and the object, find the normal
+            %to the surface at the point of contact.
+            %Input:
+            %pointOnObj nx3 cartesian where n is number of sample points
+
+
+            nPoint = size(samplePoint,1);
+            pointOnObj = nan(size(samplePoint));
+            normalVArray = nan(size(samplePoint));
+            vertIDArray = nan([nPoint,1]);
+            faceIDArray = nan([nPoint,1]);
+
+            for n = 1:nPoint
+                nearVertID = nearestNeighbor(fbTriang, samplePoint(n,:));
+                nearV_neighbours = vertexAttachments(fbTriang,nearVertID);
+                repTestPt = repmat(samplePoint(n,:), length(nearV_neighbours{:}'),1);
+                B = cartesianToBarycentric(fbTriang, nearV_neighbours{:}', repTestPt);
+                % resolves issues with values that are 0 being marked at -0
+                % (9 sig.fig.)
+                roundB = round(B, 9);
+                
+                faceFlag = ismember(sign(roundB), [1 1 1], "rows");
+                if ~any(faceFlag)
+                    % If the point lies on a vertex or edge         
+                    [zeroRow, ~] = find(sign(roundB) == 0);
+                    zeroN = length(zeroRow);
+                    if zeroN == 2
+                        %If two Barycentric values are 0, then the point is
+                        %on an edge
+                        twoFaceID = nearV_neighbours{:}(zeroRow);
+                        twoFaceNorm = faceNormal(fbTriang, twoFaceID');
+                        normalVArray(n,:) = mean(twoFaceNorm,1);
+                        pointOnObj(n,:) = barycentricToCartesian(fbTriang, twoFaceID', roundB(zeroRow));   
+                    else
+                        %If more than 2, or less than 2 values are 0, then
+                        %get the normal of the nearest vertex instead
+                        normalVArray(n,:) = vertexNormal(fbTriang, nearVertID);
+                        pointOnObj(n,:) = fbTriang.Points(nearVertID, :);
+                        vertIDArray(n) = nearVertID;
+                    end
+                elseif length(find(faceFlag == 1)) > 1
+                    %disp('Serious Issue here - point inside two triangles')
+                    %Point within two triangles due to rounding error
+                    %Check the distance between the nearest vertex and the
+                    %test point
+                    nearV_cartesian = fbTriang.Points(nearVertID, :);
+                    nearV_dist = vecnorm(nearV_cartesian - samplePoint(n,:), 2, 2);
+
+                    if round(nearV_dist, 8) == 0
+                        %The point of contact is on the vertex
+                        normalVArray(n,:) = vertexNormal(fbTriang, nearVertID);
+                        pointOnObj(n,:) = fbTriang.Points(nearVertID,:);
+                        vertIDArray(n,:) = nearVertID;
+                    else
+                        %If not on the vertex, then the issue is still
+                        %unclear so use the normal of the closest face
+
+                        doubleFaceID = nearV_neighbours{:}(faceFlag == 1);
+                        %centrePoints = incenter(fbTriang, doubleFaceID');
+                        CB = barycentricToCartesian(fbTriang, doubleFaceID', roundB([faceFlag],:));
+                        CBDist = vecnorm(CB - samplePoint(n,:) ,2,2);
+                        %distance = vecnorm(centrePoints - samplePoint(n,:) ,2,2);
+                        [~, min_id] = min(CBDist);
+
+                        normalVArray(n,:) = faceNormal(fbTriang, doubleFaceID(min_id));
+                        faceIDArray(n,:) = doubleFaceID(min_id);
+                        pointOnObj(n,:) = CB(min_id, :);
+                    end                    
+
+                else
+                    faceID = nearV_neighbours{:}(faceFlag');
+                    normalVArray(n,:) = faceNormal(fbTriang,faceID');
+                    pointOnObj(n,:) = barycentricToCartesian(fbTriang, faceID', roundB([faceFlag],:));
+                    faceIDArray(n,:) = faceID;
                 end
 
 

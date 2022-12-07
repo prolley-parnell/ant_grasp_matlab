@@ -31,7 +31,6 @@ classdef CollisionObjects
 
         function obj = plotObjects(obj)
             if obj.RUNTIME_ARGS.PLOT.ENABLE(1)
-
                 for i= 1:length(obj.objectHandles)
                     figure(1)
                     hold on;

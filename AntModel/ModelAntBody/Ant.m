@@ -13,7 +13,7 @@ classdef Ant
         poseController
         positionController
         graspEval
-        senseEval
+        graspGen
 
 
         limbs
@@ -78,7 +78,7 @@ classdef Ant
             obj.contact_points = struct.empty;
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
 
-            obj.senseEval = graspSynthesis(RUNTIME_ARGS, obj.findMaxMandibleDist);
+            obj.graspGen = graspSynthesis(RUNTIME_ARGS, obj.findMaxMandibleDist);
             obj.graspEval = graspEvaluator(RUNTIME_ARGS);
             obj.mandible_state = 0;
             obj.grasp_complete = 0;
@@ -94,36 +94,40 @@ classdef Ant
             end
         end
 
-        function [obj, sensedData, goal] = update(obj, env)
+        function [obj, sensedData, goalOut, costStruct] = update(obj, env)
+            %Initialise an empty cost table
+            costStruct = struct();
+            
 
             %Update global position
-            [obj.positionController, obj.position, motionFlag] = obj.positionController.updatePosition(obj.position, obj.q);
+            [obj.positionController, obj.position, motionFlag, costStruct.position] = obj.positionController.updatePosition(obj.position, obj.q);
+            
             %Plot the ant pose and position
             obj.plotAnt();
 
-            [obj, sensedData] = obj.poseController.updatePose(obj, env, motionFlag);
+            [obj, sensedData, costStruct.pose] = obj.poseController.updatePose(obj, env, motionFlag);
 
             %Plot the ant pose and position
             obj.plotAnt();
 
 
             %Evaluate the sensory data to instruct behaviour
-            [obj, goal] = obj.senseEval.check(obj, sensedData);
+            [obj, goalOut, costStruct.goal] = obj.graspGen.check(obj, sensedData);
 
             % Update goals
-            %If SenseEval indicates to move
-            if ~goal.isempty() && ~obj.grasp_complete
-
-                goal = goal.setalignment2goal(obj.position);
-                goal.plotGoal(obj.RUNTIME_ARGS.PLOT);
+            %If graspGenerator indicates to move
+            if ~goalOut.isempty() && ~obj.grasp_complete
+                
+                [goalOut, costStruct.goal] = goalOut.setalignment2goal(obj.position); 
+                goalOut.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
                 %Evaluate goal
-                goal.qualityObj = obj.graspEval.evaluateGoal(goal, env);
+                goalOut.qualityObj = obj.graspEval.evaluateGoal(goalOut, env);
 
                 if obj.RUNTIME_ARGS.BODY_MOTION_ENABLE
 
                     %Add the environmental collision data to the map of the env
-                    obj.positionController = obj.positionController.updateGoal(obj.contact_points, obj.position, goal);
+                    obj.positionController = obj.positionController.updateGoal(obj.contact_points, obj.position, goalOut);
 
                     %Find head pose trajectory
                     obj.neckObj = obj.poseController.newNeckTrajectory(obj.neckObj, obj.q, obj.positionController.goal);
@@ -136,6 +140,10 @@ classdef Ant
 
 
             end
+            %% [COST] Calculate memory space occupied by contact points
+            ant_contact_points = obj.contact_points;
+            whos_struct = whos('ant_contact_points');
+            costStruct.memory.contact_points = whos_struct.bytes;
         end
 
         function distance = findMaxMandibleDist(obj)

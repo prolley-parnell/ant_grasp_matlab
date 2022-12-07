@@ -21,6 +21,7 @@ classdef Neck
             obj.base_name = 'base_link';
             obj.full_tree = antTree;
             obj.joint_mask = [1 1 0 0 0 0 0 0 0 0]';
+
             obj.trajectory_queue = [];
         end
 
