@@ -111,7 +111,7 @@ objPose = env.objectHandles{idx}.Pose;
 objCOM = env.COM{idx};
 globalCOM = tbox.local2global(objCOM, objPose);
 for n = 1:nContactPoint
-    for m = 1:nContactPoint
+    for m = n:nContactPoint
         if n~=m
             mp = mean([contactStruct.point(n,:); contactStruct.point(m,:)]);
             COMOffset(n, m) = vecnorm(mp-globalCOM,2,2);
@@ -135,7 +135,7 @@ epsilonArray = nan([nContactPoint, nContactPoint]);
 
 
 for n = 1:nContactPoint
-    for m = 1:nContactPoint
+    for m = n:nContactPoint
         if n~=m
             A = contactStruct.point(n,:);
             B = contactStruct.point(m,:);
@@ -164,3 +164,19 @@ end
 
 %% For finding best (perfect placement) - find the maximum quality grasps
 
+%Convert all quality measures to a scalar between lowest and highest (worst
+%and best)
+volumeScore = rescale(volumeArray);
+epsilonScore = rescale(epsilonArray);
+offsetScore = rescale(COMOffset);
+alignScore = rescale(alignMeasure);
+
+%Sum/multiply all values to find which scores the best on all fronts
+%Assumes all features are weighted equally
+sumScore = (volumeScore + epsilonScore + offsetScore + alignScore) .* mandMaxFlag;
+prodScore = volumeScore .* epsilonScore .* offsetScore .* alignScore .* mandMaxFlag;
+
+[maxScore, idx] = max(sumScore, 'all');
+idx2rc  
+%Find the grasps the score the best on each single measure and see how the
+%other qualities compare to the best all round grasp
