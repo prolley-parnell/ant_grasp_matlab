@@ -6,6 +6,7 @@ classdef graspSynthesis
         mandible_max
         synth_method
         enforce_mand_max
+        exhaustive_search_flag
 
         quality
         COC
@@ -34,6 +35,7 @@ classdef graspSynthesis
                 end
             end
             obj.synth_method = any(measureFlag,1);
+            obj.exhaustive_search_flag = ~any(measureFlag, 1);
 
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
@@ -52,7 +54,7 @@ classdef graspSynthesis
 
             goalCostStruct = struct(); %Define the table used to store cost info
             %% [COST] Start exhaustive grasp search
-            senseTStart = tic; 
+            senseTStart = tic;
 
             goalOut = goalStruct();
             antOut = antIn;
@@ -66,26 +68,102 @@ classdef graspSynthesis
             elseif nContactThresh < 0
                 %[COST] Record time up to point where not enough contacts
                 %have been gathered to gen goal
+                antOut.graspGen = obj.calcCOC(sensedData);
                 senseEvalTEnd = toc(senseTStart);
                 goalCostStruct.time.sense_eval = senseEvalTEnd;
                 return
-            else
-                nMeasures = length(obj.synth_method);
-                if nMeasures < 1
-                    warning("No grasp synthesis method selected, goal cannot be generated");
-                    %[COST] End time measure if no grasp selection method
-                    %is selected
-                    senseEvalTEnd = toc(senseTStart);
-                    goalCostStruct.time.sense_eval = senseEvalTEnd;
-                    return
-                end
+                %             else
+                %                 nMeasures = length(obj.synth_method);
+                %                 if nMeasures < 1
+                %                     warning("No grasp synthesis method selected, goal cannot be generated");
+                %                     %[COST] End time measure if no grasp selection method
+                %                     %is selected
+                %                     senseEvalTEnd = toc(senseTStart);
+                %                     goalCostStruct.time.sense_eval = senseEvalTEnd;
+                %                     return
+                %                 end
             end
+            obj = obj.calcCOC(sensedData);
+            if ~obj.exhaustive_search_flag
+                [goalOut, bestQuality] = obj.exhaustiveCPCheck(antIn);
+            else
+                [goalOut, bestQuality] = obj.findPCAGrasp(antIn);
+            end
+
+            obj.quality = bestQuality;
+            senseEvalTEnd = toc(senseTStart);
+            goalCostStruct.time.sense_eval = senseEvalTEnd;
+            % [COST] End exhaustive grasp search
+            %[COST] Save the time taken to save the selected contact points
+            %goalCostStruct.time.contact_set = goalSetTime;
+
+            %end
+            antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
+
+            antOut.graspGen = obj;
+
+
+        end
+
+        function [goalOut, graspQuality] = findPCAGrasp(obj, antIn)
+
+            cartPointArray = cat(1,antIn.contact_points(:).point);
+            %nContactPoint = length(antIn.contact_points);
+            goalOut = goalStruct();
+
+            % Step 1: Calculate the covariance matrix
+            CM = cov(cartPointArray);
+            % Step 2:  Eigenvector and Eigenvalue
+            [V, D]= eig(CM);
+
+            % Step 3: Sort the Eigenvectors according to eigenvalue
+            eVal = diag(D);
+            [decend_eVal, idx_eVec] = sort(eVal, 1, "descend");
+            decend_eVec = V(:,[idx_eVec]);
+
+            % Step 4: Store Eigenvectors in Projection Matrix
+            % k desired features/dimension reduction = 1 to find largest
+            % eigenvalue
+            axis_1 = decend_eVec(:,1);
+
+
+            % Step 5: Find the contact furthest from the centroid
+            centroid_distance = vecnorm(cartPointArray - obj.COC.mean,2 ,2);
+            [max_centroid_distance, furthest_point_idx] = max(centroid_distance);
+            furthest_point = cartPointArray(furthest_point_idx, :);
+            axis_2 = obj.COC.mean - furthest_point;
+
+            % Step 6: Use the cross product to find the orientation of the
+            % head
+            axis_3 = norm(cross(axis_2, axis_1));
+
+            contactA_projection = furthest_point + axis_3.*obj.mandible_max*0.5;
+            contactB_projection = furthest_point - axis_3.*obj.mandible_max*0.5;
+
+            %[TODO] The true contact points are whichever is closer to the
+            %furthest point: basically add the furthest point vector to
+            %each contact points until it intersects with the actual object
+            %Add or subtract 2* axis3 to/from whichever side hits the
+            %object first
+
+
+            %P = X(startIdx,:);
+            %Wi = 2*( W'.* decend_eVal(1:k));
+            %quiver3(P(:,1),P(:,2), P(:,3), Wi(:,1), Wi(:,2), Wi(:,3), 'off')
+
+
+
+
+        end
+
+        function [goalOut, bestQuality] = exhaustiveCPCheck(obj, antIn)
             %Cartesian contact points
             cartPointArray = cat(1,antIn.contact_points(:).point);
             nContactPoint = length(antIn.contact_points);
             distanceMat = ones(nContactPoint);
             mandMaxFlag = ones(nContactPoint);
             alignMeasure = ones(nContactPoint);
+            goalOut = goalStruct();
 
             %For each goal, get the information gain measure
             if obj.synth_method(1) %Distance
@@ -110,23 +188,9 @@ classdef graspSynthesis
             %last
             %if obj.quality*1.1 < bestQuality
             [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);
-            
-            %
-            senseEvalTEnd = toc(senseTStart);
-            goalCostStruct.time.sense_eval = senseEvalTEnd;
-            % [COST] End exhaustive grasp search
-
-            %%
             [goalOut, setContactTime] = goalOut.setcontact(antIn.contact_points([a,b]));
-            obj.quality = bestQuality;
-            
-            %[COST] Save the time taken to save the selected contact points
-            goalCostStruct.time.contact_set = setContactTime;
-            
-            %end
-            antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
 
-            antOut.graspGen = obj;
+
 
 
         end

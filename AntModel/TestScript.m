@@ -52,7 +52,8 @@ RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
 
 RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
-RUNTIME_ARGS.SENSE.MODE = {'dist', 'align'};
+%RUNTIME_ARGS.SENSE.MODE = {'dist', 'align'};
+RUNTIME_ARGS.SENSE.MODE = {}; %Leave empty to use PCA
 
 RUNTIME_ARGS.SEARCH_SPACE.JOINT.RANGE = [0 0.6;...
                 0.15 0.8;...
