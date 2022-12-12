@@ -52,11 +52,11 @@ classdef goalStruct
         end
 
 
-        function [obj, checkAlignTime] = checkalignment(obj, positionIn)
+        function [obj] = checkalignment(obj, positionIn)
             %If the distance between the mp+alignment is closer than
             %mp-alignment then invert alignment
             %% [COST] Start Alignment Check time
-            checkAlignStart = tic;
+            %checkAlignStart = tic;
             oldAlignment = obj.alignment_axis / norm(obj.alignment_axis);
 
             oldProjection = obj.midpoint - oldAlignment;
@@ -71,7 +71,7 @@ classdef goalStruct
             end
 
             %
-            checkAlignTime = toc(checkAlignStart);
+            %checkAlignTime = toc(checkAlignStart);
             %[COST] End alignment check time
         end
 
@@ -101,8 +101,8 @@ classdef goalStruct
             obj.time_s = currentTime;
         end
 
-        function [obj, goalCostStruct] = setalignment2goal(obj, globalPosition)
-            %SETALIGNMENT2GOAL Find the heading vector for the ant that
+        function [obj, goalCostStruct] = setGoal(obj, globalPosition)
+            %SETGOAL Find the heading vector for the ant that
             %aligns the body while requiring minimal body movement.
             %% [COST] Start calculating ant head alignment for goal
             setAlignStart = tic;
@@ -115,7 +115,7 @@ classdef goalStruct
             %Ensure the axis always points up
             obj.goal_z_axis = sign(ant_z_axis(3))*ant_z_axis;
             %
-            goalCostStruct.time.align = toc(setAlignStart);
+            goalCostStruct.time.goal_set = toc(setAlignStart);
             %[COST] End calculating ant head alignment for goal
 
            

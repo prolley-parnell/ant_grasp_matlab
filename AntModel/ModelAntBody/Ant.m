@@ -118,7 +118,7 @@ classdef Ant
             %If graspGenerator indicates to move
             if ~goalOut.isempty() && ~obj.grasp_complete
                 
-                [goalOut, costStruct.goal] = goalOut.setalignment2goal(obj.position); 
+                [goalOut, costStruct.goal] = goalOut.setGoal(obj.position); 
                 goalOut.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
                 %Evaluate goal

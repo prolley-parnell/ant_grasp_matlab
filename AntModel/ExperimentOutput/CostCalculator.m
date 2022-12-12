@@ -4,10 +4,10 @@ classdef CostCalculator
     %evaluation at the end, not for internal use.
 
     properties
-        jointMotion
+        movementCost
         bodyMotion
         memoryCost
-        calculationTime
+        trialTime
         weights
 
 
@@ -17,9 +17,12 @@ classdef CostCalculator
         function obj = CostCalculator()
             %COSTCALCULATOR Construct an instance of this class
             %   Initialise the arrays to be empty
-            obj.jointMotion = [];
+            obj.movementCost = [];
             obj.memoryCost = 0;
-            obj.calculationTime = 0;
+            obj.trialTime = table(0, 0, 'VariableNames', {'limbCalculation', 'sumGoalTime'});
+
+            
+            
             %Movement cost weights
             % Weights
             obj.weights.Neck = 0.5;
@@ -32,22 +35,20 @@ classdef CostCalculator
             %instance of the class
 
             if ~isempty(costStruct)
-                 limbCalculationTime = sum(costStruct.pose.limb.time(:));
+                limbCalculationTime = sum(costStruct.pose.limb.time(:));
+                %updateContactMemoryTime = sum(costStruct.pose.limb.memory_time(:));
                     
                 goalTimeMeasures = fieldnames(costStruct.goal.time); 
                 nGoalTimeMeasures = length(goalTimeMeasures);
                 sumGoalTime = 0;
                 for n = 1:nGoalTimeMeasures
                     sumGoalTime = sumGoalTime + costStruct.goal.time.(goalTimeMeasures{n});
-
                 end
-                 senseEvalTime = sumGoalTime;
-
-                 obj.calculationTime = obj.calculationTime + ...
-                        limbCalculationTime + ...
-                        senseEvalTime;
 
 
+                 obj.trialTime.limbCalculation(1) = obj.trialTime.limbCalculation(1) + limbCalculationTime;
+                 obj.trialTime.sumGoalTime(1) = obj.trialTime.sumGoalTime(1) + sumGoalTime;
+                        
                  contactMemoryBytes = costStruct.memory.contact_points;
                  
 
@@ -57,8 +58,8 @@ classdef CostCalculator
         end
 
         function obj = calculateMotionCost(obj, replayTable)
-            poseMovementCostStruct = obj.weightedMotionCost(obj.weights, replayTable);
-            obj.jointMotion = poseMovementCostStruct.overall_cost;
+            movementCostStruct = obj.weightedMotionCost(obj.weights, replayTable);
+            obj.movementCost = [movementCostStruct.joint_motion_per_second, movementCostStruct.position_cost];
 
 
         end
@@ -70,20 +71,24 @@ classdef CostCalculator
 
             %time_s = 0;
             last_pose = replayTable.Pose{1,:};
+            last_position = replayTable.Position(1,:);
             nPose = size(replayTable,1);
             nJoint = length(last_pose);
 
             pose_difference = nan([nPose, nJoint]);
+            position_difference = nan([nPose, 4]);
 
 
             for i=1:nPose
                 %sample_t = replayTable.Time(i);
                 pose = replayTable.Pose{i,:};
-                %position = replayTable.Position(i,:);
+                position = replayTable.Position(1,:);
 
                 pose_difference(i,:) = abs(pose - last_pose)';
+                position_difference(i,:) = abs(position - last_position)';
 
                 last_pose = pose;
+                last_position = position;
                 %time_s = now;
             end
 
@@ -117,30 +122,35 @@ classdef CostCalculator
             weights_norm = weight_mat/sum(weight_mat);
 
 
-            if ~isempty(pose_difference)
+            if all(~isnan(pose_difference))
                 %calculate the overall cost from start to end of trial
                 movementStruct.duration = replayTable.Time(end) - replayTable.Time(1);
-                movementStruct.overall_cost_per_joint = sum(pose_difference,1) .* weights_norm';
-                movementStruct.overall_cost = sum(movementStruct.overall_cost_per_joint);
-                movementStruct.joint_cost_per_second = movementStruct.overall_cost_per_joint / movementStruct.duration;
-                movementStruct.overall_cost_per_second = sum(movementStruct.joint_cost_per_second);
-                
+                movementStruct.weighted_cost_per_joint = sum(pose_difference,1) .* weights_norm';
+                movementStruct.overall_cost = sum(movementStruct.weighted_cost_per_joint);
+                movementStruct.joint_motion_per_second = sum(pose_difference,1) / movementStruct.duration;
+                                               
             else
                 warning('Pose Change over Trial not detected')
             end
 
+            if all(~isnan(pose_difference))
+                movementStruct.position_cost = sum(position_difference, 1);
+            end
             
         end
 
 
-        function costTable = convertToTable(obj)
+        function costTable = convertToTable(obj, trialRWTime)
             %ConvertToTable Finalise the arrays contained within the class
             %to be in table format
             costTable = table();
-            costTable.(1) = obj.jointMotion;
+            costTable.(1) = obj.movementCost;
             costTable.(2) = obj.memoryCost;
-            costTable.(3) = obj.calculationTime;
-            costTable.Properties.VariableNames = {'Joint Motion', 'Memory Bytes', 'calculationTime'};
+
+            costTable.(3) = obj.trialTime.(1);
+            costTable.(4) = obj.trialTime.(2);
+            costTable.(5) = trialRWTime;
+            costTable.Properties.VariableNames = {'Joint Motion', 'Memory Bytes', 'limbControlCalculationTime', 'goalCalcTime', 'totalTime'};
                     
             
         end

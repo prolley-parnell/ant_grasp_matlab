@@ -26,6 +26,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
 
     %Reset the trial time
     trial_time = 0;
+    tStart = tic;
 
 
 
@@ -64,7 +65,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
     end
 
     if ~fileHandlerIsEmpty
-        fileHandler = fileHandler.saveTrial(n, ant.antTree);
+        fileHandler = fileHandler.saveTrial(n, ant.antTree, toc(tStart));
     end
 
     
