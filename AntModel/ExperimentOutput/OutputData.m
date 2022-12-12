@@ -64,7 +64,7 @@ classdef OutputData
 
         end
 
-        function obj = saveTrial(obj, trial_number, antTree)
+        function obj = saveTrial(obj, trial_number, antTree, tocTime)
             %saveTrialMAT Writes the data collected from the past trial to
             %a MATLAB MAT file
             
@@ -83,7 +83,7 @@ classdef OutputData
             obj.costClass = obj.costClass.calculateMotionCost(replayTable);
 
             %Make a copy of the cost summary table
-            costSummaryTable = obj.costClass.convertToTable();
+            costSummaryTable = obj.costClass.convertToTable(tocTime);
 
             %Rename the runtime args for no particular reason
             setupRuntimeArgs = obj.RUNTIME_ARGS;

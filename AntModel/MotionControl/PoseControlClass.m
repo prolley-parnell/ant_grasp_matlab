@@ -86,7 +86,10 @@ classdef PoseControlClass
                     %Update the search space, if this is enabled in the
                     %runtime args
                     %%[COST] Store time taken to save sensed contact points
-                    [obj.actionGen, ~] = obj.actionGen.updateContactMemory(ant.contact_points);
+                    [obj.actionGen, memoryTimeCost] = obj.actionGen.updateContactMemory(ant.contact_points);
+                    limbCostStruct.memory_time(i) = memoryTimeCost;
+                else
+                    limbCostStruct.memory_time(i) = 0;
                 end
             end
             ant.limbs = limbs;
@@ -212,6 +215,8 @@ classdef PoseControlClass
                     %Make a new trajectory
                     mandibleIn.motion_state = antMandibleState;
 
+                    %[TODO] [COST] Add time taken to load a mandible
+                    %trajectory
                     [mandibleOut, reloadSuccessFlag] = obj.actionGen.loadMandibleTrajectory(mandibleIn, qIn);
 
                     if ~reloadSuccessFlag

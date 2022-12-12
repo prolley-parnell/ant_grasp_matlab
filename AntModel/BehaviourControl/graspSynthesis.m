@@ -54,10 +54,10 @@ classdef graspSynthesis
 
             goalCostStruct = struct(); %Define the table used to store cost info
             %% [COST] Start exhaustive grasp search
-            senseTStart = tic;
-
+            senseTStart = tic; 
             goalOut = goalStruct();
             antOut = antIn;
+            
             %Deal with exceptions (no contact points, or no grasp synthesis method)
             nContactThresh = length(antIn.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
             if isempty(sensedData)

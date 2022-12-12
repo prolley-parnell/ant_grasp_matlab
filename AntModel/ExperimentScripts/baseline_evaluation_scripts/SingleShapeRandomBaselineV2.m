@@ -153,11 +153,9 @@ end
 
 
 
-%% Find the wrench quality
-% [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);
-% [goalOut, ~] = goalOut.setcontact(contactStruct([a,b]));
+%% Load the file if necessary
 
-
+load('C:\Users\eroll\Documents\MATLAB\Model\Debugging Tools\comparisonBaselineResults.mat')
 
 
 
@@ -173,10 +171,124 @@ alignScore = rescale(alignMeasure);
 
 %Sum/multiply all values to find which scores the best on all fronts
 %Assumes all features are weighted equally
-sumScore = (volumeScore + epsilonScore + offsetScore + alignScore) .* mandMaxFlag;
-prodScore = volumeScore .* epsilonScore .* offsetScore .* alignScore .* mandMaxFlag;
+%Volume should be large, epsilon should be large, align should be large but
+%offset should be small, so - offset
+sumScore = (volumeScore + epsilonScore - offsetScore + alignScore) .* mandMaxFlag;
+% prodScore = volumeScore .* epsilonScore .* offsetScore .* alignScore .* mandMaxFlag;
 
-[maxScore, idx] = max(sumScore, 'all');
-idx2rc  
-%Find the grasps the score the best on each single measure and see how the
+[max_sum_score, sum_score_max_idx] = max(sumScore, [], 'all');
+[contact_a_idx_sum, contact_b_idx_sum] = ind2sub(size(sumScore), sum_score_max_idx);
+
+%Find the values that associate with the max
+sumScoreMat = cat(3, volumeScore, epsilonScore, offsetScore, alignScore);
+bestValue = squeeze(sumScoreMat(contact_a_idx_sum, contact_b_idx_sum,:));
+
+
+% [max_prod_score, prod_score_max_idx] = max(prodScore, [], 'all');
+% [contact_a_idx_prod, contact_b_idx_prod] = ind2sub(size(prodScore), prod_score_max_idx);
+
+%% Summarise the qualities of this experiment
+
+%Show box plots for each variable
+
+dataCells = {volumeScore, epsilonScore, offsetScore, alignScore};
+qualityNames = {'Volume', 'Epsilon', 'COM Offset', 'Alignment'};
+nMeasure = length(dataCells);
+compressed_data = nan([nRandomPt^2 , nMeasure]);
+
+for measure_i = 1:nMeasure
+    compressed_qual = reshape(dataCells{measure_i}, 1, []);
+    compressed_data(:,measure_i) = compressed_qual;
+
+
+end
+
+
+%% Plotting PDF for one variable
+pd = fitdist(compressed_data(:,1), 'Normal');
+x_values = [0:0.001:0.2]; %Width decided by observation
+y = pdf(pd, x_values);
+plot(x_values, y, 'LineWidth', 2)
+%%
+boxplot(compressed_data, qualityNames', 'BoxStyle', 'filled');
+xlabel("Quality Measures for Dice scale 0.18")
+ylabel("Normalised Quality Score")
+hold on
+plot(bestValue,'-o')
+hold off
+legend(["Best Grasp Qualities"])
+
+
+%% What if I try PCA on the data?
+
+%Use the original data
+dataCells = {volumeArray, epsilonArray, COMOffset, alignMeasure};
+qualityNames = {'Volume', 'Epsilon', 'COM Offset', 'Alignment'};
+nMeasure = length(dataCells);
+X = nan([nRandomPt^2 , nMeasure]);
+
+for measure_i = 1:nMeasure
+    compressed_qual = reshape(dataCells{measure_i}, 1, []);
+    X(:,measure_i) = compressed_qual;
+end
+
+% Remove any rows where NaN makes the covariance impossible
+X(any(isnan(X),2),:) = [];
+CM = cov(X);
+% Step 2:  Eigenvector and Eigenvalue
+[V, D]= eig(CM);
+
+% Step 3: Sort the Eigenvectors according to eigenvalue
+eVal = diag(D);
+[decend_eVal, idx_eVec] = sort(eVal, 1, "descend");
+decend_eVec = V(:,[idx_eVec]);
+
+
+% Step 4: Store Eigenvectors in Projection Matrix
+% k desired features/dimesion reduction
+k = 3;
+W = decend_eVec(:,[1:k]);
+
+% Step 5: Transform original data in to the Principal Component
+Y = X*W;
+
+%% Plot the PC box plots
+figure(1)
+boxplot(X, qualityNames', 'BoxStyle', 'filled');
+xlabel("Quality Measures for Dice scale 0.18")
+ylabel("Normalised Quality Score")
+title("Trimmed Data")
+hold on
+plot(bestValue,'-o')
+hold off
+legend(["Best Grasp Qualities"])
+
+%%
+[~, startIdx] = min(Y);
+P = X(startIdx,:);
+Wi = 2*( W'.* decend_eVal(1:k));
+
+%%
+figure(2)
+scatter3(Y(:,1),Y(:,2),Y(:,3), 0.1, 'ColorVariable', sqrt(rescale(Y(:,3))))
+
+hold on
+quiver3(P(:,1),P(:,2), P(:,3), Wi(:,1), Wi(:,2), Wi(:,3), 'off')
+
+
+
+%%
+
+
+% Identify the qualities of the best all round grasp
+
+
+
+% Identify the maximum and minimum possible values for this shape
+
+
+%% Find the grasps the score the best on each single measure and see how the
 %other qualities compare to the best all round grasp
+
+
+

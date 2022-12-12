@@ -144,17 +144,20 @@ classdef JointActionGen
 
 
 
-        function [obj, memoryCostStruct] = updateContactMemory(obj, contact_pointStruct)
-            memoryCostStruct = struct.empty;
+        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct)
             %[COST] Memory cost of ActionGen class for remembering means
-            %[TODO]
+
+            tStart = tic;
             if strcmp(obj.search_config.JOINT.MODE, "GM")
+                tStart = tic;
                 obj = obj.updateGM(contact_pointStruct);
             end
             if ~isempty(obj.refineSearch)
+                tStart = tic;
                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
             end
 
+            memoryCostTime = toc(tStart);
         end
 
         function obj = updateGM(obj, contact_pointStruct)
