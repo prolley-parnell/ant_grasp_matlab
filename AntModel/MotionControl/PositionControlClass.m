@@ -97,7 +97,7 @@ classdef PositionControlClass
         end
 
 
-        function [obj, positionOut, successFlag] = updatePosition(obj, positionIn, qIn)
+        function [obj, positionOut, successFlag, positionCostStruct] = updatePosition(obj, positionIn, qIn)
             %UPDATEPOSITION Get the next position from the queue
             % If the queue is empty and there is a goal, then generate
             % another trajectory to be added to the queue then try again.
@@ -109,6 +109,8 @@ classdef PositionControlClass
             %
             %   qIn - 10x1 vector of the joint angles of the rigidBodyTree
             %   at the current time step.
+            %[COST] PositionCost INIT [TODO]
+            positionCostStruct = struct.empty();
 
             if ~isempty(obj.goal)
                 if isempty(obj.trajectory_queue)

@@ -31,25 +31,28 @@ classdef PoseControlClass
 
         end
 
-        function [ant, contactStructArray] = updatePose(obj, ant, env, motionFlag)
+        function [ant, contactStructArray, poseCostStruct] = updatePose(obj, ant, env, motionFlag)
             %Update neck and head
             %[ant, obj] = obj.moveNeck(ant);
             [ant] = obj.moveNeck(ant);
-            [ant, contactStructArray] = obj.updateLimbs(ant, env, motionFlag);
+            [ant, contactStructArray, limbCostStruct] = obj.updateLimbs(ant, env, motionFlag);
+            % Compile the different cost tables in to one [TODO]
+            poseCostStruct.limb = limbCostStruct;
         end
 
 
 
         % --------- Generalised Limb Update Function
-        function [ant, contactStructArray] = updateLimbs(obj, ant, env, motionFlag)
-
+        function [ant, contactStructArray, limbCostStruct] = updateLimbs(obj, ant, env, motionFlag)
+            limbCostStruct = struct();
+            
             limbs = ant.limbs;
             contactStructArray = [];
 
 
             for i=1:length(limbs)
 
-
+                limbCostStruct.name(i) = limbs{i}.type;
                 %Move the object rigidBodyTree base to match the global ant
                 %position.
                 if motionFlag
@@ -64,15 +67,14 @@ classdef PoseControlClass
 
                 switch(limbs{i}.type)
                     case "Antenna"
-                        [obj, limbs{i}, qLocal] = obj.moveAntenna(limbs{i}, ant.q, ant.position);
-
+                        [obj, limbs{i}, qLocal, moveTime] = obj.moveAntenna(limbs{i}, ant.q, ant.position);
                     case "Mandible"
-                        [obj, limbs{i}, qLocal] = obj.moveMandible(limbs{i}, ant.q, ant.mandible_state);
+                        [obj, limbs{i}, qLocal, moveTime] = obj.moveMandible(limbs{i}, ant.q, ant.mandible_state);
                     case "Leg"
                         warning("Leg control is not yet implemented");
-
                 end
-
+                %%[COST] Save the movetime cost for each limb
+                limbCostStruct.time(i) = moveTime;
                 qFull = ant.q;
                 %Apply joint mask
                 ant.q = limbs{i}.applyMask(qFull, qLocal);
@@ -83,14 +85,17 @@ classdef PoseControlClass
                     ant = ant.addContact(dataStruct);
                     %Update the search space, if this is enabled in the
                     %runtime args
-                    obj.actionGen = obj.actionGen.updateContactMemory(ant.contact_points);
-
+                    %%[COST] Store time taken to save sensed contact points
+                    [obj.actionGen, memoryTimeCost] = obj.actionGen.updateContactMemory(ant.contact_points);
+                    limbCostStruct.memory_time(i) = memoryTimeCost;
+                else
+                    limbCostStruct.memory_time(i) = 0;
                 end
             end
             ant.limbs = limbs;
-
-
             ant.poseController = obj;
+
+
         end
 
         function [limbOut, dataStruct] = tactileSenseEval(obj, limbIn, qIn, positionIn, env)
@@ -180,15 +185,13 @@ classdef PoseControlClass
 
         % ---------- Antenna functions
 
-        function [obj, antennaOut, qOut] = moveAntenna(obj, antennaIn, qIn, globalPosition)
+        function [obj, antennaOut, qOut, antennaTrajTime] = moveAntenna(obj, antennaIn, qIn, globalPosition)
             qOut = qIn;
             antennaOut = antennaIn;
+            antennaTrajTime = 0;
 
             if or(antennaIn.collision_latch, isempty(antennaIn.trajectory_queue))
-                    %For antenna joint sweep control
-                    %antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn);
-                    %For point to point control
-                    antennaOut = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
+                [antennaOut, antennaTrajTime] = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
             end
 
             [antennaOut, q, successFlag] = tbox.popTrajectory(antennaOut);
@@ -202,15 +205,18 @@ classdef PoseControlClass
 
 
         % -------------- Mandible Functions
-        function [obj, mandibleOut, qOut] = moveMandible(obj, mandibleIn, qIn, antMandibleState)
+        function [obj, mandibleOut, qOut, mandibleTrajTime] = moveMandible(obj, mandibleIn, qIn, antMandibleState)
             qOut = qIn;
             mandibleOut = mandibleIn;
+            mandibleTrajTime = 0;
 
             if obj.RUNTIME_ARGS.BODY_MOTION_ENABLE
                 if and(antMandibleState ~= mandibleIn.motion_state, ~mandibleIn.collision_latch)
                     %Make a new trajectory
                     mandibleIn.motion_state = antMandibleState;
 
+                    %[TODO] [COST] Add time taken to load a mandible
+                    %trajectory
                     [mandibleOut, reloadSuccessFlag] = obj.actionGen.loadMandibleTrajectory(mandibleIn, qIn);
 
                     if ~reloadSuccessFlag
@@ -239,7 +245,7 @@ classdef PoseControlClass
             neckOut.trajectory_queue = obj.actionGen.loadNeckTrajectory(neckIn, qIn, goalStruct);
 
         end
-   
+
 
         % ------------ Neck Pose update function
         function [antOut] = moveNeck(~, antIn)

@@ -20,7 +20,7 @@ classdef graspSynthesis
 
             obj.mandible_max = maxMandibleDist;
             obj.enforce_mand_max = RUNTIME_ARGS.SENSE.MAND_MAX;
-            
+
             methodArg = RUNTIME_ARGS.SENSE.MODE; %Cell array of the different qualities used to select a grasp
 
             nMethodArg = length(methodArg);
@@ -47,20 +47,36 @@ classdef graspSynthesis
 
         end
 
-        function [antOut, goalOut] = check(obj, antIn, sensedData)
-            %EVALUATE Use the methods defined to evaluate the contact point data pairs and select a goal
+        function [antOut, goalOut, goalCostStruct] = check(obj, antIn, sensedData)
+            %CHECK Use the methods defined to evaluate the contact point data pairs and select a goal
+
+            goalCostStruct = struct(); %Define the table used to store cost info
+            %% [COST] Start exhaustive grasp search
+            senseTStart = tic; 
             goalOut = goalStruct();
             antOut = antIn;
+            
             %Deal with exceptions (no contact points, or no grasp synthesis method)
             nContactThresh = length(antIn.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
-            if isempty(sensedData) 
+            if isempty(sensedData)
+                %[COST] End time if no new data has been collected
+                senseEvalTEnd = toc(senseTStart);
+                goalCostStruct.time.sense_eval = senseEvalTEnd;
                 return
             elseif nContactThresh < 0
+                %[COST] Record time up to point where not enough contacts
+                %have been gathered to gen goal
+                senseEvalTEnd = toc(senseTStart);
+                goalCostStruct.time.sense_eval = senseEvalTEnd;
                 return
             else
                 nMeasures = length(obj.synth_method);
                 if nMeasures < 1
                     warning("No grasp synthesis method selected, goal cannot be generated");
+                    %[COST] End time measure if no grasp selection method
+                    %is selected
+                    senseEvalTEnd = toc(senseTStart);
+                    goalCostStruct.time.sense_eval = senseEvalTEnd;
                     return
                 end
             end
@@ -70,21 +86,22 @@ classdef graspSynthesis
             distanceMat = ones(nContactPoint);
             mandMaxFlag = ones(nContactPoint);
             alignMeasure = ones(nContactPoint);
-                %For each goal, get the information gain measure
-                if obj.synth_method(1) %Distance
+
+            %For each goal, get the information gain measure
+            if obj.synth_method(1) %Distance
+                [distanceMat, ~, ~] = obj.findInterPointDistance(cartPointArray, "none");
+                %Normalise the distance mat to be between 0 and 1
+                %distMeasure = rescale(distanceMat);
+            end
+            if obj.enforce_mand_max
+                if ~obj.synth_method(1)
                     [distanceMat, ~, ~] = obj.findInterPointDistance(cartPointArray, "none");
-                    %Normalise the distance mat to be between 0 and 1
-                    %distMeasure = rescale(distanceMat);
                 end
-                if obj.enforce_mand_max
-                    if ~obj.synth_method(1)
-                        [distanceMat, ~, ~] = obj.findInterPointDistance(cartPointArray, "none");
-                    end
-                    mandMaxFlag = obj.mandibleLimit(distanceMat);
-                end
-                if obj.synth_method(2) %Alignment
-                    [alignMeasure, ~, ~] = obj.findInterPointGraspAlign(antIn.contact_points);
-                end
+                mandMaxFlag = obj.mandibleLimit(distanceMat);
+            end
+            if obj.synth_method(2) %Alignment
+                [alignMeasure, ~, ~] = obj.findInterPointGraspAlign(antIn.contact_points);
+            end
 
 
             [bestQuality, goalIndex] = max(distanceMat.*mandMaxFlag.*alignMeasure,[],'all');
@@ -92,40 +109,52 @@ classdef graspSynthesis
             %Only update to a new goal if the goal is 10% better than the
             %last
             %if obj.quality*1.1 < bestQuality
-                [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);        
-                goalOut = goalOut.setcontact(antIn.contact_points([a,b]));
-                obj.quality = bestQuality;
+            [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);
+            
+            %
+            senseEvalTEnd = toc(senseTStart);
+            goalCostStruct.time.sense_eval = senseEvalTEnd;
+            % [COST] End exhaustive grasp search
+
+            %%
+            [goalOut, setContactTime] = goalOut.setcontact(antIn.contact_points([a,b]));
+            obj.quality = bestQuality;
+            
+            %[COST] Save the time taken to save the selected contact points
+            goalCostStruct.time.contact_set = setContactTime;
+            
             %end
             antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
 
-            antOut.senseEval = obj;
+            antOut.graspGen = obj;
+
 
         end
 
         function [flagArray] = mandibleLimit(obj, distanceArray)
 
-                flagArray = ones(size(distanceArray));
-                flagArray(distanceArray>obj.mandible_max) = 0;
+            flagArray = ones(size(distanceArray));
+            flagArray(distanceArray>obj.mandible_max) = 0;
 
         end
 
         function antOut =  mandibleMotionStateMachine(~, antIn, sensedData)
             mandibleContactCheck = [];
-                for l = 1:length(antIn.limbs)
-                    if contains(antIn.limbs{l}.name, "Mandible")
-                        mandibleContactCheck(end+1) = antIn.limbs{l}.collision_latch;
-                    end
+            for l = 1:length(antIn.limbs)
+                if contains(antIn.limbs{l}.name, "Mandible")
+                    mandibleContactCheck(end+1) = antIn.limbs{l}.collision_latch;
                 end
-                %mandibleContactCheck = sum(contains([sensedData(:).limb], "Mandible"));
-                antOut = antIn;
-                if mandibleContactCheck > 1
-                    antOut.grasp_complete = 1;
-                    antOut.mandible_state = 0;
-                    antOut.positionController.trajectory_queue = [];
-                elseif mandibleContactCheck == 1
-                    antOut.positionController.trajectory_queue = [];
-                    antOut.mandible_state = 1;
-                end
+            end
+            %mandibleContactCheck = sum(contains([sensedData(:).limb], "Mandible"));
+            antOut = antIn;
+            if mandibleContactCheck > 1
+                antOut.grasp_complete = 1;
+                antOut.mandible_state = 0;
+                antOut.positionController.trajectory_queue = [];
+            elseif mandibleContactCheck == 1
+                antOut.positionController.trajectory_queue = [];
+                antOut.mandible_state = 1;
+            end
         end
 
 
@@ -133,7 +162,7 @@ classdef graspSynthesis
         function [alignMat, bestAlign, idx] = findInterPointGraspAlign(obj, contactStruct)
             %findInterPointGraspAlign find the alignment at a point of contact
             %with the surface vector for a given opposing contact
-            
+
             pointArray = cat(1,contactStruct(:).point);
             normArray = cat(1,contactStruct(:).normal);
             nContact = size(pointArray,1);

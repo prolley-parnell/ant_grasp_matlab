@@ -42,11 +42,16 @@ classdef JointActionGen
 
 
 
-        function [antennaOut] = loadAntennaTrajectory(obj, antennaIn, ~, ~)
+        function [antennaOut, antennaTrajectoryTime] = loadAntennaTrajectory(obj, antennaIn, ~, ~)
             %loadAntennaTrajectory
             antennaOut = antennaIn;
-
+            
+            %% [COST] Start time to calculate antenna trajectory
+            trajStartTime = tic;
             trajectoryQueue = obj.generateJointTrajectory(antennaIn);
+            
+            antennaTrajectoryTime = toc(trajStartTime);
+            % [COST] End time to calculate antenna trajectory
 
             antennaOut.trajectory_queue = trajectoryQueue;
 
@@ -139,14 +144,20 @@ classdef JointActionGen
 
 
 
-        function obj = updateContactMemory(obj, contact_pointStruct)
+        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct)
+            %[COST] Memory cost of ActionGen class for remembering means
+
+            tStart = tic;
             if strcmp(obj.search_config.JOINT.MODE, "GM")
+                tStart = tic;
                 obj = obj.updateGM(contact_pointStruct);
             end
             if ~isempty(obj.refineSearch)
+                tStart = tic;
                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
             end
 
+            memoryCostTime = toc(tStart);
         end
 
         function obj = updateGM(obj, contact_pointStruct)

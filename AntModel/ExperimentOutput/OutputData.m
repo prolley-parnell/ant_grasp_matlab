@@ -3,9 +3,8 @@ classdef OutputData
     %variables from the Ant Model for an experiment across multiple trials.
     %   Used to save results to .csv or .mat files with locations defined
     %   in the RUNTIME_ARGS.
-    %   ChangeLog: 22/08/22 - Emily Rolley-Parnell - Added a class
-    %   descriptor, changed folder names, and changed result printout
-    %   location.
+    %   ChangeLog: 22/11/22 - Emily Rolley-Parnell - Added the ability to
+    %   print a cost sheet
 
     properties
 
@@ -21,6 +20,10 @@ classdef OutputData
         contact_data
         sense_goal_data
         replay_data
+        cost_summary
+
+        costClass
+
 
     end
 
@@ -52,39 +55,46 @@ classdef OutputData
                 obj.printout_path = [];
             end
 
+
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
             obj.contact_data = {};
             obj.sense_goal_data = {};
             obj.replay_data = {};
+            obj.costClass = CostCalculator();
 
         end
 
-        function obj = saveTrial(obj, trial_number, antTree)
+        function obj = saveTrial(obj, trial_number, antTree, tocTime)
             %saveTrialMAT Writes the data collected from the past trial to
             %a MATLAB MAT file
-
+            
+            %Compile the sensory data
             contactsTable = cell2table(vertcat(obj.contact_data{:}));
-
             contactsTable.Properties.VariableNames =  {'Time', 'Contact Location', 'Surface Normal', 'Contact Limb'};
 
-
+            %Compile the pose for the whole trial
             replayTable = cell2table(vertcat(obj.replay_data{:}));
             replayTable.Properties.VariableNames = {'Time', 'Pose', 'Position'};
 
-
-
-
-            senseGoalTable = vertcat(obj.sense_goal_data{:});
-
             
+            %Compile the different goals evaluated during the trial
+            senseGoalTable = vertcat(obj.sense_goal_data{:});      
 
+            obj.costClass = obj.costClass.calculateMotionCost(replayTable);
 
+            %Make a copy of the cost summary table
+            costSummaryTable = obj.costClass.convertToTable(tocTime);
+
+            %Rename the runtime args for no particular reason
             setupRuntimeArgs = obj.RUNTIME_ARGS;
 
+            %If you provided a destination then save a mat file for every trial with all the set up
+            %details
             if ~isempty(obj.mat_path)
-                save([obj.mat_path, '\trial_',int2str(trial_number), '.mat'], 'contactsTable', 'senseGoalTable', 'replayTable', 'antTree', 'setupRuntimeArgs')
+                save([obj.mat_path, '\trial_',int2str(trial_number), '.mat'], 'contactsTable', 'senseGoalTable', 'replayTable', 'costSummaryTable', 'antTree', 'setupRuntimeArgs')
             end
 
+            % If you want the experiment saved in a written format
             if ~isempty(obj.printout_path)
 
                 filename = [obj.printout_path, '\trial_',int2str(trial_number)];
@@ -99,28 +109,33 @@ classdef OutputData
                 writetable(contactsTable, filename, 'FileType', obj.printout_format, 'Sheet', 'Contact Points', 'WriteMode', WriteMode)
                 writetable(senseGoalTable, filename, 'FileType', obj.printout_format, 'Sheet', 'Sensed Goal', 'WriteMode', WriteMode)
                 writetable(replayTable, filename, 'FileType', obj.printout_format, 'Sheet', 'Model Pose and Positions', 'WriteMode', WriteMode)
+                writetable(costSummaryTable, filename, 'FileType', obj.printout_format, 'Sheet', 'Trial Costs', 'WriteMode', WriteMode)
             end
 
             obj.sense_goal_data = {};
             obj.replay_data = {};
             obj.contact_data = {};
+            %obj.cost_summary = table.empty;
 
         end
 
 
 
-        function obj = addTimeStep(obj, time, contactStructArray, pose, position, goalObj)
+        function obj = addTimeStep(obj, time, contactStructArray, pose, position, goalObj, costStruct)
 
             obj = obj.addPose(time, pose, position);
             obj = obj.addSensedData(time, contactStructArray);
             obj = obj.addGoal(time, goalObj);
+            obj.costClass = obj.costClass.addCost(costStruct);
         end
+
+
 
 
         function obj = addSensedData(obj, time, contactStructArray)
 
             if ~isempty(contactStructArray)
-                for i = 1:size(contactStructArray,2)
+                for i = 1:size(contactStructArray,1)
                     obj.contact_data{end+1} = {time, contactStructArray(i).point, contactStructArray(i).normal, contactStructArray(i).limb};
                 end
 

@@ -4,8 +4,7 @@ classdef goalStruct
 
     properties (SetAccess = public, GetAccess = public)
         qualityObj graspQuality
-    end
-    properties (SetAccess = public, GetAccess = public)
+
         time_s = -1
         midpoint = nan([1,3],"double")
         contact_axis = nan([1,3],"double")
@@ -13,6 +12,7 @@ classdef goalStruct
         alignment_axis = nan([1,3],"double")
         goal_z_axis = nan([1,3],"double")
         contact_norm = nan([2,3], "double")
+
 
     end
     properties (SetAccess = private, GetAccess = protected)
@@ -27,8 +27,11 @@ classdef goalStruct
 
         end
 
-        function obj = setcontact(obj, contactStructArray)
+        function [obj, setContactTime] = setcontact(obj, contactStructArray)
             %Validate point size [TODO]
+            %% [COST] Start save contacts for goal
+            setContactStart = tic;
+            %
             pointArray = cat(1,contactStructArray(:).point);
             normArray = cat(1,contactStructArray(:).normal);
             obj.emptyFlag = false;
@@ -36,6 +39,12 @@ classdef goalStruct
             obj.contact_axis = pointArray(1,:) - pointArray(2,:);
             obj.midpoint = mean(pointArray, 1);
             obj.contact_norm = normArray;
+            %
+            %[COST] Stop save contacts for goal
+            setContactTime = toc(setContactStart);
+            
+            %[COST] [TODO] Get memory size of goal, either when it is set
+            %or as it is maintained in memory
         end
 
         function flag = isempty(obj)
@@ -43,9 +52,11 @@ classdef goalStruct
         end
 
 
-        function obj = checkalignment(obj, positionIn)
+        function [obj] = checkalignment(obj, positionIn)
             %If the distance between the mp+alignment is closer than
             %mp-alignment then invert alignment
+            %% [COST] Start Alignment Check time
+            %checkAlignStart = tic;
             oldAlignment = obj.alignment_axis / norm(obj.alignment_axis);
 
             oldProjection = obj.midpoint - oldAlignment;
@@ -59,7 +70,9 @@ classdef goalStruct
                 obj.alignment_axis = oldAlignment;
             end
 
-
+            %
+            %checkAlignTime = toc(checkAlignStart);
+            %[COST] End alignment check time
         end
 
         function outTable = convert2table(obj)
@@ -88,8 +101,12 @@ classdef goalStruct
             obj.time_s = currentTime;
         end
 
-        function obj = setalignment2goal(obj, globalPosition)
-
+        function [obj, goalCostStruct] = setGoal(obj, globalPosition)
+            %SETGOAL Find the heading vector for the ant that
+            %aligns the body while requiring minimal body movement.
+            %% [COST] Start calculating ant head alignment for goal
+            setAlignStart = tic;
+            
             global_z_vector = [0 0 1];
             obj.alignment_axis = cross(obj.contact_axis, global_z_vector);
             obj = obj.checkalignment(globalPosition);
@@ -97,8 +114,13 @@ classdef goalStruct
             ant_z_axis = cross(obj.contact_axis, obj.alignment_axis);
             %Ensure the axis always points up
             obj.goal_z_axis = sign(ant_z_axis(3))*ant_z_axis;
+            %
+            goalCostStruct.time.goal_set = toc(setAlignStart);
+            %[COST] End calculating ant head alignment for goal
 
+           
         end
+        
         function obj = plotGoal(obj, PLOT)
             if any(PLOT.ENABLE)
                 vector_base = obj.midpoint - obj.alignment_axis;
