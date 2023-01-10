@@ -30,7 +30,8 @@ classdef RuntimeArgs
         ANTENNA_CONTROL
         ANT_MEMORY(1,1) double = 20
 
-        SEARCH_SPACE
+        %SEARCH_SPACE
+        SEARCH
 
         SENSE
 
@@ -149,69 +150,38 @@ classdef RuntimeArgs
             %DEFAULT: [0 0 0 0]
             %Is in the form [ X, Y, Z, yaw], where yaw is the rotation in
             %radians about the global Z axis.
-            %obj.ANT_POSITION = [0 0 0 0];
-
-            %The method of control of the antennae, the string in position
-            %1 indicates whether the control is joint trajectory based or
-            %end-effector goal based. The second string indicates the
-            %curvature of the path.
-            %DEFAULT: ["goals", "joint_traj"]
-            % Control methods: "goals", "joint" (not yet implemented)
-            % Control trajectories: "curve", "spiral", "straight",
-            % "joint_traj"
-            obj.ANTENNA_CONTROL = ["goals", "joint_traj"];
-
+            obj.ANT_POSITION = [0 0 0 0];
 
             %The number of contact points stored by the ant. The memory is
             %FIFO, and separate from the print out data and the Centre of
             %Contact calculations.
             %Default = 20; int between 1 and inf
-            %obj.ANT_MEMORY = 20;
-
-            %Define the method that the antenna use to generate potential
-            %sample points
-            %Mode options: "fixed", "GM" (Gaussian Model)
-            %obj.SEARCH_SPACE.SAMPLE.MODE = "fixed";
-            obj.SEARCH_SPACE.SAMPLE.MODE = "fixed";
-
-            %Var is only used in the Gaussian Model (GM) mode
-            %The variance around each point of contact that combine to make
-            %the gaussian model of sampling space
-            %set VAR = "IPD" to use the distance between the contact point
-            %and its next closest point
-            %Or set the variance to be a scalar e.g. 0.5
-            obj.SEARCH_SPACE.SAMPLE.VAR = "0.5";
-
-            %Range is only used if mode = "fixed" and for before contact is
-            %made
-            %[Xmin Xmax Ymin Ymax Zmin Zmax]
-            obj.SEARCH_SPACE.SAMPLE.RANGE = [-2, 2; ...
-                2, 4; ...
-                0, 1];
-
-            % Search space for the joint range of operation when using
-            % antenna sweeping and joint based control
-            obj.SEARCH_SPACE.JOINT.RANGE = [0 0.6;...
-                0.15 0.8;...
-                0.9 0.45];
-
-            % Whether the range of motion updates to reflect contacts
-            % [TODO]
-            obj.SEARCH_SPACE.JOINT.MODE = "fixed";
+            obj.ANT_MEMORY = 20;
 
 
 
-            %Method for refining the potential samling points
-            %DEFAULT: 'IG' - Information Gain
-            obj.SEARCH_SPACE.REFINE.MODE = '';
+            % Control methods: "goals", "joint" (not yet implemented)
+            % Control trajectories: "curve", "spiral", "straight",
+            % "joint_traj"
+
+
+            %%[NEW] More Compact Antenna Control representation
+            %obj.SEARCH
+            %SEARCH.MODE = {('p2p' or 'joint'), (control mode ('GMM', 'mean')}
+            %SEARCH.REFINE = {('IG' or '')}
+            %SEARCH.VAR = {('varinc', 'vardec' or 'none'), (variance
+            %starting value=0.5)}
+            %SEARCH.RANGE = 3x2 matrix containing the cartesian or joint
+            %percentage range
+            obj = obj.setAntennaControl({});
+
 
             %Arguments required for the refinement of sampled points
-            %For REFINE
-            obj.SEARCH_SPACE.REFINE.ARG = {'psi1', 'psi2' ,'psi3', 'psi4'};
+            %For REFINE, specifically for the Information Gain Estimation
+            %Function.
+            obj.SEARCH.REFINE.ARG = {'psi1', 'psi2' ,'psi3', 'psi4'};
 
-            obj.SEARCH_SPACE.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
-
-
+            obj.SEARCH.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
 
 
             % Which method is used to evaluate the input sensory data
@@ -239,6 +209,8 @@ classdef RuntimeArgs
             %'dist' - Scores the contact points based on their distance
             %'align' - measures the alignment of the grasp forces with the
             %surface normal
+            %'axis' - Using a principal axis through the data rather than
+            %summarising individual points to generate a grasp
             obj.SENSE.MODE = {'dist','align'};
             obj.SENSE.THRESH = 0;
 
@@ -315,6 +287,88 @@ classdef RuntimeArgs
         function disableWarnings(~)
             warning('off')
             warning('off','inhull:degeneracy')
+        end
+
+        function obj = setAntennaControl(obj, cellInstruct)
+        %SETANTENNACONTROL Parse a cell array that contains char arrays for
+        %instructions on how to set the antenna control method
+            availableMethod = {'p2p', 'joint'};
+            p2pControlMethod = {'GMM', 'mean'};
+            refineMethod = {'IG'};
+            jointControlMethod = {'mean'};
+            varianceMethod = {'varinc', 'vardec'};
+            
+            
+            methodFlag = contains(availableMethod, cellInstruct);
+            
+            
+            if or(all(methodFlag), all(~methodFlag))
+                %warning("Must set only 1 antenna control method, default to sweep");
+                obj.SEARCH.MODE{1} = 'joint';
+                methodFlag = [0 1];
+                          
+            end
+            obj.SEARCH.MODE{1} = availableMethod{methodFlag==1};
+
+            %In case no specific method is defined, default to random
+            obj.SEARCH.MODE{2} = 'random';
+
+            if methodFlag(1)
+                obj.SEARCH.RANGE = [-2, 2; ...
+                                    2, 4; ...
+                                    0, 1];
+                refineFlag = contains(refineMethod, cellInstruct);
+                if any(refineFlag)
+                    obj.SEARCH.REFINE.MODE = refineMethod{refineFlag==1};
+                else
+                    obj.SEARCH.REFINE.MODE = '';
+                end
+                
+                p2pmethodFlag = contains(p2pControlMethod, cellInstruct);
+                if any(p2pmethodFlag)
+                    obj.SEARCH.MODE{2} = p2pControlMethod{p2pmethodFlag==1};
+                end
+
+
+            elseif methodFlag(2)
+                obj.SEARCH.RANGE = [0 0.6;...
+                                    0.15 0.8;...
+                                    0.9 0.45];
+                obj.SEARCH.REFINE = '';
+                jointControlFlag = contains(jointControlMethod, cellInstruct);
+                if any(jointControlFlag)
+                    obj.SEARCH.MODE{2} = jointControlMethod{jointControlFlag == 1};
+                end
+
+            end
+
+            varFlag = contains(cellInstruct, 'var');
+            %Set the default values in case that the variance is not
+            %defined
+            obj.SEARCH.VAR = {'none', 0.5};
+            if any(varFlag)
+                varMethodFlag = contains(varianceMethod, cellInstruct);
+                if all(varMethodFlag)
+                    obj.SEARCH.VAR{1} = 'var';
+                elseif any(varMethodFlag)
+                    obj.SEARCH.VAR{1} = varianceMethod{varMethodFlag==1};
+                end
+                varValueCell = extractAfter(cellInstruct{varFlag==1}, '=');
+                varValueInt = str2num(varValueCell);
+                if isempty(varValueInt)
+                    warning("Var= is used to set the initial int of variance, specify an integer")
+                else
+                    obj.SEARCH.VAR{2} = varValueInt;
+                end
+            end
+
+            rangeFlag = contains(cellInstruct, 'range');
+            if any(rangeFlag)
+                rangeValueStr = extractBetween(cellInstruct{rangeFlag==1}, '[', ']');
+                obj.SEARCH.RANGE = str2num(rangeValueStr{:});
+            end %Otherwise leave as default
+
+
         end
 
         function obj = initiatePlots(obj)

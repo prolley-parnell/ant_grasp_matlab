@@ -63,7 +63,8 @@ classdef Ant
 
             names = [{"Left_Antenna"}, {"Right_Antenna"}, {"Left_Mandible"}, {"Right_Mandible"}];
             types = [{"Antenna"}, {"Antenna"},{"Mandible"},{"Mandible"}];
-            control_type = [{RUNTIME_ARGS.ANTENNA_CONTROL}, {RUNTIME_ARGS.ANTENNA_CONTROL},{nan},{nan}];
+            %control_type = [{RUNTIME_ARGS.ANTENNA_CONTROL}, {RUNTIME_ARGS.ANTENNA_CONTROL},{nan},{nan}];
+            control_type = [{RUNTIME_ARGS.SEARCH.MODE}, {RUNTIME_ARGS.SEARCH.MODE},{nan},{nan}];
             colours = [{'blue'}, {'red'}, {'green'}, {'green'}];
             end_effectors = [{"l_tip"}, {"r_tip"}, {"left_jaw_tip"}, {"right_jaw_tip"}];
             base_names = [{"left_antenna_base"}, {"right_antenna_base"}, {"left_jaw_base"}, {"right_jaw_base"}];

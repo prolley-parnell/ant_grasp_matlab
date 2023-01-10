@@ -13,6 +13,8 @@ rng('shuffle');
 
 RUNTIME_ARGS = RuntimeArgs();
 
+RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl({'p2p', 'mean', 'vardec'});
+
 % Warnings are automatically enabled
 RUNTIME_ARGS.disableWarnings();
 
@@ -43,24 +45,11 @@ RUNTIME_ARGS.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
 
 
 % ------------- Antenna Motion -------------- %
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "fixed";
-%RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.MODE = "GM";
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.VAR = 0.5;
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
-                2.5, 3.5; ...
-                0, 1];
 
-RUNTIME_ARGS.ANTENNA_CONTROL =  ["goals", "joint_traj"];
 
 RUNTIME_ARGS.SENSE.MODE = {'dist', 'align'};
 
-RUNTIME_ARGS.SEARCH_SPACE.JOINT.RANGE = [0 0.6;...
-                0.15 0.8;...
-                0.9 0.45]; %The middle joint of the antenna is at its maximum closure at 100%
 
-RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE = [-1, 1; ...
-                2, 4; ...
-                0, 1];
 
 %No need for a threshold, as it picks the best after 10 contacts, and no
 %new goal is generated

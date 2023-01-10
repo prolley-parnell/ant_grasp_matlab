@@ -204,9 +204,16 @@ classdef graspSynthesis
                 end
             end
 
-            obj.COC.mean = new_COC;
+            if strcmp(obj.RUNTIME_ARGS.SEARCH.MODE{2}, 'mean')
+                %If using a running mean, rather than storing all contact
+                %points in memory
+                obj.COC.mean
+            else
+                obj.COC.mean = new_COC;
+            end
 
         end
+
 
         function [distanceMAT, distance, idx] = findInterPointDistance(~, contact_points, type)
 
