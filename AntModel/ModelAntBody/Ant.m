@@ -62,6 +62,7 @@ classdef Ant
 
 
             names = [{"Left_Antenna"}, {"Right_Antenna"}, {"Left_Mandible"}, {"Right_Mandible"}];
+            numbers = [{1},{2},{1},{2}];
             types = [{"Antenna"}, {"Antenna"},{"Mandible"},{"Mandible"}];
             %control_type = [{RUNTIME_ARGS.ANTENNA_CONTROL}, {RUNTIME_ARGS.ANTENNA_CONTROL},{nan},{nan}];
             control_type = [{RUNTIME_ARGS.SEARCH.MODE}, {RUNTIME_ARGS.SEARCH.MODE},{nan},{nan}];
@@ -70,7 +71,7 @@ classdef Ant
             base_names = [{"left_antenna_base"}, {"right_antenna_base"}, {"left_jaw_base"}, {"right_jaw_base"}];
 
             for i = 1:length(names)
-                obj.limbs{i} = Limb(names{i}, types{i}, control_type{i}, colours{i}, end_effectors{i}, base_names{i}, obj.antTree, obj.position, RUNTIME_ARGS);
+                obj.limbs{i} = Limb(names{i}, numbers{i}, types{i}, control_type{i}, colours{i}, end_effectors{i}, base_names{i}, obj.antTree, obj.position, RUNTIME_ARGS);
                 obj.limbs{i}.free_point = tbox.findFKglobalPosition(obj.antTree, obj.q, obj.position, end_effectors{i});
                 obj.limbs{i}.free_pose = obj.q(obj.limbs{i}.joint_mask==1);
             end

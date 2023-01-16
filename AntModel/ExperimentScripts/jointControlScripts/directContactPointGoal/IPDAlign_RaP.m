@@ -1,5 +1,5 @@
-%% Test Debug Template - Currently Windows only
-% 16/01/2023 - Emily Rolley-Parnell
+%% Experiment Template - Currently Windows only
+% 10/01/2023 - Emily Rolley-Parnell
 %% Set the environment by closing any previous figures and variables
 
 %If errors persist and the system crashes or closes, use diary to store
@@ -33,14 +33,11 @@ RUNTIME_ARGS = RuntimeArgs();
 RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.N_TRIALS = 50;
 
 % Sampling rate in simulated time - smaller is smoother for plotting, but
 % takes longer to run (0.05 to 0.15)
 RUNTIME_ARGS.RATE = 0.05;
-
-%Plot the experiment
-RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
@@ -49,7 +46,7 @@ RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 
 % To save the summary tables, antTree, and runtime args in a single MAT
 % file, enable. Use for internal matlab processing
-RUNTIME_ARGS.RECORD.ENABLE = 0;
+RUNTIME_ARGS.RECORD.ENABLE = 1;
 
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
@@ -66,15 +63,15 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 % Select point-to-point or joint based control
 motion_type = {'p2p'}; %{'p2p', 'joint'};
 
-%if using p2p then p2pmode = {'GMM'};
+%if using p2p then p2pmode = {'GMM', 'mean'};
 %if using joint control then jointmode = {'mean'}
-control_method = {};
+control_method = {'mean'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
             
-%If using 'mean' or 'GMM' then option to set variance {'IPD', 'varinc', 'vardec', 'var=1.2'};
-variance_mode = {'var=0.4'};
+%If using 'mean' or 'GMM' then option to set variance {'varinc', 'vardec', 'var=1.2'};
+variance_mode = {};
 
 antenna_control_cell = [motion_type,control_method,refine_method,variance_mode];
 
@@ -83,12 +80,43 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 
 % ------------- Goal Selection Method ---------- %
 % Checks all points for each of the modes included in the brackets
-RUNTIME_ARGS.SENSE.MODE = {'align'};
+RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis [NOT IMPLEMENTED]
 %RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
-%% -------- Test Specific Set Up ------------ %%
-% 
-[exitflag, fileHandler] = AntModelFunction(RUNTIME_ARGS);
+%% -------- Experiment Specific Set Up ------------ %%
+
+% Experiment runs trial_n experiments per number of contact points sensed
+% before goal evaluation
+NumberOfPoints = [2:1:40];
+nExperiment = length(NumberOfPoints);
+
+%Structure:
+% 1 - Replicate the runtime args for the number of experiments
+% 2 - Assign the controlled variable to the replicated runtime args.
+
+RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
+experiment_name = 'IPDAlign_RaP'; %Fill in with the name of the folder
+
+for i = 1: nExperiment
+    RUNTIME_ARGS_i(i).TRIAL_NAME = [experiment_name,'\', int2str(NumberOfPoints(i)), '_contact_pts'];
+    RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
+    RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
+end
+
+%Start timer for this experiment
+experimentStartTime = tic;
+%Disable any printed warnings for the parallel pool
+p = parpool();
+parfevalOnAll(p,@warning, 0,'off');
+opts = parforOptions(p);
+
+R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
+
+parfor (n = 1:nExperiment, opts)
+    [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
+end
+experimentEndTime = toc(experimentStartTime);
+disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 

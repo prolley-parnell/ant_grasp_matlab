@@ -60,8 +60,8 @@ classdef RuntimeArgs
             % The current plots are
             % Fig 1: RigidBodyTree model of ant and the CollisionBody of the object
             % Fig 2: COM of the CollisionBody, and the contact points in 3D space
-            % Default is [1 1] (Both Enabled)
-            obj.PLOT.ENABLE = [1 1]; %True if figure should be plotted
+            % Default is [0 0] (Both Disabled)
+            obj.PLOT.ENABLE = [0 0]; %True if figure should be plotted
 
 
             %The range that the simulation plot shows
@@ -89,7 +89,7 @@ classdef RuntimeArgs
             obj.N_TRIALS = 1;
 
 
-            
+
             % Print output to Terminal
             % Decide whether to print to the terminal the current state of the
             % simulation iteration
@@ -100,7 +100,7 @@ classdef RuntimeArgs
 
             % At the end of the simulation, save a CSV with the data collected during
             % each simulation
-            obj.PRINTOUT.ENABLE = true;
+            obj.PRINTOUT.ENABLE = false;
 
             %Output file format
             %Matlab uses Tables to process the data and can print it to
@@ -114,13 +114,14 @@ classdef RuntimeArgs
             % experiment. The default folder is called "printout_files" and
             % will be created in the same workspace as wherever the
             % AntModelScript.m is called.
-            %The folder must already exist 
+            %The folder must already exist
             obj.PRINTOUT.FOLDER = 'printout';
 
 
             %Whether to make a file that has the time stamp, position and
             %pose of the full model to be replayed.
-            obj.RECORD.ENABLE = true;
+            %Default is true
+            obj.RECORD.ENABLE = false;
 
 
             %The folder name where the recorded data will be printed.
@@ -128,11 +129,14 @@ classdef RuntimeArgs
             obj.RECORD.FOLDER = 'mat-files';
 
 
-
+            %Sense object file path relative to AntModel
             obj.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
+            %Global position of centre of object
             obj.COLLISION_OBJ.POSITION = [0 3 0.5];
+            %Orientation of object [NOT IMPLEMENTED]
             obj.COLLISION_OBJ.ROTATION = [0 0 0]; %roll pitch yaw
-            obj.COLLISION_OBJ.SCALE = 0.15;
+            %Scale of object
+            obj.COLLISION_OBJ.SCALE = 0.18;
 
 
             %ANT_URDF The file path to the URDF used to define the
@@ -140,11 +144,13 @@ classdef RuntimeArgs
             %obj.ANT_URDF = './urdf/ant.urdf';
             %The specified joint positions of the ant RigidBodyTree at the start of the
             %simulation
-            %DEFAULT: The home pose defined by the URDF represented by
+            %"home" = The home pose defined by the URDF represented by
             %"home"
             %nx1 array where n is the number of non-fixed joints
             %n = 10
-            obj.ANT_POSE = "home";
+            %DEFAULT = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]'
+            %Slightly more dynamic than the URDF home position
+            obj.ANT_POSE = [0 0 0 0 0.3 -0.45 0.85 0.3 -0.45 0.85]';
 
             %The starting global cartesian position of the ant model
             %DEFAULT: [0 0 0 0]
@@ -160,11 +166,6 @@ classdef RuntimeArgs
 
 
 
-            % Control methods: "goals", "joint" (not yet implemented)
-            % Control trajectories: "curve", "spiral", "straight",
-            % "joint_traj"
-
-
             %%[NEW] More Compact Antenna Control representation
             %obj.SEARCH
             %SEARCH.MODE = {('p2p' or 'joint'), (control mode ('GMM', 'mean')}
@@ -173,6 +174,7 @@ classdef RuntimeArgs
             %starting value=0.5)}
             %SEARCH.RANGE = 3x2 matrix containing the cartesian or joint
             %percentage range
+            % See below function for specific default values
             obj = obj.setAntennaControl({});
 
 
@@ -181,37 +183,26 @@ classdef RuntimeArgs
             %Function.
             obj.SEARCH.REFINE.ARG = {'psi1', 'psi2' ,'psi3', 'psi4'};
 
+            % Specific parameters from the IGEF Paper (Asfour et al.
+            % 2018) - values changed
+            % sigma_1, sigma_3, sigma_alpha, mu_3
             obj.SEARCH.REFINE.PARAM = [1.2, 0.5, 1.4, 0.9];
 
 
-            % Which method is used to evaluate the input sensory data
-            % (contact points) to indicate when the ant should grasp
-            %options are (string):
-            %DEFAULT: "closest_first_pair" : The first pair of contacts that are closer
-            %together than the mandible width thresh = 0.1
-            %"furthest_first_pair" : The first pair of contacts that are
-            %further apart than the threshold distance
-            %with the greatest distance thresh = 1 <- if mandible width is
-            %considered, the threshold must be less than the mandible width
-            %Width of mandibles is usually 0.8626
-
-            %"thresh_COC" : The pair that give the line closest to the
-            %Centre of Contact once the threshold has been reached
-            %"largest_wrench_vol" : If assessing all contact point pairings
-            %with equal forces in the direction of the opposing point being
-            %considered, pick the pair that generates the largest wrench
-            %space volume
-
-            %New sense.mode method:
+            %[NEW] SENSE.MODE method:
             %Which qualities are evaluated of the contact points to
             %synthesise a grasp
             %Cell array containing any of the following: 'dist', 'align'
             %'dist' - Scores the contact points based on their distance
             %'align' - measures the alignment of the grasp forces with the
             %surface normal
-            %'axis' - Using a principal axis through the data rather than
+            %'axis' - [NOT IMPLEMENTED] Using a principal axis through the data rather than
             %summarising individual points to generate a grasp
             obj.SENSE.MODE = {'dist','align'};
+
+            %Threshold for object quality, only update goal if new quality
+            %is higher than threshold - not required for current
+            %experiments
             obj.SENSE.THRESH = 0;
 
             %The number of contact points that must be collected before the
@@ -228,7 +219,7 @@ classdef RuntimeArgs
             %Qhull arguments, different modes enabled to get a fast
             %representation of the convex grasp wrench space using QHULL
             obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
-            
+
             % Force applied by mandibles
             obj.GRASP.FORCE = 1;
 
@@ -240,11 +231,9 @@ classdef RuntimeArgs
             %Map size (struct)
             %Height and width of the map used for path planning from the
             %current ant Position to the goal position. Used exclusively
-            %for path planning. Map should be as large as the search area
-            %required to make a valid path to the goal without collision,
-            %but larger maps require more time to process when path
-            %planning.
-            %(the units are the grid squares)
+            %for path planning.
+            % Larger maps require more time to process when path planning.
+            %(units are the grid squares)
             %Default = 10
             obj.MAP_SIZE.HEIGHT = 10;
             %Default = 10
@@ -252,8 +241,6 @@ classdef RuntimeArgs
 
             %The radius of the collision space created around each contact
             %point in the path planning map.
-            %NOTE: Previous work decided the radius using the standard
-            %deviation of the contact points that occupy the map
             obj.MAP_POINT_RADIUS = 0.05;
 
 
@@ -279,7 +266,7 @@ classdef RuntimeArgs
             %Whether to enable the movement of the body or not, used for
             %simplifying the model and enabling tests that do not require
             %the body to move.
-            obj.BODY_MOTION_ENABLE = 1;
+            obj.BODY_MOTION_ENABLE = 0;
 
 
         end
@@ -290,23 +277,24 @@ classdef RuntimeArgs
         end
 
         function obj = setAntennaControl(obj, cellInstruct)
-        %SETANTENNACONTROL Parse a cell array that contains char arrays for
-        %instructions on how to set the antenna control method
+            %SETANTENNACONTROL Parse a cell array that contains char arrays for
+            %instructions on how to set the antenna control method
             availableMethod = {'p2p', 'joint'};
             p2pControlMethod = {'GMM', 'mean'};
+            p2pRouteGen = {'jointInterp', 'cartesianPath'};
             refineMethod = {'IG'};
             jointControlMethod = {'mean'};
-            varianceMethod = {'varinc', 'vardec'};
-            
-            
+            varianceMethod = {'varinc', 'vardec', 'IPD', 'var='};
+
+
             methodFlag = contains(availableMethod, cellInstruct);
-            
-            
+
+
             if or(all(methodFlag), all(~methodFlag))
                 %warning("Must set only 1 antenna control method, default to sweep");
                 obj.SEARCH.MODE{1} = 'joint';
                 methodFlag = [0 1];
-                          
+
             end
             obj.SEARCH.MODE{1} = availableMethod{methodFlag==1};
 
@@ -315,15 +303,15 @@ classdef RuntimeArgs
 
             if methodFlag(1)
                 obj.SEARCH.RANGE = [-2, 2; ...
-                                    2, 4; ...
-                                    0, 1];
+                    2, 4; ...
+                    0, 1];
                 refineFlag = contains(refineMethod, cellInstruct);
                 if any(refineFlag)
                     obj.SEARCH.REFINE.MODE = refineMethod{refineFlag==1};
                 else
                     obj.SEARCH.REFINE.MODE = '';
                 end
-                
+
                 p2pmethodFlag = contains(p2pControlMethod, cellInstruct);
                 if any(p2pmethodFlag)
                     obj.SEARCH.MODE{2} = p2pControlMethod{p2pmethodFlag==1};
@@ -332,8 +320,8 @@ classdef RuntimeArgs
 
             elseif methodFlag(2)
                 obj.SEARCH.RANGE = [0 0.6;...
-                                    0.15 0.8;...
-                                    0.9 0.45];
+                    0.15 0.8;...
+                    0.9 0.45];
                 obj.SEARCH.REFINE = '';
                 jointControlFlag = contains(jointControlMethod, cellInstruct);
                 if any(jointControlFlag)
@@ -342,10 +330,10 @@ classdef RuntimeArgs
 
             end
 
-            varFlag = contains(cellInstruct, 'var');
+            varFlag = contains(cellInstruct, varianceMethod);
             %Set the default values in case that the variance is not
             %defined
-            obj.SEARCH.VAR = {'none', 0.5};
+            obj.SEARCH.VAR = {'none', 0.3};
             if any(varFlag)
                 varMethodFlag = contains(varianceMethod, cellInstruct);
                 if all(varMethodFlag)
@@ -353,12 +341,15 @@ classdef RuntimeArgs
                 elseif any(varMethodFlag)
                     obj.SEARCH.VAR{1} = varianceMethod{varMethodFlag==1};
                 end
-                varValueCell = extractAfter(cellInstruct{varFlag==1}, '=');
-                varValueInt = str2num(varValueCell);
-                if isempty(varValueInt)
-                    warning("Var= is used to set the initial int of variance, specify an integer")
-                else
-                    obj.SEARCH.VAR{2} = varValueInt;
+                initVarFlag = contains(cellInstruct, 'var=');
+                if any(initVarFlag)
+                    varValueCell = extractAfter(cellInstruct{initVarFlag==1}, '=');
+                    varValueInt = str2num(varValueCell);
+                    if isempty(varValueInt)
+                        warning("Var= is used to set the initial int of variance, specify an integer")
+                    else 
+                        obj.SEARCH.VAR{2} = varValueInt;
+                    end                    
                 end
             end
 

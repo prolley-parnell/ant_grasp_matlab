@@ -35,17 +35,12 @@ classdef JointActionGen
             obj.home_pose = RUNTIME_ARGS.ANT_POSE;
 
             obj.mean_q = obj.home_pose;
-            obj.mean_weight = 1;
+            obj.mean_weight = [1, 1];
 
             obj.search_config = RUNTIME_ARGS.SEARCH;
             obj.search_range = RUNTIME_ARGS.SEARCH.RANGE;
             obj.memory_length = RUNTIME_ARGS.ANT_MEMORY;
 
-%             if strcmp(RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE, 'IG')
-%                 obj.refineSearch = InformationGain(RUNTIME_ARGS);
-%             else
-%                 obj.refineSearch = struct.empty;
-%             end
 
         end
 
@@ -54,11 +49,11 @@ classdef JointActionGen
         function [antennaOut, antennaTrajectoryTime] = loadAntennaTrajectory(obj, antennaIn, ~, ~)
             %loadAntennaTrajectory
             antennaOut = antennaIn;
-            
+
             %% [COST] Start time to calculate antenna trajectory
             trajStartTime = tic;
             trajectoryQueue = obj.generateJointTrajectory(antennaIn);
-            
+
             antennaTrajectoryTime = toc(trajStartTime);
             % [COST] End time to calculate antenna trajectory
 
@@ -136,14 +131,15 @@ classdef JointActionGen
             %joint waypoints for the antenna (not the incremental
             %trajectory)
 
+
             if strcmp(obj.search_config.MODE{2}, 'random')
                 waypoints = obj.randomRestrict(antennaIn);
             elseif strcmp(obj.search_config.MODE{2}, 'mean')
                 waypoints = obj.meanCentred(antennaIn);
             end
-            
 
-            
+
+
 
 
         end
@@ -171,9 +167,13 @@ classdef JointActionGen
             %MEANCENTRED Generate the sparse waypoints for the 3 antennal
             %joints that will be used to make the mean centred sweeping
             %trajectory
+            %Extract which number of contacts to use for the mean
+
+
+
             %Generate the variance for each joint based on the mode and
             %joint limits
-            jointVariance = obj.generateVariance(antennaIn.joint_limits);
+            jointVariance = obj.generateVariance(antennaIn.joint_limits, antennaIn.number);
 
             %sample a value for each of the (first two) joints centred
             %about te mean
@@ -186,50 +186,59 @@ classdef JointActionGen
             %[TODO] Check that this works given that q2 has an inverted
             %axis
             runningMeanQ = obj.mean_q(antennaIn.joint_mask==1);
-            
+
             %[TODO] Check if the min/max selects based on each row
             %individually
             %Check the lower and upper working limits
             meanJointVal = tbox.applyUpperandLowerLimit(runningMeanQ(1:2, :), meanWorkingLimit(1:2,:));
-            
+
 
             %Randomly generate joint position based on the mean and
             %variance
             jointOffset = jointVariance(1:2,:).*((2*rand([2,1])) - 1);
-            
+
             newJointGoal = meanJointVal + jointOffset;
 
             %Ensure the values are within limits
             q12 = tbox.applyUpperandLowerLimit(newJointGoal, antennaIn.joint_limits(1:2,:));
-            
+
             %also generate a sweeping motion for q3
             outPath = [q12;meanWorkingLimit(3,2)];
             sweepIn = [q12;meanWorkingLimit(3,1)];
 
             %compile the random base with the sweeping motion
-            waypointArray = [outPath, sweepIn];           
+            waypointArray = [outPath, sweepIn];
 
         end
 
-        function [variance] = generateVariance(obj, joint_limits)
+        function [variance] = generateVariance(obj, joint_limits, weightMask)
             %GENERATEVARIANCE Use the instruction string to give a scalar
             %value of variance based on the internal state of the model and
             %the instruction
             modeString = obj.search_config.VAR{1};
-            availableModes = {'none', 'varinc', 'vardec'};
-            
+            availableModes = {'none', 'varinc', 'vardec', 'IPD'};
+
             modeIndex = find(contains(availableModes, modeString));
+
+            maskedWeight = obj.mean_weight(weightMask);
 
             if modeIndex==1 %If no variance change method is selected
                 variance_scale = obj.search_config.VAR{2};
             elseif modeIndex == 2 %If variance mode increases with the number of contacts
-                if obj.mean_weight<3
-                    variance_scale = 0.5;
+                if maskedWeight<2
+                    variance_scale = obj.search_config.VAR{2};
                 else
-                    variance_scale = obj.mean_weight*2 / obj.memory_length;
+                    variance_scale = maskedWeight*2 / obj.memory_length;
                 end
             elseif modeIndex == 3 %If the variance mode decreases with the number of contacts
-                variance_scale = 2/obj.mean_weight;
+                if maskedWeight<2
+                    variance_scale = obj.search_config.VAR{2};
+                else
+                    variance_scale = 2/maskedWeight;
+                end
+            elseif modeIndex == 4
+                warning('IPD variance not enabled for joint control')
+                variance_scale = obj.search_config.VAR{2};
             end
 
             motion_range = abs(joint_limits(:,1) - joint_limits(:,2));
@@ -239,7 +248,7 @@ classdef JointActionGen
         end
 
 
-        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct, qIn, joint_mask_i)
+        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct, qIn, joint_mask_i, antennaNumber)
             %[COST] Memory cost of ActionGen class for remembering means
 
             tStart = tic;
@@ -250,14 +259,14 @@ classdef JointActionGen
             if strcmp(obj.search_config.MODE{2}, 'mean')
                 %Identify which limb to find the joint mask
                 %Add pose of antenna at point of contact to the mean
-                obj = obj.addPoseToMean(qIn, joint_mask_i);
+                obj = obj.addPoseToMean(qIn, joint_mask_i, antennaNumber);
             end
 
 
-%             if ~isempty(obj.refineSearch)
-%                 tStart = tic;
-%                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
-%             end
+            %             if ~isempty(obj.refineSearch)
+            %                 tStart = tic;
+            %                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
+            %             end
 
             memoryCostTime = toc(tStart);
         end
@@ -273,8 +282,7 @@ classdef JointActionGen
             I = eye(d,d);
             p = ones([1, n])/n;
             %variance of the distribution around each point
-            %[TODO] Update this to match the new format for runtime args
-            if strcmp(obj.search_config.VAR, 'IPD')
+            if strcmp(obj.search_config.VAR{1}, 'IPD')
                 if n > 1
                     distanceMAT = pdist2(points, points);
                     distanceMAT(distanceMAT==0) = nan;
@@ -307,22 +315,22 @@ classdef JointActionGen
             obj.search_range = gmObj;
         end
 
-        function obj = addPoseToMean(obj, qIn, joint_mask)
+        function obj = addPoseToMean(obj, qIn, joint_mask, antenna_number)
             %ADDPOSETOMEAN Add the appropriate joint values to the mean at
             %the point of contact
-
+            mean_weight_temp = obj.mean_weight(antenna_number);
             %Multiply the mean by the number of contacts so far
-            scale_mean = obj.mean_q * obj.mean_weight;
+            scale_mean = obj.mean_q * mean_weight_temp;
 
             %Divide the mean value by the new number of samples
-            sum_q = (scale_mean + qIn)/(obj.mean_weight+1);
+            sum_q = (scale_mean + qIn)/(mean_weight_temp+1);
             %Update the weighting to have a maximum based on the set memory
             %length
-            obj.mean_weight = min(obj.mean_weight+1, obj.memory_length);
+            obj.mean_weight(antenna_number) = min(mean_weight_temp+1, obj.memory_length);
 
             %Edit the mean joint values, but only the relevant ones using a
             %mask
-            obj.mean_q(joint_mask==1) = sum_q(joint_mask==1); 
+            obj.mean_q(joint_mask==1) = sum_q(joint_mask==1);
 
         end
 

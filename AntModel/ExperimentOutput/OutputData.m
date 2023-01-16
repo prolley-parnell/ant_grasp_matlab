@@ -357,26 +357,26 @@ classdef OutputData
 
         end
 
-        function [resultsTable, summaryOut] = evaluateFolder(obj, folder, weights)
-
-            resultsTable = [];
-            fileStruct = dir([folder, '\*.mat']);
-
-            for idx = 1:length(fileStruct)
-                matPath = [folder, '\', fileStruct(idx).name];
-                trialMotionTable = obj.evaluateTrialMotionMat(matPath, weights);
-                trialGoalTable = obj.evaluateTrialGoalMat(matPath);
-
-                trialResults = [trialMotionTable, trialGoalTable];
-                resultsTable = [resultsTable ; trialResults];
-            end
-
-            %Order by trial number
-            resultsTable = sortrows(resultsTable,1);
-
-            summaryOut = varfun(@mean, resultsTable,"InputVariables",{'Duration','Overall Weighted Cost','Overall Weighted Cost Per Second','Weighted Cost Per Joint','Weighted Joint Cost Per Second', 'Volume', 'Epsilon', 'MP_2_COM_Offset'});
-
-        end
+%         function [resultsTable, summaryOut] = evaluateFolder(obj, folder, weights)
+% 
+%             resultsTable = [];
+%             fileStruct = dir([folder, '\*.mat']);
+% 
+%             for idx = 1:length(fileStruct)
+%                 matPath = [folder, '\', fileStruct(idx).name];
+%                 trialMotionTable = obj.evaluateTrialMotionMat(matPath, weights);
+%                 trialGoalTable = obj.evaluateTrialGoalMat(matPath);
+% 
+%                 trialResults = [trialMotionTable, trialGoalTable];
+%                 resultsTable = [resultsTable ; trialResults];
+%             end
+% 
+%             %Order by trial number
+%             resultsTable = sortrows(resultsTable,1);
+% 
+%             summaryOut = varfun(@mean, resultsTable,"InputVariables",{'Duration','Overall Weighted Cost','Overall Weighted Cost Per Second','Weighted Cost Per Joint','Weighted Joint Cost Per Second', 'Volume', 'Epsilon', 'MP_2_COM_Offset'});
+% 
+%         end
 
 
 

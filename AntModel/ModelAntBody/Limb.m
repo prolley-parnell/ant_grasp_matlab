@@ -4,6 +4,7 @@ classdef Limb
 
     properties
         name
+        number
         type
         colour
         end_effector
@@ -23,10 +24,11 @@ classdef Limb
     end
 
     methods
-        function obj = Limb(name, type, control_type, colour, end_effector, base_name, antTree, position, RUNTIME_ARGS)
+        function obj = Limb(name, number, type, control_type, colour, end_effector, base_name, antTree, position, RUNTIME_ARGS)
             %LIMB Construct an instance of this class
             %   Detailed explanation goes here
             obj.name = name;
+            obj.number = number;
             obj.type = type;
             obj.colour = colour;
             obj.end_effector = end_effector;
