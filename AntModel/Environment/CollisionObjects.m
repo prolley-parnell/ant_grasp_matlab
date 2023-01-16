@@ -146,10 +146,10 @@ classdef CollisionObjects
 
             for j=1:nSTL
 
-                
+
                 %Translate all vertices so the total mean COM is at 0 0 0
                 zeroMesh = model{j}.Mesh.Nodes' - CentreOfMass;
-                
+
                 k = convhulln(zeroMesh);
                 %Need to remove indices not referenced by convhill
                 newVertIdx = unique(k);
@@ -168,13 +168,13 @@ classdef CollisionObjects
 
                 obj.objectHandles{j} = collision_mesh;
 
-                %Translate to the object pose for the DT calculations        
+                %Translate to the object pose for the DT calculations
                 translateNode = newVertexArray + ARGS.POSITION;
 
                 %Calculate the surface normals for each face
                 [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateNode);
 
-                
+
 
             end
             %Save the generated meshes to be loaded later
@@ -284,6 +284,45 @@ classdef CollisionObjects
                 end
 
             end
+
+        end
+
+        function [contactPtArray, normalArray, stlID] = findRayIntersect(obj, orig, dir, vargin)
+            %%FINDRAYINTERSECT Return the first point of intersection
+            %%created along a vector from a point in space. Include which
+            %%STL the ray intersects and the contact point and surface
+            %%normal at intersection
+
+            %If the size of the start point array is incompatible with the
+            %number of vectors then raise a warning
+
+            contactPtArray = nan(1,3);
+            normalArray = nan(1,3);
+            stlID = -1;
+
+
+            nRay = size(orig,1);
+            %Make a set of all faces to check
+            nSTL = length(obj.FBT);
+            for j = 1:nRay
+                for i = 1:nSTL
+                    faceArray = obj.FBT{i}.ConnectivityList;
+                    vertArray = obj.FBT{i}.Points;
+                    vert0 = vertArray(faceArray(:,1),:);
+                    vert1 = vertArray(faceArray(:,2),:);
+                    vert2 = vertArray(faceArray(:,3),:);
+                    [intersect, ~, ~, ~, xcoor] = TriangleRayIntersection(orig(j,:), dir(j,:), vert0, vert1, vert2, vargin{:});
+                    if find(intersect)
+                        stlID = i;
+                        faceID = find(intersect);
+                        contactPtArray = xcoor(faceID, :);
+                        normalArray = faceNormal(obj.FBT{i}, faceID);
+                    end
+                end
+            end
+
+
+
 
         end
     end

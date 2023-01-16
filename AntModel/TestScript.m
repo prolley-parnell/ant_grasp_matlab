@@ -40,7 +40,7 @@ RUNTIME_ARGS.N_TRIALS = 1;
 RUNTIME_ARGS.RATE = 0.05;
 
 %Plot the experiment
-RUNTIME_ARGS.PLOT.ENABLE = [1 0];
+RUNTIME_ARGS.PLOT.ENABLE = [1 1];
 
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
@@ -83,7 +83,7 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 
 % ------------- Goal Selection Method ---------- %
 % Checks all points for each of the modes included in the brackets
-RUNTIME_ARGS.SENSE.MODE = {'align'};
+RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis [NOT IMPLEMENTED]
 %RUNTIME_ARGS.SENSE.MODE = {'PCA'};
