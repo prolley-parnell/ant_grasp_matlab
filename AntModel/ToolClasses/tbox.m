@@ -442,5 +442,14 @@ classdef tbox
 
         end
 
+        function limitedValues = applyUpperandLowerLimit(inputValue, limitMat)
+            %APPLYUPPERANDLOWERLIMIT Input is an mx1 mat and limit is an
+            %mx2 mat with upper limit in the first column, and lower limit
+            %on the right column
+            value_upper_cap = min(inputValue, limitMat(:,2));
+            limitedValues = max(value_upper_cap, limitMat(:,1));
+
+        end
+
     end
 end

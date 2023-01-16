@@ -1,9 +1,7 @@
 classdef SampleActionGen
-    %SPIRALACTION controls the two antennal angles
-    % [TODO] Write the documentation for this
-    % %   ChangeLog: 22/08/22 - Emily Rolley-Parnell - Change
-    % body2globaltraj class to have premultiplying rotations and remove old
-    % code
+    %SAMPLEACTIONGEN Used to generate trajectories for the joints in the
+    %antennae and mandibles. Functions relate to point to point control in
+    %cartesian space and use inverse kinematics
 
     properties
         interval
@@ -28,10 +26,10 @@ classdef SampleActionGen
             %Make the scape pedicel joint have a higher speed limit
             obj.maxvelocities([7 10]) = deg2rad(7) / obj.interval;
 
-            obj.search_config = RUNTIME_ARGS.SEARCH_SPACE;
-            obj.search_range = RUNTIME_ARGS.SEARCH_SPACE.SAMPLE.RANGE;
+            obj.search_config = RUNTIME_ARGS.SEARCH;
+            obj.search_range = RUNTIME_ARGS.SEARCH.RANGE;
 
-            if strcmp(RUNTIME_ARGS.SEARCH_SPACE.REFINE.MODE, 'IG')
+            if strcmp(RUNTIME_ARGS.SEARCH.REFINE.MODE, 'IG')
                 obj.refineSearch = InformationGain(RUNTIME_ARGS);
             else
                 obj.refineSearch = struct.empty;
@@ -47,11 +45,11 @@ classdef SampleActionGen
 
 
 
-        function [antennaOut] = loadAntennaTrajectory(obj, antennaIn, qIn, positionIn)
-
-            %If the control style of the antenna is to reach goal
-            %positions
-            %Generate the next goal
+        function [antennaOut, antennaTrajectoryTime] = loadAntennaTrajectory(obj, antennaIn, qIn, positionIn)
+            %LOADANTENNATRAJECTORY generate a sampling point in cartesian space and
+            % generate a joint trajectory to reach the sampling point
+            %% [COST] Start time to calculate antenna trajectory
+            trajStartTime = tic;
             antennaOut = antennaIn;
             if ~isempty(obj.refineSearch)
                 N = obj.refineSearch.n_sample;
@@ -71,7 +69,8 @@ classdef SampleActionGen
             else
                 goalPropStructOut = goalPropStruct(1);
             end
-
+            antennaTrajectoryTime = toc(trajStartTime);
+            % [COST] End time to calculate antenna trajectory
             antennaOut.trajectory_queue = goalPropStructOut.jointPath;
 
         end
@@ -177,64 +176,101 @@ classdef SampleActionGen
 
 
         function [goalTrajProperties] = generateGoalProp(obj, antennaIn, qIn, positionIn, goalArray)
-            %For N goals, get N trajectory structs with the cartesian end
-            %positions, and the joint positions to reach the path
+            %GENERATEGOALPROP Use the control methods for the antennae,
+            %fill in the struct that includes the cartesian start and end
+            %points, and the cartesian and joint trajectories.
+
+            %Define the goal struct
             goalTrajProperties = struct('startPt', [], 'endPt', [], 'cartesianPath', [], 'jointPath', []);
 
-            pattern = antennaIn.control_type(~strcmp(antennaIn.control_type, "goals")); %Find the name of the pattern
+            %Determine whether the trajectories are generated with finding
+            %joint positions for cartesian points, or finding the joint
+            %position for the end point and interpolating
+            trajOption = {'jointInterp', 'cartesianPath'};
+
+            trajGenFlag = contains(trajOption, antennaIn.control_type);
+
+            %Check for errors in assigning the mode of generating the
+            %trajectory to the cartesian point.
+            if all(trajGenFlag)
+                warning('Too many options selected, default to jointInterp');
+                trajGenMode = 'jointInterp';
+                trajGenFlag = contains(trajOption, trajGenMode);
+            elseif any(trajGenFlag)
+                %trajGenMode = trajOption{trajGenFlag==1}
+            else
+                warning('No option selected for traj generation, default to jointInterp')
+                trajGenMode = 'jointInterp';
+                trajGenFlag = contains(trajOption, trajGenMode);
+            end
+
+            trajGenModeIdx = find(trajGenFlag);
 
             nGoal = size(goalArray,1);
             for g = 1:nGoal
                 goalTrajProperties(g).startPt = antennaIn.free_point;
                 goalTrajProperties(g).endPt = goalArray(g,:);
-                switch pattern
 
-                    case "joint_traj"
-                        %If joint based, then gen joint first then
-                        %cartesian
-                        %Generate goals and their trajectories
+                if trajGenModeIdx==1 %jointInterp
+                    %Generate trajectory using interpolation between
+                    %the joint configuration for the initial tip position
+                    % and the goal point joint config
 
-                        waypointsGlobal = [antennaIn.free_point', goalArray(g,:)'];
-                        [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
-                        %velocityLims = obj.maxvelocities(antennaIn.joint_mask==1)*obj.interval;
-                        velocityLims = obj.maxvelocities(antennaIn.joint_mask==1);
-                        goalTrajProperties(g).jointPath = obj.jointTrajectory(jointWaypoints, velocityLims);
-                        nPose = size(goalTrajProperties(g).jointPath,2);
+                    waypointsGlobal = [antennaIn.free_point', goalArray(g,:)'];
 
-                        %Initialise the output cartesian values
-                        if ~isempty(obj.refineSearch)
-                            if obj.refineSearch.information_measures(2)
-                                cartesianOut = nan([nPose,3]);
+                    %Find the joint configurations for the last free
+                    %point and the goal
+                    [jointWaypoints] = antennaIn.findIKforGlobalPt(waypointsGlobal);
 
-                                for n = 1:nPose
-                                    % --- If code stops working after global
-                                    % position changes --%
-                                    %pose_n = antennaIn.applyMask(qIn, goalTrajProperties(g).jointPath(:,n));
-                                    %cartesianOut(n,:) = tbox.findFKglobalPosition(antennaIn.full_tree, pose_n, positionIn, antennaIn.end_effector);
+                    %Load joint velocity limits
+                    velocityLims = obj.maxvelocities(antennaIn.joint_mask==1);
 
-                                    % -- Assuming the code continues to work
-                                    % properly on the local scale (as subtrees
-                                    % are updated) -- %%
-                                    cartesianOut(n,:) = tbox.findFKlocalPosition(antennaIn.subtree, ...
-                                        goalTrajProperties(g).jointPath(:,n), ...
-                                        antennaIn.end_effector);
-                                end
+                    %Generate the joint waypoints along the path that
+                    %fit to the velocity limits
+                    goalTrajProperties(g).jointPath = obj.jointTrajectory(jointWaypoints, velocityLims);
 
-                                goalTrajProperties(g).cartesianPath = cartesianOut;
+                    %Find the number of intermediate poses
+                    nPose = size(goalTrajProperties(g).jointPath,2);
+
+                    if ~isempty(obj.refineSearch)
+                        %If the IGEF doesn't need the cartesian path of
+                        %the motion for evaluating cost, then don't
+                        %generate it
+                        if obj.refineSearch.information_measures(2)
+                            cartesianOut = nan([nPose,3]);
+
+                            for n = 1:nPose
+                                % --- If code stops working after global
+                                % position changes --%
+                                %pose_n = antennaIn.applyMask(qIn, goalTrajProperties(g).jointPath(:,n));
+                                %cartesianOut(n,:) = tbox.findFKglobalPosition(antennaIn.full_tree, pose_n, positionIn, antennaIn.end_effector);
+
+                                % -- Assuming the code continues to work
+                                % properly on the local scale (as subtrees
+                                % are updated) -- %%
+                                cartesianOut(n,:) = tbox.findFKlocalPosition(antennaIn.subtree, ...
+                                    goalTrajProperties(g).jointPath(:,n), ...
+                                    antennaIn.end_effector);
                             end
+
+                            goalTrajProperties(g).cartesianPath = cartesianOut;
                         end
+                    end
 
 
-                    otherwise
-                        %If cartesian based, gen cartesian then joint
+                elseif trajGenModeIdx == 2 %cartesianPath
+                    %Generate a trajectory made up of cartesian points
+                    %and find the joint configurations to meet those
+                    %points.
 
-                        goalTrajProperties(g).cartesianPath = obj.generateWaypoints(antennaIn.free_point, goalArray(g,:), pattern);
-                        %Transform waypoints to be relative to the full
-                        %rigidBodyTree base_link rather than global coordinates
-                        %(for speed) antennaIn, points, positionIn, qIn
-                        localModelTF = tbox.modelPosition2GlobalTF(positionIn);
-                        waypointsLocal = tbox.global2local(goalTrajProperties(g).cartesianPath, localModelTF);
-                        goalTrajProperties(g).jointPath = obj.trajfromWP(antennaIn, waypointsLocal, qIn);
+                    goalTrajProperties(g).cartesianPath = obj.generateWaypoints(antennaIn.free_point, goalArray(g,:), "curve");
+                    %Find the global to local transform for the model
+                    localModelTF = tbox.modelPosition2GlobalTF(positionIn);
+                    %Transform waypoints from global to local frame
+                    waypointsLocal = tbox.global2local(goalTrajProperties(g).cartesianPath, localModelTF);
+                    %Find the joint configuration for each of the
+                    %cartesian waypoints
+                    goalTrajProperties(g).jointPath = obj.jointConfigFromCartesian(antennaIn, waypointsLocal, qIn);
 
 
                 end
@@ -269,7 +305,11 @@ classdef SampleActionGen
         end
 
 
-        function qTrajectory = trajfromWP(obj, inputObj, waypoints, qIn)
+        function qTrajectory = jointConfigFromCartesian(obj, inputObj, waypoints, qIn)
+            %JOINTCONFIGFROMCARTESIAN Use either pose or 3D XYZ and find
+            %the joint configuration for a set of consecutive points in a
+            %trajectory
+            %[TODO] Check similarity with limb.findIKForGlobalPt
 
             poseTgt = constraintPoseTarget(inputObj.end_effector);
             poseTgt.ReferenceBody = inputObj.full_tree.BaseName;
@@ -323,17 +363,30 @@ classdef SampleActionGen
             qTrajectory(:,1) = [];
         end
 
-        function obj = updateContactMemory(obj, contact_pointStruct)
-            if strcmp(obj.search_config.SAMPLE.MODE, "GM")
-                obj = obj.updateGM(contact_pointStruct);
+        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct, ~, ~, ~)
+            %UPDATECONTACTMEMORY If new contact has been made, update the appropriate memory stores
+            %[COST] Memory time cost of ActionGen class for remembering means
+            tStart = tic;
+            if strcmp(obj.search_config.MODE{2}, 'GMM')
+                tStart = tic;
+                obj = obj.updateGMM(contact_pointStruct);
             end
+            %             if strcmp(obj.search_config.MODE{2}, 'mean')
+            %                 %Identify which limb to find the joint mask
+            %                 %Add pose of antenna at point of contact to the mean
+            %                 obj = obj.addPoseToMean(qIn, joint_mask_i);
+            %             end
             if ~isempty(obj.refineSearch)
+                tStart = tic;
                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
             end
+            memoryCostTime = toc(tStart);
 
         end
 
-        function obj = updateGM(obj, contact_pointStruct)
+
+
+        function obj = updateGMM(obj, contact_pointStruct)
 
             points = cat(1,contact_pointStruct(:).point);
             n = size(points,1);
@@ -344,7 +397,8 @@ classdef SampleActionGen
             I = eye(d,d);
             p = ones([1, n])/n;
             %variance of the distribution around each point
-            if strcmp(obj.search_config.SAMPLE.VAR, "IPD")
+            %[TODO] Update this to match the new format for runtime args
+            if strcmp(obj.search_config.VAR{1}, 'IPD')
                 if n > 1
                     distanceMAT = pdist2(points, points);
                     distanceMAT(distanceMAT==0) = nan;
@@ -361,12 +415,12 @@ classdef SampleActionGen
                 sigma = I.* reshape(dist, [1 1 n]);
 
             else
-                if ~strcmp(class(obj.search_config.SAMPLE.VAR), "double")
+                if ~strcmp(class(obj.search_config.VAR{2}), "double")
                     warning("The set variance is not a valid value - overwrite to 1")
-                    obj.search_config.SAMPLE.VAR = 1;
+                    obj.search_config.VAR = 1;
                 end
 
-                variance = obj.search_config.SAMPLE.VAR;
+                variance = obj.search_config.VAR{2};
 
 
                 sigma = repmat(I*variance, [1 1 n]);
@@ -398,7 +452,7 @@ classdef SampleActionGen
             tSamples = 0:0.05:1;
             [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
 
-            outputTrajectory = obj.trajfromWP(neckIn, waypoints, qIn);
+            outputTrajectory = obj.jointConfigFromCartesian(neckIn, waypoints, qIn);
 
         end
 
