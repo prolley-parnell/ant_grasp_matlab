@@ -8,6 +8,7 @@ classdef CostCalculator
         bodyMotion
         memoryCost
         trialTime
+        trialDuration
         weights
 
 
@@ -20,6 +21,7 @@ classdef CostCalculator
             obj.movementCost = [];
             obj.memoryCost = 0;
             obj.trialTime = table(0, 0, 'VariableNames', {'limbCalculation', 'sumGoalTime'});
+            obj.trialDuration = 0;
 
             
             
@@ -59,7 +61,8 @@ classdef CostCalculator
 
         function obj = calculateMotionCost(obj, replayTable)
             movementCostStruct = obj.weightedMotionCost(obj.weights, replayTable);
-            obj.movementCost = [movementCostStruct.joint_motion_per_second, movementCostStruct.position_cost];
+            obj.movementCost = [movementCostStruct.joint_motion_total, movementCostStruct.position_cost];
+            obj.trialDuration = movementCostStruct.duration;
 
 
         end
@@ -128,6 +131,7 @@ classdef CostCalculator
                 movementStruct.weighted_cost_per_joint = sum(pose_difference,1) .* weights_norm';
                 movementStruct.overall_cost = sum(movementStruct.weighted_cost_per_joint);
                 movementStruct.joint_motion_per_second = sum(pose_difference,1) / movementStruct.duration;
+                movementStruct.joint_motion_total = sum(pose_difference, 1);
                                                
             else
                 warning('Pose Change over Trial not detected')
@@ -149,8 +153,10 @@ classdef CostCalculator
 
             costTable.(3) = obj.trialTime.(1);
             costTable.(4) = obj.trialTime.(2);
-            costTable.(5) = trialRWTime;
-            costTable.Properties.VariableNames = {'Joint Motion', 'Memory Bytes', 'limbControlCalculationTime', 'goalCalcTime', 'totalTime'};
+            costTable.(5) = obj.trialDuration;
+            costTable.(6) = trialRWTime;
+            
+            costTable.Properties.VariableNames = {'Joint Change', 'Total Contact Memory Bytes', 'limbControlCalculationTime', 'goalCalcTime', 'Simulation Time' , 'Real World Time' };
                     
             
         end
