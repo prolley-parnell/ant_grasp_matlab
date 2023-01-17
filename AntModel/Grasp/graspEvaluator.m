@@ -45,12 +45,14 @@ classdef graspEvaluator
             %Calculate the volume and epsilon for the given goal grasp
             %point locations
             forces = obj.genOpposeForces(A, B);
-            vertices = environmentClass.objectHandles{idx}.Vertices;
-            normAlignArray = tbox.findSurfNormAlign(goalObj.contact_norm, forces);
+            if ~any(isnan(forces))
+                vertices = environmentClass.objectHandles{idx}.Vertices;
+                normAlignArray = tbox.findSurfNormAlign(goalObj.contact_norm, forces);
 
-            qualityObj.normAlign = min(normAlignArray);
+                qualityObj.normAlign = min(normAlignArray);
 
-            [qualityObj.volume, qualityObj.epsilon] = obj.findWrenchQuality(forces, [A;B], vertices, globalCOM, objCOM);
+                [qualityObj.volume, qualityObj.epsilon] = obj.findWrenchQuality(forces, [A;B], vertices, globalCOM, objCOM);
+            end
 
 
         end

@@ -20,7 +20,7 @@ classdef OutputData
         contact_data
         sense_goal_data
         replay_data
-        cost_summary
+       
 
         costClass
 
@@ -67,6 +67,8 @@ classdef OutputData
         function obj = saveTrial(obj, trial_number, antTree, tocTime)
             %saveTrialMAT Writes the data collected from the past trial to
             %a MATLAB MAT file
+            % Inputs:
+            % tocTime: Real world time taken from start to end of trial
             
             %Compile the sensory data
             contactsTable = cell2table(vertcat(obj.contact_data{:}));
@@ -83,7 +85,7 @@ classdef OutputData
             obj.costClass = obj.costClass.calculateMotionCost(replayTable);
 
             %Make a copy of the cost summary table
-            costSummaryTable = obj.costClass.convertToTable(tocTime);
+            costSummaryTable = obj.costClass.convertToTable(tocTime, RUNTIME_ARGS.RATE, );
 
             %Rename the runtime args for no particular reason
             setupRuntimeArgs = obj.RUNTIME_ARGS;
@@ -115,7 +117,8 @@ classdef OutputData
             obj.sense_goal_data = {};
             obj.replay_data = {};
             obj.contact_data = {};
-            %obj.cost_summary = table.empty;
+         
+            obj.costClass = CostCalculator();
 
         end
 
