@@ -12,5 +12,15 @@
 % 6.  IPD&Align             Contact Mean Centred
 
 %Warning: current folder must be the one that contains the overhead script
+
+
 %5
-run('.\IPDAlign_RaP.m')
+run('.\IPDAlign_RRaP.m')
+%5.5
+
+run('\IPDAlign_CMC_fixvar.m')
+%6
+%run('.\IPDAlign_CMC_vardec.m')
+
+%6.5
+%run('.\IPDAlign_CMC_varinc.m')
