@@ -120,3 +120,5 @@ end
 experimentEndTime = toc(experimentStartTime);
 disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 
+%Change back to the script folder in case of multiple scripts being run
+cd(scriptFolder)
