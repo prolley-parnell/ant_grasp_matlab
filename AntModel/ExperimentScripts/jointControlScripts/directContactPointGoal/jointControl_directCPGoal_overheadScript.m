@@ -14,16 +14,16 @@
 %Warning: current folder must be the one that contains the overhead script
 
 %1
-run('.\IPD_RRaP.m')
+%run('.\IPD_RRaP.m')
 
 %3
-run('.\Align_RRaP.m')
+%run('.\Align_RRaP.m')
 
 %5
-run('.\IPDAlign_RRaP.m')
+%run('.\IPDAlign_RRaP.m')
 %5.5
 
-run('\IPDAlign_CMC_fixvar.m')
+run('.\IPDAlign_CMC_fixvar.m')
 %6
 run('.\IPDAlign_CMC_vardec.m')
 
