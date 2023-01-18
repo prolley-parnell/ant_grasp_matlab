@@ -1,5 +1,5 @@
 %% Experiment Template - Currently Windows only
-% 10/01/2023 - Emily Rolley-Parnell
+% 18/01/2023 - Emily Rolley-Parnell
 %% Set the environment by closing any previous figures and variables
 
 %If errors persist and the system crashes or closes, use diary to store
@@ -65,7 +65,7 @@ motion_type = {'p2p'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM', 'mean'};
 %if using joint control then jointmode = {'mean'}
-control_method = {'mean'};
+control_method = {'GMM'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
@@ -97,7 +97,7 @@ nExperiment = length(NumberOfPoints);
 % 2 - Assign the controlled variable to the replicated runtime args.
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
-experiment_name = 'sense_mode_or_grasp_mode'; %Fill in with the name of the folder
+experiment_name = 'IPDAlign_CGMMC_fixvar'; %Fill in with the name of the folder
 
 for i = 1: nExperiment
     RUNTIME_ARGS_i(i).TRIAL_NAME = [experiment_name,'\', int2str(NumberOfPoints(i)), '_contact_pts'];
@@ -118,5 +118,7 @@ parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 experimentEndTime = toc(experimentStartTime);
-disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
+disp(['Experiment named: ', experiment_name, ' completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 
+%Change back to the script folder in case of multiple scripts being run
+cd(scriptFolder)

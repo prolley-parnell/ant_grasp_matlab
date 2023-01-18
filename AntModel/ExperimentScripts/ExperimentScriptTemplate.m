@@ -63,8 +63,8 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 % Select point-to-point or joint based control
 motion_type = {'p2p'}; %{'p2p', 'joint'};
 
-%if using p2p then p2pmode = {'GMM', 'mean'};
-%if using joint control then jointmode = {'mean'}
+%if using p2p then p2pmode = {'GMM', 'random'};
+%if using joint control then jointmode = {'mean', 'random'}
 control_method = {'mean'};
 
 %If using Information gain refinement {'IG'}
@@ -118,7 +118,7 @@ parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 experimentEndTime = toc(experimentStartTime);
-disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
+disp(['Experiment named: ', experiment_name, ' completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 
 %Change back to the script folder in case of multiple scripts being run
 cd(scriptFolder)

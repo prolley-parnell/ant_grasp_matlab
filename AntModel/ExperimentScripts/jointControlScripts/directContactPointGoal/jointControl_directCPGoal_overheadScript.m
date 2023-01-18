@@ -16,16 +16,22 @@
 %1
 %run('.\IPD_RRaP.m')
 
+%2
+run('.\IPD_CMC_fixvar.m')
+
 %3
 %run('.\Align_RRaP.m')
+
+%4
+run('.\Align_CMC_fixvar.m')
 
 %5
 %run('.\IPDAlign_RRaP.m')
 %5.5
 
-run('.\IPDAlign_CMC_fixvar.m')
+%run('.\IPDAlign_CMC_fixvar.m')
 %6
-run('.\IPDAlign_CMC_vardec.m')
+%run('.\IPDAlign_CMC_vardec.m')
 
 %6.5
-run('.\IPDAlign_CMC_varinc.m')
+%run('.\IPDAlign_CMC_varinc.m')

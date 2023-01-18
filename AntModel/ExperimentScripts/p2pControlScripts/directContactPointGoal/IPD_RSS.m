@@ -1,5 +1,5 @@
 %% Experiment Template - Currently Windows only
-% 10/01/2023 - Emily Rolley-Parnell
+% 18/01/2023 - Emily Rolley-Parnell
 %% Set the environment by closing any previous figures and variables
 
 %If errors persist and the system crashes or closes, use diary to store
@@ -61,10 +61,10 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 % ------------- Antenna Motion -------------- %
 % Select point-to-point or joint based control
-motion_type = {'joint'}; %{'p2p', 'joint'};
+motion_type = {'p2p'}; %{'p2p', 'joint'};
 
-%if using p2p then p2pmode = {'GMM'};
-%if using joint control then jointmode = {'mean'}
+%if using p2p then p2pmode = {'GMM', 'random'};
+%if using joint control then jointmode = {'mean', 'random'}
 control_method = {'random'};
 
 %If using Information gain refinement {'IG'}
@@ -80,7 +80,7 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 
 % ------------- Goal Selection Method ---------- %
 % Checks all points for each of the modes included in the brackets
-RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
+RUNTIME_ARGS.SENSE.MODE = {'dist'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis [NOT IMPLEMENTED]
 %RUNTIME_ARGS.SENSE.MODE = {'PCA'};
@@ -97,7 +97,7 @@ nExperiment = length(NumberOfPoints);
 % 2 - Assign the controlled variable to the replicated runtime args.
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
-experiment_name = 'IPDAlign_RRaP'; %Fill in with the name of the folder
+experiment_name = 'IPD_RSS'; %Fill in with the name of the folder
 
 for i = 1: nExperiment
     RUNTIME_ARGS_i(i).TRIAL_NAME = [experiment_name,'\', int2str(NumberOfPoints(i)), '_contact_pts'];
@@ -108,7 +108,6 @@ end
 %Start timer for this experiment
 experimentStartTime = tic;
 %Disable any printed warnings for the parallel pool
-delete(gcp('nocreate'))
 p = parpool();
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
@@ -119,7 +118,7 @@ parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 experimentEndTime = toc(experimentStartTime);
-disp(['Experiment named: ', experiment_name, ' completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
+disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 
 %Change back to the script folder in case of multiple scripts being run
 cd(scriptFolder)
