@@ -85,7 +85,7 @@ classdef OutputData
             obj.costClass = obj.costClass.calculateMotionCost(replayTable);
 
             %Make a copy of the cost summary table
-            costSummaryTable = obj.costClass.convertToTable(tocTime, RUNTIME_ARGS.RATE, );
+            costSummaryTable = obj.costClass.convertToTable(tocTime);
 
             %Rename the runtime args for no particular reason
             setupRuntimeArgs = obj.RUNTIME_ARGS;
