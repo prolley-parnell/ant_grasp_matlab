@@ -299,7 +299,7 @@ classdef CollisionObjects
             contactPtArray = nan(1,3);
             normalArray = nan(1,3);
             stlID = -1;
-            closeDist = [];
+            closeDist = inf;
 
 
             nRay = size(orig,1);

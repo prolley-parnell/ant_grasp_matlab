@@ -145,7 +145,7 @@ classdef graspSynthesis
 
             %% Testing, plot to see
 
-            figure(2)
+            figure(1)
             hold on
             plot3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), ':*','MarkerSize',7, 'LineWidth', 1)
             vector_base = obj.COC.mean - var_axis.*0.5;
@@ -163,12 +163,17 @@ classdef graspSynthesis
             [mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, rayVec, vargin);
 
             % Approach shape Use either Y axis, or the furthest point
-            approachTipMP = mand_base_contact_pt ;
+            approachTipMP = mand_base_contact_pt - (y_axis_n * obj.mandible_depth);
             approachTipA = approachTipMP - (x_axis_n * obj.mandible_max*0.5);
             approachTipB = approachTipMP + (x_axis_n * obj.mandible_max*0.5);
 
             %Define the rays of approach
-            approachRay = -y_axis_n * obj.mandible_depth;
+            approachRay = y_axis_n;
+
+            figure(1)
+            hold on
+            quiver3(approachTipA(1), approachTipA(2), approachTipA(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+            quiver3(approachTipB(1), approachTipB(2), approachTipB(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
 
             %4: Find the points of intersection and surface normal for those arcs. These are
             %the contact points
@@ -177,11 +182,11 @@ classdef graspSynthesis
             contactPts = repmat(contactStruct, [2,1]);
             %If either point makes contact, the contact with the distance
             %closest to the starting approachTip is the first contact
-            vargin = {'lineType', 'segment'};
+            vargin = {'border','inclusive'};
             [contactPts(1).point, contactPts(1).normal, ~, distA] = env.findRayIntersect(approachTipA, approachRay,vargin);
             [contactPts(2).point, contactPts(2).normal, ~, distB] = env.findRayIntersect(approachTipB, approachRay, vargin);
 
-            if all(isempty([distA, distB]))
+            if all(isfinite([distA, distB]))
                 %Approached without collision
 
                 %Find the first point of collision along the axis of approach
