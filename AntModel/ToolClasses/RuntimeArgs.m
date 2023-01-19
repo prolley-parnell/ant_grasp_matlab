@@ -196,7 +196,7 @@ classdef RuntimeArgs
             %'dist' - Scores the contact points based on their distance
             %'align' - measures the alignment of the grasp forces with the
             %surface normal
-            %'axis' - [NOT IMPLEMENTED] Using a principal axis through the data rather than
+            %'PCA' - [NOT IMPLEMENTED] Using a principal axis through the data rather than
             %summarising individual points to generate a grasp
             obj.SENSE.MODE = {'dist','align'};
 

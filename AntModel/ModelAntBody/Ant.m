@@ -64,7 +64,6 @@ classdef Ant
             names = [{"Left_Antenna"}, {"Right_Antenna"}, {"Left_Mandible"}, {"Right_Mandible"}];
             numbers = [{1},{2},{1},{2}];
             types = [{"Antenna"}, {"Antenna"},{"Mandible"},{"Mandible"}];
-            %control_type = [{RUNTIME_ARGS.ANTENNA_CONTROL}, {RUNTIME_ARGS.ANTENNA_CONTROL},{nan},{nan}];
             control_type = [{RUNTIME_ARGS.SEARCH.MODE}, {RUNTIME_ARGS.SEARCH.MODE},{nan},{nan}];
             colours = [{'blue'}, {'red'}, {'green'}, {'green'}];
             end_effectors = [{"l_tip"}, {"r_tip"}, {"left_jaw_tip"}, {"right_jaw_tip"}];
@@ -80,8 +79,9 @@ classdef Ant
             obj.contact_points = struct.empty;
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
 
-            obj.graspGen = graspSynthesis(RUNTIME_ARGS, obj.findMaxMandibleDist);
-            obj.graspEval = graspEvaluator(RUNTIME_ARGS);
+            mandible_max = obj.findMaxMandibleDist;
+            obj.graspGen = graspSynthesis(RUNTIME_ARGS, mandible_max, obj.findMandibleDepth);
+            obj.graspEval = graspEvaluator(RUNTIME_ARGS, mandible_max);
             obj.mandible_state = 0;
             obj.grasp_complete = 0;
 
@@ -114,7 +114,7 @@ classdef Ant
 
 
             %Evaluate the sensory data to instruct behaviour
-            [obj, goalOut, costStruct.goal] = obj.graspGen.check(obj, sensedData);
+            [obj, goalOut, costStruct.goal] = obj.graspGen.check(obj, sensedData, env);
 
             % Update goals
             %If graspGenerator indicates to move
@@ -170,6 +170,34 @@ classdef Ant
             A2B = end_point(1,:) - end_point(2,:);
             distance = sqrt(sum(A2B.^2));
 
+
+
+        end
+
+        function distance = findMandibleDepth(obj)
+
+            tip = [];
+            base = [];
+            %Return the maximum joint positions of the mandibles
+            for i=1:length(obj.limbs)
+                if strcmp(obj.limbs{i}.type, "Mandible")
+                    %Find the joint limits
+                    max_q = obj.limbs{i}.joint_limits(:,2);
+
+                    %Find the end position of the mandible tip given this
+                    %pose
+                    pose = obj.q;
+                    pose(obj.limbs{i}.joint_mask == 1) = max_q;
+                    tip(end+1,:) = tform2trvec(getTransform(obj.antTree, pose, obj.limbs{i}.end_effector));
+                    base(end+1,:) = tform2trvec(getTransform(obj.antTree, pose, obj.limbs{i}.base_name));
+                
+                end
+            end
+
+            tip_midpoint = mean(tip,1);
+            base_midpoint = mean(base,1);
+            
+            distance = vecnorm(tip_midpoint - base_midpoint);
 
 
         end

@@ -117,6 +117,7 @@ classdef PoseControlClass
 
             %Print collisions
             obj.showPoints(contact_point, surface_normal, limbOut.colour, 1);
+            obj.showPoints(contact_point, surface_normal, limbOut.colour, 2);
 
             if ~isnan(contact_point)
                 if contains(limbOut.name, "Mandible")

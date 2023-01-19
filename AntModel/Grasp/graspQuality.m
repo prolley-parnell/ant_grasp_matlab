@@ -12,6 +12,7 @@ classdef graspQuality
         normAlign(1,1) double = 0 %Scalar between -1 and 1 to indicate how much of the surface 
         % normal at the points of contact are aligned with the force
         % vectors
+        withinReach(1,1) double = 1 %Boolean flag to indicate whether the grasp selected is within the reach of the mandibles
     end
 
     methods
@@ -20,9 +21,9 @@ classdef graspQuality
         end
 
         function qualityTable = convert2table(obj)
-            qualityCell = {obj.volume, obj.epsilon, obj.com_offset, obj.normAlign};
+            qualityCell = {obj.volume, obj.epsilon, obj.com_offset, obj.normAlign, obj.withinReach};
             qualityTable = cell2table(qualityCell);
-            qualityTable.Properties.VariableNames = {'Volume', 'Epsilon', 'COM Offset', 'normAlign'};
+            qualityTable.Properties.VariableNames = {'Volume', 'Epsilon', 'COM Offset', 'normAlign', 'withinReach'};
         end
     end
 end

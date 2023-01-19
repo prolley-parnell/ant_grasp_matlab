@@ -4,8 +4,10 @@ classdef graspSynthesis
     properties
 
         mandible_max
+        mandible_depth
         synth_method
         enforce_mand_max
+        %exhaustive_search_flag
 
         quality
         COC
@@ -15,16 +17,17 @@ classdef graspSynthesis
     end
 
     methods
-        function obj = graspSynthesis(RUNTIME_ARGS, maxMandibleDist)
+        function obj = graspSynthesis(RUNTIME_ARGS, maxMandibleDist, mandibleDepth)
             %GRASPSYNTHESIS Construct an instance of this class
 
             obj.mandible_max = maxMandibleDist;
+            obj.mandible_depth = mandibleDepth;
             obj.enforce_mand_max = RUNTIME_ARGS.SENSE.MAND_MAX;
 
             methodArg = RUNTIME_ARGS.SENSE.MODE; %Cell array of the different qualities used to select a grasp
 
             nMethodArg = length(methodArg);
-            availableMethod = {'dist', 'align'};
+            availableMethod = {'dist', 'align', 'PCA'};
             nAvailableMethod = length(availableMethod(:));
             measureFlag = zeros([nMethodArg, nAvailableMethod]);
             for t=1:nMethodArg
@@ -34,6 +37,7 @@ classdef graspSynthesis
                 end
             end
             obj.synth_method = any(measureFlag,1);
+            %obj.exhaustive_search_flag = ~any(measureFlag, 1);
 
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
@@ -47,15 +51,15 @@ classdef graspSynthesis
 
         end
 
-        function [antOut, goalOut, goalCostStruct] = check(obj, antIn, sensedData)
+        function [antOut, goalOut, goalCostStruct] = check(obj, antIn, sensedData, env)
             %CHECK Use the methods defined to evaluate the contact point data pairs and select a goal
 
             goalCostStruct = struct(); %Define the table used to store cost info
             %% [COST] Start exhaustive grasp search
-            senseTStart = tic; 
+            senseTStart = tic;
             goalOut = goalStruct();
             antOut = antIn;
-            
+
             %Deal with exceptions (no contact points, or no grasp synthesis method)
             nContactThresh = length(antIn.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
             if isempty(sensedData)
@@ -66,6 +70,7 @@ classdef graspSynthesis
             elseif nContactThresh < 0
                 %[COST] Record time up to point where not enough contacts
                 %have been gathered to gen goal
+                antOut.graspGen = obj.calcCOC(antIn.contact_points);
                 senseEvalTEnd = toc(senseTStart);
                 goalCostStruct.time.sense_eval = senseEvalTEnd;
                 return
@@ -80,12 +85,154 @@ classdef graspSynthesis
                     return
                 end
             end
+            obj = obj.calcCOC(antIn.contact_points);
+            if obj.synth_method(3)
+                [goalOut] = obj.findPCAGrasp(antIn, env);
+            else
+                [goalOut, bestQuality] = obj.exhaustiveCPCheck(antIn);
+                obj.quality = bestQuality;
+            end
+
+
+            senseEvalTEnd = toc(senseTStart);
+            goalCostStruct.time.sense_eval = senseEvalTEnd;
+            % [COST] End exhaustive grasp search
+            %[COST] Save the time taken to save the selected contact points
+            %goalCostStruct.time.contact_set = goalSetTime;
+
+            %end
+            antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
+
+            antOut.graspGen = obj;
+
+
+        end
+
+        function [goalOut] = findPCAGrasp(obj, antIn, env)
+
+            cartPointArray = cat(1,antIn.contact_points(:).point);
+            %nContactPoint = length(antIn.contact_points);
+            goalOut = goalStruct();
+
+            % Step 1: Calculate the covariance matrix
+            CM = cov(cartPointArray);
+            % Step 2:  Eigenvector and Eigenvalue
+            [V, D]= eig(CM);
+
+            % Step 3: Sort the Eigenvectors according to eigenvalue
+            eVal = diag(D);
+            [~, idx_eVec] = sort(eVal, 1, "descend");
+            decend_eVec = V(:,[idx_eVec]);
+
+            % Step 4: Store Eigenvectors in Projection Matrix
+            % k desired features/dimension reduction = 1 to find largest
+            % eigenvalue
+            var_axis = decend_eVec(:,1)';
+            x_axis = cross(var_axis, [0 0 1]);
+            x_axis_n = x_axis/norm(x_axis);
+
+
+            % Step 6: Use the cross product to find the orientation of the
+            % head
+            y_axis_n = var_axis/norm(var_axis);
+
+
+%             z_axis = cross(x_axis_n, y_axis_n);
+%             z_axis_n = z_axis/norm(z_axis);
+
+
+%             %% Testing, plot to see
+%             figure(1)
+%             hold on
+%             plot3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), ':*','MarkerSize',7, 'LineWidth', 1)
+%             vector_base = obj.COC.mean - var_axis.*0.5;
+%             quiver3(vector_base(1), vector_base(2), vector_base(3), var_axis(1), var_axis(2), var_axis(3), 'LineWidth', 3, 'Color', 'k')
+%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), x_axis_n(1), x_axis_n(2), x_axis_n(3), 'LineWidth', 3, 'Color', 'r')
+%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), y_axis_n(1), y_axis_n(2), y_axis_n(3), 'LineWidth', 3, 'Color', 'g')
+%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), z_axis_n(1), z_axis_n(2), z_axis_n(3), 'LineWidth', 3, 'Color', 'b')
+%             %hold off;
+            %%
+
+            %1: find the point of intersection along the X axis
+            startPt = obj.COC.mean;
+            rayVec = y_axis_n;
+            
+            includeOrigin = 1;
+            [mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, rayVec, includeOrigin, {});
+
+            % Approach shape Use either Y axis, or the furthest point
+            approachTipMP = mand_base_contact_pt - (y_axis_n * obj.mandible_depth);
+            approachTipA = approachTipMP + (x_axis_n * obj.mandible_max*0.5);
+            approachTipB = approachTipMP - (x_axis_n * obj.mandible_max*0.5);
+
+            %Define the rays of approach
+            approachRay = y_axis_n;
+
+%             figure(1)
+%             hold on
+%             quiver3(approachTipA(1), approachTipA(2), approachTipA(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+%             quiver3(approachTipB(1), approachTipB(2), approachTipB(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+
+            %4: Find the points of intersection and surface normal for those arcs. These are
+            %the contact points
+            %Set up an empty contact point struct
+            contactStruct = struct("point", [], "normal", []);
+            contactPts = repmat(contactStruct, [2,1]);
+            %If either point makes contact, the contact with the distance
+            %closest to the starting approachTip is the first contact
+            vargin = {'border','inclusive'};
+
+            [contactPts(1).point, contactPts(1).normal, ~, distA] = env.findRayIntersect(approachTipA, approachRay, includeOrigin, vargin);
+            [contactPts(2).point, contactPts(2).normal, ~, distB] = env.findRayIntersect(approachTipB, approachRay, includeOrigin, vargin);
+            finiteFlag = isfinite([distA, distB]);
+            if all(~finiteFlag)
+                %Approached without collision
+
+                %3: Draw the arcs where the ray points from the open position
+                %to the closed position
+                %[NOTE] for simplicity, drawing a line across rather than an
+                %arc to the point where the mandibles would actually contact.
+                %This is because the calculations require rotation of vectors
+                %to match the grasp frame
+                rayA = approachTipB - approachTipA;
+                rayB = -rayA;
+
+                %Use the default settings (no vargin)
+                [contactPts(1).point, contactPts(1).normal, ~] = env.findRayIntersect(approachTipA, rayA, includeOrigin, vargin);
+                [contactPts(2).point, contactPts(2).normal, ~] = env.findRayIntersect(approachTipB, rayB, includeOrigin, vargin);
+
+            else
+                [~, closeID] = min([distA, distB]);
+                if closeID == 1
+                    tipA = contactPts(1).point;
+                    closeRay = -x_axis_n;
+                    [contactPts(2).point, contactPts(2).normal, ~, ~] = env.findRayIntersect(tipA, closeRay, ~includeOrigin, vargin);
+                else
+                    tipB = contactPts(2).point;
+                    closeRay = x_axis_n;
+                    [contactPts(1).point, contactPts(1).normal, ~, ~] = env.findRayIntersect(tipB, closeRay, ~includeOrigin, vargin);
+
+                end
+
+            end
+
+
+            %5: Set the contact points in the goal struct
+            [goalOut, ~] = goalOut.setcontact(contactPts);
+
+
+
+
+        end
+
+        function [goalOut, bestQuality] = exhaustiveCPCheck(obj, antIn)
             %Cartesian contact points
             cartPointArray = cat(1,antIn.contact_points(:).point);
             nContactPoint = length(antIn.contact_points);
             distanceMat = ones(nContactPoint);
             mandMaxFlag = ones(nContactPoint);
             alignMeasure = ones(nContactPoint);
+            goalOut = goalStruct();
 
             %For each goal, get the information gain measure
             if obj.synth_method(1) %Distance
@@ -110,23 +257,9 @@ classdef graspSynthesis
             %last
             %if obj.quality*1.1 < bestQuality
             [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);
-            
-            %
-            senseEvalTEnd = toc(senseTStart);
-            goalCostStruct.time.sense_eval = senseEvalTEnd;
-            % [COST] End exhaustive grasp search
-
-            %%
             [goalOut, setContactTime] = goalOut.setcontact(antIn.contact_points([a,b]));
-            obj.quality = bestQuality;
-            
-            %[COST] Save the time taken to save the selected contact points
-            goalCostStruct.time.contact_set = setContactTime;
-            
-            %end
-            antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
 
-            antOut.graspGen = obj;
+
 
 
         end

@@ -204,161 +204,161 @@ classdef OutputData
 
         end
 
-        function summaryTable = evaluateTrialGoalMat(~, file)
-            %Sum the change in joint angle according to weights
-            %If plot = True, then show the cumulative cost across the trial
-            %Print to file a calculation summary of:
-            %Trial, Overall cost, average cost per second
-
-            trial = [];
-
-            [path,name,type] = fileparts(file);
-
-
-            if ~strcmp(type, '.mat')
-                warning("File type was %s, it must be '.mat'", type)
-                return
-            end
-
-            fileStruct = load(file);
-            try
-            senseGoalTable = fileStruct.senseGoalTable;
-
-            catch
-                warning("replayTable not found")
-                return
-            end
-
-            %Check if the trial is named in the table
-            if isfield(senseGoalTable, 'Trial')
-                trial = senseGoalTable.Trial{:};
-            else
-                name_cells = split(name, '_');
-                I = find(strcmp(name_cells, 'trial'));
-                trial = name_cells{I+1};
-            end
-
-            % ---------- Find the overall cost for one trial
-
-            time = [];
-            volume = [];
-            epsilon = [];
-            for i=1:size(senseGoalTable,1)
-                time(i) = senseGoalTable.Time(i);
-                volume(i) = senseGoalTable.Volume(i);
-                epsilon(i) = senseGoalTable.Epsilon(i);
-                dist(i) = senseGoalTable.MP_2_COM_Offset(i);
-            end
-
-
-
-            summaryTable = cell2table({time, volume, epsilon, dist});
-            summaryTable.Properties.VariableNames = {'Time', 'Volume', 'Epsilon', 'MP_2_COM_Offset'};
-
-
-        end
-
-
-        function summaryTable = evaluateTrialMotionMat(~, file, weights)
-            %Sum the change in joint angle according to weights
-            %If plot = True, then show the cumulative cost across the trial
-            %Print to file a calculation summary of:
-            %Trial, Overall cost, average cost per second
-
-            trial = [];
-            overall_cost = [];
-            pose_difference = [];
-
-            [path,name,type] = fileparts(file);
+%         function summaryTable = evaluateTrialGoalMat(~, file)
+%             %Sum the change in joint angle according to weights
+%             %If plot = True, then show the cumulative cost across the trial
+%             %Print to file a calculation summary of:
+%             %Trial, Overall cost, average cost per second
+% 
+%             trial = [];
+% 
+%             [path,name,type] = fileparts(file);
+% 
+% 
+%             if ~strcmp(type, '.mat')
+%                 warning("File type was %s, it must be '.mat'", type)
+%                 return
+%             end
+% 
+%             fileStruct = load(file);
+%             try
+%             senseGoalTable = fileStruct.senseGoalTable;
+% 
+%             catch
+%                 warning("replayTable not found")
+%                 return
+%             end
+% 
+%             %Check if the trial is named in the table
+%             if isfield(senseGoalTable, 'Trial')
+%                 trial = senseGoalTable.Trial{:};
+%             else
+%                 name_cells = split(name, '_');
+%                 I = find(strcmp(name_cells, 'trial'));
+%                 trial = name_cells{I+1};
+%             end
+% 
+%             % ---------- Find the overall cost for one trial
+% 
+%             time = [];
+%             volume = [];
+%             epsilon = [];
+%             for i=1:size(senseGoalTable,1)
+%                 time(i) = senseGoalTable.Time(i);
+%                 volume(i) = senseGoalTable.Volume(i);
+%                 epsilon(i) = senseGoalTable.Epsilon(i);
+%                 dist(i) = senseGoalTable.MP_2_COM_Offset(i);
+%             end
+% 
+% 
+% 
+%             summaryTable = cell2table({time, volume, epsilon, dist});
+%             summaryTable.Properties.VariableNames = {'Time', 'Volume', 'Epsilon', 'MP_2_COM_Offset'};
+% 
+% 
+%         end
 
 
-            if ~strcmp(type, '.mat')
-                warning("File type was %s, it must be '.mat'", type)
-                return
-            end
-
-            fileStruct = load(file);
-            try
-            replayTable = fileStruct.replayTable;
-
-            catch
-                warning("replayTable not found")
-                return
-            end
-
-            %Check if the trial is named in the table
-            if isfield(replayTable, 'Trial')
-                trial = replayTable.Trial{:};
-            else
-                name_cells = split(name, '_');
-                I = find(strcmp(name_cells, 'trial'));
-                trial = name_cells{I+1};
-            end
-
-            % ---------- Find the overall cost for one trial
-
-            time = 0;
-            last_pose = replayTable.Pose{1,:};
-
-
-
-            for i=1:size(replayTable,1)
-                now = replayTable.Time(i);
-                pose = replayTable.Pose{i,:};
-                position = replayTable.Position(i,:);
-
-                pose_difference(:,i) = abs(pose - last_pose);
-
-                last_pose = pose;
-                time = now;
-            end
-
-
-
-
-            %Normalise the weights
-            switch class(weights)
-                case "struct"
-                    weight_mat = [weights.Neck; weights.Neck; 
-                        weights.Mandible; weights.Mandible;...
-                        weights.Antenna; weights.Antenna; weights.Antenna; ...
-                        weights.Antenna; weights.Antenna; weights.Antenna];
-                    
-                case "double"
-                    if length(weights) == 10
-                        weight_mat = weights;
-                    else
-                        warning("Weights size expected 10x1, instead it is %d x %d - setting to 1", size(weights,1), size(weights,2))
-                        weight_mat = ones([10,1]);
-
-                    end
-
-                otherwise
-                    warning("Weights are an unexpected file type - setting to 1")
-                    weight_mat = ones([10,1]);
-
-            end
-
-            %normalise weights
-            weights_norm = weight_mat/sum(weight_mat);
-
-
-            if ~isempty(pose_difference)
-                %calculate the overall cost from start to end of trial
-                duration = replayTable.Time(end) - replayTable.Time(1);
-                overall_cost_per_joint = sum(pose_difference,2)' .* weights_norm';
-                overall_cost = sum(overall_cost_per_joint);
-                joint_cost_per_second = overall_cost_per_joint / duration;
-                overall_cost_per_second = sum(joint_cost_per_second);
-
-            end
-
-
-            summaryTable = cell2table({str2double(trial),duration, overall_cost, overall_cost_per_second, overall_cost_per_joint, joint_cost_per_second, weights_norm});
-            summaryTable.Properties.VariableNames = {'Trial','Duration', 'Overall Weighted Cost', 'Overall Weighted Cost Per Second', 'Weighted Cost Per Joint', 'Weighted Joint Cost Per Second', 'Weights'};
-
-
-        end
+%         function summaryTable = evaluateTrialMotionMat(~, file, weights)
+%             %Sum the change in joint angle according to weights
+%             %If plot = True, then show the cumulative cost across the trial
+%             %Print to file a calculation summary of:
+%             %Trial, Overall cost, average cost per second
+% 
+%             trial = [];
+%             overall_cost = [];
+%             pose_difference = [];
+% 
+%             [path,name,type] = fileparts(file);
+% 
+% 
+%             if ~strcmp(type, '.mat')
+%                 warning("File type was %s, it must be '.mat'", type)
+%                 return
+%             end
+% 
+%             fileStruct = load(file);
+%             try
+%             replayTable = fileStruct.replayTable;
+% 
+%             catch
+%                 warning("replayTable not found")
+%                 return
+%             end
+% 
+%             %Check if the trial is named in the table
+%             if isfield(replayTable, 'Trial')
+%                 trial = replayTable.Trial{:};
+%             else
+%                 name_cells = split(name, '_');
+%                 I = find(strcmp(name_cells, 'trial'));
+%                 trial = name_cells{I+1};
+%             end
+% 
+%             % ---------- Find the overall cost for one trial
+% 
+%             time = 0;
+%             last_pose = replayTable.Pose{1,:};
+% 
+% 
+% 
+%             for i=1:size(replayTable,1)
+%                 now = replayTable.Time(i);
+%                 pose = replayTable.Pose{i,:};
+%                 position = replayTable.Position(i,:);
+% 
+%                 pose_difference(:,i) = abs(pose - last_pose);
+% 
+%                 last_pose = pose;
+%                 time = now;
+%             end
+% 
+% 
+% 
+% 
+%             %Normalise the weights
+%             switch class(weights)
+%                 case "struct"
+%                     weight_mat = [weights.Neck; weights.Neck; 
+%                         weights.Mandible; weights.Mandible;...
+%                         weights.Antenna; weights.Antenna; weights.Antenna; ...
+%                         weights.Antenna; weights.Antenna; weights.Antenna];
+%                     
+%                 case "double"
+%                     if length(weights) == 10
+%                         weight_mat = weights;
+%                     else
+%                         warning("Weights size expected 10x1, instead it is %d x %d - setting to 1", size(weights,1), size(weights,2))
+%                         weight_mat = ones([10,1]);
+% 
+%                     end
+% 
+%                 otherwise
+%                     warning("Weights are an unexpected file type - setting to 1")
+%                     weight_mat = ones([10,1]);
+% 
+%             end
+% 
+%             %normalise weights
+%             weights_norm = weight_mat/sum(weight_mat);
+% 
+% 
+%             if ~isempty(pose_difference)
+%                 %calculate the overall cost from start to end of trial
+%                 duration = replayTable.Time(end) - replayTable.Time(1);
+%                 overall_cost_per_joint = sum(pose_difference,2)' .* weights_norm';
+%                 overall_cost = sum(overall_cost_per_joint);
+%                 joint_cost_per_second = overall_cost_per_joint / duration;
+%                 overall_cost_per_second = sum(joint_cost_per_second);
+% 
+%             end
+% 
+% 
+%             summaryTable = cell2table({str2double(trial),duration, overall_cost, overall_cost_per_second, overall_cost_per_joint, joint_cost_per_second, weights_norm});
+%             summaryTable.Properties.VariableNames = {'Trial','Duration', 'Overall Weighted Cost', 'Overall Weighted Cost Per Second', 'Weighted Cost Per Joint', 'Weighted Joint Cost Per Second', 'Weights'};
+% 
+% 
+%         end
 
 %         function [resultsTable, summaryOut] = evaluateFolder(obj, folder, weights)
 % 
