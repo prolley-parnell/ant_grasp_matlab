@@ -28,7 +28,6 @@ run('.\Align_CMC_fixvar.m')
 %5
 %run('.\IPDAlign_RRaP.m')
 %5.5
-
 %run('.\IPDAlign_CMC_fixvar.m')
 %6
 %run('.\IPDAlign_CMC_vardec.m')

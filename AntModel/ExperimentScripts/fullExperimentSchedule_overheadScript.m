@@ -10,17 +10,17 @@
 % 4.    Point to Point             PCA
 
 %Warning: current folder must be the one that contains the overhead script
-scriptFolder = pwd;
+overheadFolder = pwd;
 %1
-run('.\jointControlScripts\directContactPointGoal\jointControl_directCPGoal_overheadScript.m')
-cd(scriptFolder)
+%run('.\jointControlScripts\directContactPointGoal\jointControl_directCPGoal_overheadScript.m')
+%cd(overheadFolder)
 
 %2
 %run('')
 
 %3
 run('.\p2pControlScripts\directContactPointGoal\p2pControl_directCPG_overheadScript.m')
-cd(scriptFolder)
+cd(overheadFolder)
 
 %4
 %run('')
