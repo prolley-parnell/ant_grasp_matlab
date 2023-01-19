@@ -79,8 +79,9 @@ classdef Ant
             obj.contact_points = struct.empty;
             obj.memory_size = RUNTIME_ARGS.ANT_MEMORY;
 
-            obj.graspGen = graspSynthesis(RUNTIME_ARGS, obj.findMaxMandibleDist, obj.findMandibleDepth);
-            obj.graspEval = graspEvaluator(RUNTIME_ARGS);
+            mandible_max = obj.findMaxMandibleDist;
+            obj.graspGen = graspSynthesis(RUNTIME_ARGS, mandible_max, obj.findMandibleDepth);
+            obj.graspEval = graspEvaluator(RUNTIME_ARGS, mandible_max);
             obj.mandible_state = 0;
             obj.grasp_complete = 0;
 

@@ -287,7 +287,7 @@ classdef CollisionObjects
 
         end
 
-        function [contactPtArray, normalArray, stlID, closeDist] = findRayIntersect(obj, orig, dir, vargin)
+        function [contactPtArray, normalArray, stlID, closeDist] = findRayIntersect(obj, orig, dir, includeOrigin, vargin)
             %%FINDRAYINTERSECT Return the first point of intersection
             %%created along a vector from a point in space. Include which
             %%STL the ray intersects and the contact point and surface
@@ -314,9 +314,26 @@ classdef CollisionObjects
                     vert2 = vertArray(faceArray(:,3),:);
                     [intersect, dist, ~, ~, xcoor] = TriangleRayIntersection(orig(j,:), dir(j,:), vert0, vert1, vert2, vargin{:});
                     intersectID = find(intersect);
+                    
+
+
                     if intersectID
+                        
                         %Find the closest positive intersection
                         intersectDist = dist(intersectID);
+                        
+                        %Exclude intersections that are at the origin
+                        if ~includeOrigin
+                            intersectID(intersectDist<1e-5) = [];
+                        end
+
+                        if isempty(intersectID)
+                            return
+                        else
+                            intersectDist = dist(intersectID);
+                        end
+
+
                         [closeDist, closeID] = min(intersectDist);
                         stlID = i;
                         faceID = intersectID(closeID);

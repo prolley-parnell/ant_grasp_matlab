@@ -13,7 +13,7 @@ classdef graspEvaluator
     end
 
     methods
-        function obj = graspEvaluator(RUNTIME_ARGS)
+        function obj = graspEvaluator(RUNTIME_ARGS, mandible_max)
             %GRASPEVALUATOR Construct an instance of this class
             %   Detailed explanation goes here
             obj.mu = RUNTIME_ARGS.GRASP.OBJ_FRICTION;
@@ -21,6 +21,7 @@ classdef graspEvaluator
             obj.force_applied = RUNTIME_ARGS.GRASP.FORCE;
             %obj.qhull_arguments = {'QJ', 'Pp', 'Q9', 'QR0', 'n'};
             obj.qhull_arguments = RUNTIME_ARGS.GRASP.QUALITY.Q_HULL_ARGS;
+            obj.mandible_max = mandible_max;
 
         end
 
@@ -41,6 +42,11 @@ classdef graspEvaluator
             %Calculate the offset from the COM to the grasp contacts axis
             qualityObj.com_offset = obj.axis2COM(A, B, globalCOM);
 
+
+            %Check that the grasp points are closer together than the
+            %maximum mandible reach
+            IPD = vecnorm(goalObj.contact_axis,2, 2);
+            qualityObj.withinReach(IPD>obj.mandible_max) = 0;
 
             %Calculate the volume and epsilon for the given goal grasp
             %point locations

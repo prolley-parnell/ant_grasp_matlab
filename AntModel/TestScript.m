@@ -33,7 +33,7 @@ RUNTIME_ARGS = RuntimeArgs();
 RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 1;
+RUNTIME_ARGS.N_TRIALS = 2;
 
 % Sampling rate in simulated time - smaller is smoother for plotting, but
 % takes longer to run (0.05 to 0.15)
@@ -45,7 +45,7 @@ RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
 % external software
-RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
+RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
 
 % To save the summary tables, antTree, and runtime args in a single MAT
 % file, enable. Use for internal matlab processing

@@ -137,43 +137,41 @@ classdef graspSynthesis
             y_axis_n = var_axis/norm(var_axis);
 
 
-            z_axis = cross(x_axis_n, y_axis_n);
-            z_axis_n = z_axis/norm(z_axis);
+%             z_axis = cross(x_axis_n, y_axis_n);
+%             z_axis_n = z_axis/norm(z_axis);
 
 
-
-
-            %% Testing, plot to see
-
-            figure(1)
-            hold on
-            plot3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), ':*','MarkerSize',7, 'LineWidth', 1)
-            vector_base = obj.COC.mean - var_axis.*0.5;
-            quiver3(vector_base(1), vector_base(2), vector_base(3), var_axis(1), var_axis(2), var_axis(3), 'LineWidth', 3, 'Color', 'k')
-            quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), x_axis_n(1), x_axis_n(2), x_axis_n(3), 'LineWidth', 3, 'Color', 'r')
-            quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), y_axis_n(1), y_axis_n(2), y_axis_n(3), 'LineWidth', 3, 'Color', 'g')
-            quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), z_axis_n(1), z_axis_n(2), z_axis_n(3), 'LineWidth', 3, 'Color', 'b')
-            %hold off;
+%             %% Testing, plot to see
+%             figure(1)
+%             hold on
+%             plot3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), ':*','MarkerSize',7, 'LineWidth', 1)
+%             vector_base = obj.COC.mean - var_axis.*0.5;
+%             quiver3(vector_base(1), vector_base(2), vector_base(3), var_axis(1), var_axis(2), var_axis(3), 'LineWidth', 3, 'Color', 'k')
+%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), x_axis_n(1), x_axis_n(2), x_axis_n(3), 'LineWidth', 3, 'Color', 'r')
+%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), y_axis_n(1), y_axis_n(2), y_axis_n(3), 'LineWidth', 3, 'Color', 'g')
+%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), z_axis_n(1), z_axis_n(2), z_axis_n(3), 'LineWidth', 3, 'Color', 'b')
+%             %hold off;
             %%
 
             %1: find the point of intersection along the X axis
             startPt = obj.COC.mean;
             rayVec = y_axis_n;
-            vargin = {'lineType','ray'};
-            [mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, rayVec, vargin);
+            
+            includeOrigin = 1;
+            [mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, rayVec, includeOrigin, {});
 
             % Approach shape Use either Y axis, or the furthest point
             approachTipMP = mand_base_contact_pt - (y_axis_n * obj.mandible_depth);
-            approachTipA = approachTipMP - (x_axis_n * obj.mandible_max*0.5);
-            approachTipB = approachTipMP + (x_axis_n * obj.mandible_max*0.5);
+            approachTipA = approachTipMP + (x_axis_n * obj.mandible_max*0.5);
+            approachTipB = approachTipMP - (x_axis_n * obj.mandible_max*0.5);
 
             %Define the rays of approach
             approachRay = y_axis_n;
 
-            figure(1)
-            hold on
-            quiver3(approachTipA(1), approachTipA(2), approachTipA(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
-            quiver3(approachTipB(1), approachTipB(2), approachTipB(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+%             figure(1)
+%             hold on
+%             quiver3(approachTipA(1), approachTipA(2), approachTipA(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+%             quiver3(approachTipB(1), approachTipB(2), approachTipB(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
 
             %4: Find the points of intersection and surface normal for those arcs. These are
             %the contact points
@@ -183,19 +181,12 @@ classdef graspSynthesis
             %If either point makes contact, the contact with the distance
             %closest to the starting approachTip is the first contact
             vargin = {'border','inclusive'};
-            [contactPts(1).point, contactPts(1).normal, ~, distA] = env.findRayIntersect(approachTipA, approachRay,vargin);
-            [contactPts(2).point, contactPts(2).normal, ~, distB] = env.findRayIntersect(approachTipB, approachRay, vargin);
 
-            if all(isfinite([distA, distB]))
+            [contactPts(1).point, contactPts(1).normal, ~, distA] = env.findRayIntersect(approachTipA, approachRay, includeOrigin, vargin);
+            [contactPts(2).point, contactPts(2).normal, ~, distB] = env.findRayIntersect(approachTipB, approachRay, includeOrigin, vargin);
+            finiteFlag = isfinite([distA, distB]);
+            if all(~finiteFlag)
                 %Approached without collision
-
-                %Find the first point of collision along the axis of approach
-                %2: find the offset from the point of collision + depth of
-                %mandibles
-                %Side 1
-                tipMP = mand_base_contact_pt - (y_axis_n*obj.mandible_depth);
-                tipA = tipMP - (x_axis_n * obj.mandible_max*0.5);
-                tipB = tipMP + (x_axis_n * obj.mandible_max*0.5);
 
                 %3: Draw the arcs where the ray points from the open position
                 %to the closed position
@@ -203,23 +194,23 @@ classdef graspSynthesis
                 %arc to the point where the mandibles would actually contact.
                 %This is because the calculations require rotation of vectors
                 %to match the grasp frame
-                rayA = tipB - tipA;
+                rayA = approachTipB - approachTipA;
                 rayB = -rayA;
 
                 %Use the default settings (no vargin)
-                [contactPts(1).point, contactPts(1).normal, ~] = env.findRayIntersect(tipA, rayA,{});
-                [contactPts(2).point, contactPts(2).normal, ~] = env.findRayIntersect(tipB, rayB, {});
+                [contactPts(1).point, contactPts(1).normal, ~] = env.findRayIntersect(approachTipA, rayA, includeOrigin, vargin);
+                [contactPts(2).point, contactPts(2).normal, ~] = env.findRayIntersect(approachTipB, rayB, includeOrigin, vargin);
 
             else
                 [~, closeID] = min([distA, distB]);
                 if closeID == 1
                     tipA = contactPts(1).point;
                     closeRay = -x_axis_n;
-                    [contactPts(2).point, contactPts(2).normal, ~, ~] = env.findRayIntersect(tipA, closeRay, {});
+                    [contactPts(2).point, contactPts(2).normal, ~, ~] = env.findRayIntersect(tipA, closeRay, ~includeOrigin, vargin);
                 else
                     tipB = contactPts(2).point;
                     closeRay = x_axis_n;
-                    [contactPts(1).point, contactPts(1).normal, ~, ~] = env.findRayIntersect(tipB, closeRay, {});
+                    [contactPts(1).point, contactPts(1).normal, ~, ~] = env.findRayIntersect(tipB, closeRay, ~includeOrigin, vargin);
 
                 end
 
@@ -227,7 +218,7 @@ classdef graspSynthesis
 
 
             %5: Set the contact points in the goal struct
-            [goalOut, setContactTime] = goalOut.setcontact(contactPts);
+            [goalOut, ~] = goalOut.setcontact(contactPts);
 
 
 
