@@ -108,6 +108,7 @@ end
 %Start timer for this experiment
 experimentStartTime = tic;
 %Disable any printed warnings for the parallel pool
+delete(gcp('nocreate'))
 p = parpool();
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);

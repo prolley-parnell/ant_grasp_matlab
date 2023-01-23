@@ -68,13 +68,13 @@ motion_type = {'joint'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}
-control_method = {'random'};
+control_method = {'mean'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
             
 %If using 'mean' or 'GMM' then option to set variance {'IPD', 'varinc', 'vardec', 'var=1.2'};
-variance_mode = {};
+variance_mode = {'varinc'};
 
 antenna_control_cell = [motion_type,control_method,refine_method,variance_mode];
 
@@ -86,7 +86,7 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 %RUNTIME_ARGS.SENSE.MODE = {'align'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis [NOT IMPLEMENTED]
-RUNTIME_ARGS.SENSE.MODE = {'PCA'};
+RUNTIME_ARGS.SENSE.MODE = {'dist', 'align'};
 
 %% -------- Test Specific Set Up ------------ %%
 % 

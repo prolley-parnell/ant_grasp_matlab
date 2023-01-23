@@ -253,7 +253,7 @@ classdef JointActionGen
 
             tStart = tic;
             if strcmp(obj.search_config.MODE{2}, 'GMM')
-                tStart = tic;
+                %tStart = tic;
                 obj = obj.updateGMM(contact_pointStruct);
             end
             if strcmp(obj.search_config.MODE{2}, 'mean')

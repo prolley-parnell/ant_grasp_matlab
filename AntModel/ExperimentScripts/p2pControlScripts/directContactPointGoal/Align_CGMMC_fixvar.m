@@ -97,7 +97,7 @@ nExperiment = length(NumberOfPoints);
 % 2 - Assign the controlled variable to the replicated runtime args.
 
 RUNTIME_ARGS_i = repmat(RUNTIME_ARGS, [1, nExperiment]);
-experiment_name = 'sense_mode_or_grasp_mode'; %Fill in with the name of the folder
+experiment_name = 'Align_CGMMC_fixvar'; %Fill in with the name of the folder
 
 for i = 1: nExperiment
     RUNTIME_ARGS_i(i).TRIAL_NAME = [experiment_name,'\', int2str(NumberOfPoints(i)), '_contact_pts'];
@@ -108,6 +108,7 @@ end
 %Start timer for this experiment
 experimentStartTime = tic;
 %Disable any printed warnings for the parallel pool
+delete(gcp('nocreate'))
 p = parpool();
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
@@ -118,7 +119,7 @@ parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 experimentEndTime = toc(experimentStartTime);
-disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
+disp(['Experiment named: ', experiment_name, ' completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 
 %Change back to the script folder in case of multiple scripts being run
 cd(scriptFolder)

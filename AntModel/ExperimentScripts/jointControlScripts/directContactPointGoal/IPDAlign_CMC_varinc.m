@@ -108,7 +108,7 @@ end
 %Start timer for this experiment
 experimentStartTime = tic;
 %Disable any printed warnings for the parallel pool
-delete(gcp('nocreate'))
+delete(gcp('nocreate'));
 p = parpool();
 parfevalOnAll(p,@warning, 0,'off');
 opts = parforOptions(p);
@@ -119,7 +119,7 @@ parfor (n = 1:nExperiment, opts)
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 experimentEndTime = toc(experimentStartTime);
-disp(['Experiment named: ', experiment_name, 'completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
+disp(['Experiment named: ', experiment_name, ' completed in ', num2str(experimentEndTime/3600, 3),' hours.']);
 
 %Change back to the script folder in case of multiple scripts being run
 cd(scriptFolder)

@@ -337,13 +337,10 @@ classdef graspSynthesis
                 end
             end
 
-            if strcmp(obj.RUNTIME_ARGS.SEARCH.MODE{2}, 'mean')
-                %If using a running mean, rather than storing all contact
-                %points in memory
-                obj.COC.mean
-            else
-                obj.COC.mean = new_COC;
-            end
+            %[TODO] Add the ability to have a running mean rather than
+            %storing all contact points (see jointActionGen.addPoseToMean)
+            obj.COC.mean = new_COC;
+
 
         end
 
