@@ -64,17 +64,17 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 % ------------- Antenna Motion -------------- %
 % Select point-to-point or joint based control
-motion_type = {'joint'}; %{'p2p', 'joint'};
+motion_type = {'p2p'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}
-control_method = {'mean'};
+control_method = {'random'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
             
 %If using 'mean' or 'GMM' then option to set variance {'IPD', 'varinc', 'vardec', 'var=1.2'};
-variance_mode = {'varinc'};
+variance_mode = {'vardec', 'var=0.5'};
 
 antenna_control_cell = [motion_type,control_method,refine_method,variance_mode];
 

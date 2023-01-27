@@ -9,10 +9,12 @@ classdef SampleActionGen
         %weights
         maxvelocities
 
+
         gik
 
         search_range
         search_config
+        memory_length
         refineSearch
 
     end
@@ -35,6 +37,8 @@ classdef SampleActionGen
                 obj.refineSearch = struct.empty;
             end
 
+
+            obj.memory_length = RUNTIME_ARGS.ANT_MEMORY;
             %Initialise Generalized IK Solver
             obj.gik = generalizedInverseKinematics('RigidBodyTree', fullTree);
 
@@ -363,7 +367,7 @@ classdef SampleActionGen
             qTrajectory(:,1) = [];
         end
 
-        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct, ~, ~, ~)
+        function [obj, memoryCostTime] = updateContactMemory(obj, contact_pointStruct, ~, ~, antennaInMask)
             %UPDATECONTACTMEMORY If new contact has been made, update the appropriate memory stores
             %[COST] Memory time cost of ActionGen class for remembering means
             tStart = tic;
@@ -371,11 +375,7 @@ classdef SampleActionGen
                 tStart = tic;
                 obj = obj.updateGMM(contact_pointStruct);
             end
-            %             if strcmp(obj.search_config.MODE{2}, 'mean')
-            %                 %Identify which limb to find the joint mask
-            %                 %Add pose of antenna at point of contact to the mean
-            %                 obj = obj.addPoseToMean(qIn, joint_mask_i);
-            %             end
+
             if ~isempty(obj.refineSearch)
                 tStart = tic;
                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
@@ -384,6 +384,44 @@ classdef SampleActionGen
 
         end
 
+
+        function variance = updateVariance(obj, contactPointArray)
+            %GENERATEVARIANCE Use the instruction string to give a scalar
+            %value of variance based on the internal state of the model and
+            %the instruction
+            modeString = obj.search_config.VAR{1};
+            availableModes = {'none', 'varinc', 'vardec', 'IPD'};
+
+            modeIndex = find(contains(availableModes, modeString));
+
+            nContact = size(contactPointArray, 1);
+            
+            variance_scale = 1;
+            variance = obj.search_config.VAR{2};
+            
+            if modeIndex == 2 %If variance mode increases with the number of contacts
+                if nContact>=2
+                    variance_scale = 1 + (nContact / obj.memory_length);
+                end
+                variance = variance_scale * obj.search_config.VAR{2};
+            elseif modeIndex == 3 %If the variance mode decreases with the number of contacts
+                if nContact>=2
+                    variance_scale = max(0.01, 1 - (nContact/obj.memory_length));
+                end
+                variance = variance_scale * obj.search_config.VAR{2};
+            elseif modeIndex == 4
+                %[TODO] Not tested IPD Code
+                if n > 1
+                    distanceMAT = pdist2(contactPointArray, contactPointArray);
+                    distanceMAT(distanceMAT==0) = nan;
+                    meanIPD = mean(distanceMAT, [], "all");
+
+                    variance = 1/meanIPD;
+                end
+                
+            end
+
+        end
 
 
         function obj = updateGMM(obj, contact_pointStruct)
@@ -397,34 +435,12 @@ classdef SampleActionGen
             I = eye(d,d);
             p = ones([1, n])/n;
             %variance of the distribution around each point
-            %[TODO] Update this to match the new format for runtime args
-            if strcmp(obj.search_config.VAR{1}, 'IPD')
-                if n > 1
-                    distanceMAT = pdist2(points, points);
-                    distanceMAT(distanceMAT==0) = nan;
-                    minDist = min(distanceMAT);
-                    maxDist = max(distanceMAT);
 
-                    p = maxDist/sum(maxDist);
+            variance = obj.updateVariance(points);
+      
 
-                    dist = minDist;
-
-                else
-                    dist = 1;
-                end
-                sigma = I.* reshape(dist, [1 1 n]);
-
-            else
-                if ~strcmp(class(obj.search_config.VAR{2}), "double")
-                    warning("The set variance is not a valid value - overwrite to 1")
-                    obj.search_config.VAR = 1;
-                end
-
-                variance = obj.search_config.VAR{2};
-
-
-                sigma = repmat(I*variance, [1 1 n]);
-            end
+            sigma = repmat(I*variance, [1 1 n]);
+            
 
             gmObj = gmdistribution(points,sigma,p);
 

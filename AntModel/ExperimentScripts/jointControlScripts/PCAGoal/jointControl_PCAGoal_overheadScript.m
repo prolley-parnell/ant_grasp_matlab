@@ -15,7 +15,7 @@
 overheadFolder = pwd;
 
 %1
-run('.\PCA_RRaP.m')
+%run('.\PCA_RRaP.m')
 
 %2
 run('.\PCA_CMC_fixvar.m')

@@ -333,7 +333,7 @@ classdef RuntimeArgs
             varFlag = contains(cellInstruct, varianceMethod);
             %Set the default values in case that the variance is not
             %defined
-            obj.SEARCH.VAR = {'none', 0.3};
+            obj.SEARCH.VAR = {'none', 0.5};
             if any(varFlag)
                 varMethodFlag = contains(varianceMethod, cellInstruct);
                 if all(varMethodFlag)

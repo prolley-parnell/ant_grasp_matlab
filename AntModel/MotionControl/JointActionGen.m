@@ -211,7 +211,7 @@ classdef JointActionGen
 
         end
 
-        function [variance] = generateVariance(obj, joint_limits, weightMask)
+        function [joint_variance] = generateVariance(obj, joint_limits, weightMask)
             %GENERATEVARIANCE Use the instruction string to give a scalar
             %value of variance based on the internal state of the model and
             %the instruction
@@ -222,28 +222,27 @@ classdef JointActionGen
 
             maskedWeight = obj.mean_weight(weightMask);
 
-            if modeIndex==1 %If no variance change method is selected
-                variance_scale = obj.search_config.VAR{2};
-            elseif modeIndex == 2 %If variance mode increases with the number of contacts
-                if maskedWeight<2
-                    variance_scale = obj.search_config.VAR{2};
-                else
-                    variance_scale = maskedWeight*2 / obj.memory_length;
+            variance_scale = 1;
+            variance = obj.search_config.VAR{2};
+            
+            if modeIndex == 2 %If variance mode increases with the number of contacts
+                if maskedWeight>=2
+                    variance_scale = 1 + (maskedWeight / obj.memory_length);
                 end
+                variance = variance_scale * obj.search_config.VAR{2};
             elseif modeIndex == 3 %If the variance mode decreases with the number of contacts
-                if maskedWeight<2
-                    variance_scale = obj.search_config.VAR{2};
-                else
-                    variance_scale = 2/maskedWeight;
+                if maskedWeight>=2
+                    variance_scale = max(0.01, 1 - (maskedWeight/obj.memory_length));
                 end
+                variance = variance_scale * obj.search_config.VAR{2};
             elseif modeIndex == 4
-                warning('IPD variance not enabled for joint control')
-                variance_scale = obj.search_config.VAR{2};
+                warning("IPD Not Implemented for Joint Control")
+                variance = variance_scale * obj.search_config.VAR{2};
             end
 
             motion_range = abs(joint_limits(:,1) - joint_limits(:,2));
 
-            variance = motion_range .* variance_scale;
+            joint_variance = motion_range .* variance ;
 
         end
 
@@ -252,10 +251,7 @@ classdef JointActionGen
             %[COST] Memory cost of ActionGen class for remembering means
 
             tStart = tic;
-            if strcmp(obj.search_config.MODE{2}, 'GMM')
-                %tStart = tic;
-                obj = obj.updateGMM(contact_pointStruct);
-            end
+
             if strcmp(obj.search_config.MODE{2}, 'mean')
                 %Identify which limb to find the joint mask
                 %Add pose of antenna at point of contact to the mean
@@ -263,57 +259,11 @@ classdef JointActionGen
             end
 
 
-            %             if ~isempty(obj.refineSearch)
-            %                 tStart = tic;
-            %                 obj.refineSearch = obj.refineSearch.setContactMemory(contact_pointStruct);
-            %             end
+
 
             memoryCostTime = toc(tStart);
         end
 
-        function obj = updateGMM(obj, contact_pointStruct)
-
-            points = cat(1,contact_pointStruct(:).point);
-            n = size(points,1);
-            d = size(points,2);
-
-            %mu = points;
-
-            I = eye(d,d);
-            p = ones([1, n])/n;
-            %variance of the distribution around each point
-            if strcmp(obj.search_config.VAR{1}, 'IPD')
-                if n > 1
-                    distanceMAT = pdist2(points, points);
-                    distanceMAT(distanceMAT==0) = nan;
-                    minDist = min(distanceMAT);
-                    maxDist = max(distanceMAT);
-
-                    p = maxDist/sum(maxDist);
-
-                    dist = minDist;
-
-                else
-                    dist = 1;
-                end
-                sigma = I.* reshape(dist, [1 1 n]);
-
-            else
-                if ~strcmp(class(obj.search_config.VAR{2}), "double")
-                    warning("The set variance is not a valid value - overwrite to 1")
-                    obj.search_config.VAR = 1;
-                end
-
-                variance = obj.search_config.VAR;
-
-
-                sigma = repmat(I*variance, [1 1 n]);
-            end
-
-            gmObj = gmdistribution(points,sigma,p);
-
-            obj.search_range = gmObj;
-        end
 
         function obj = addPoseToMean(obj, qIn, joint_mask, antenna_number)
             %ADDPOSETOMEAN Add the appropriate joint values to the mean at
