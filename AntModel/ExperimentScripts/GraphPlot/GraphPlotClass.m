@@ -5,6 +5,7 @@ classdef GraphPlotClass
     properties
         experimentPath = {};
         experimentDataStruct
+        all_measure_name
 
 
     end
@@ -16,7 +17,419 @@ classdef GraphPlotClass
                 'nContact', [], ...
                 'trialData', struct('contactNumber', [], 'senseGoalTable', table.empty, 'costSummaryTable', table.empty, 'nTrial', []));
 
+            obj.all_measure_name = ["Epsilon", "Volume", "COM Offset", "normAlign", "withinReach"];
         end
+
+
+
+        %% Functions to load MAT files
+
+        function obj = loadData(obj, varargin)
+            % Used to add all folders in the provided path, or the assumed
+            % path to the class instance. WARNING: Does not overwrite
+            % existing experiments but adds to the end. May result in
+            % repeated data
+            if isempty(varargin)
+                folderPath = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
+            else
+                folderPath = varargin{:};
+            end
+            experimentDir = dir(folderPath);
+            resultsFolderCell = {};
+            for f = 1:length(experimentDir)
+                subfolderPath = [folderPath, '\', experimentDir(f).name];
+                if ~strcmp(experimentDir(f).name(1), '.') && isfolder(subfolderPath)
+                    %"mat-files" is the subfolder name for .mat files in the runtime args
+                    resultsFolderCell = [resultsFolderCell ; {subfolderPath}];
+                end
+            end
+
+            %%
+            %obj = obj.addExperiment(resultsFolderCell)
+
+        end
+
+        function obj = addExperiment(obj, folderPathCell)
+            nFolder = length(folderPathCell);
+            for n = 1:nFolder
+                %Add the path to the file to the class to record which
+                %files have been processed
+                obj.experimentPath{end+1} = folderPathCell{n};
+
+
+
+                folderStruct = dir(folderPathCell{n});
+
+                %For all folders that are not hidden (experiments)
+                for i = 1:length(folderStruct)
+                    if ~strcmp(folderStruct(i).name(1), '.') && isfolder([folderPathCell{n}, '\', folderStruct(i).name])
+                        %"mat-files" is the subfolder name for .mat files in the runtime args
+                        subfolder = ['\', folderStruct(i).name, '\mat-files'];
+
+                        MATSubDir = [folderPathCell{n}, subfolder];
+
+                        obj = obj.addMATDir(MATSubDir);
+
+                    end
+                end
+            end
+        end
+
+        function obj = addMATDir(obj, MATFolderPath)
+
+            MATDirStruct = dir([MATFolderPath, '\*.mat']);
+
+            for i = 1:length(MATDirStruct)
+                fileName = [MATFolderPath, '\', MATDirStruct(i).name];
+
+                obj = obj.addTrial(fileName);
+
+
+            end
+
+        end
+
+        function obj = addTrial(obj, MATFile)
+            load(MATFile, 'senseGoalTable', 'costSummaryTable')
+            [experimentTitle, experimentContact, trialNumber] = obj.addressFromPath(MATFile);
+
+            existingExperimentFlag = ismember({obj.experimentDataStruct(:).Title}, experimentTitle);
+            if any(existingExperimentFlag)
+                entryIndex = find(existingExperimentFlag);
+            else
+                entryIndex = length(existingExperimentFlag) + 1;
+                obj.experimentDataStruct(entryIndex).Title = experimentTitle;
+            end
+
+
+
+            existingContactNumberFlag = ismember(obj.experimentDataStruct(entryIndex).nContact(:), experimentContact);
+            if any(existingContactNumberFlag)
+                contactIndex = find(existingContactNumberFlag);
+            else
+                contactIndex = length(existingContactNumberFlag)+1;
+                obj.experimentDataStruct(entryIndex).nContact(contactIndex) = experimentContact;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).contactNumber = experimentContact;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = table.empty;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = table.empty;
+            end
+
+
+
+            existingGoalData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable;
+            existingCostData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable;
+            newGoalData = [existingGoalData; senseGoalTable];
+            newCostData = [existingCostData; costSummaryTable];
+            obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = newGoalData;
+            obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = newCostData;
+            obj.experimentDataStruct(entryIndex).trialData(contactIndex).nTrial = size(newGoalData,1);
+        end
+
+
+
+        function [experimentTitle, nContacts, trialNumber] = addressFromPath(~, MATPath)
+            folderCell = split(MATPath, '\');
+
+            matName = split(folderCell{end}, {'_', '.'});
+            trialNumber = str2num(matName{2});
+
+            contactsFileName = split(folderCell{end-2}, {'_', '.'});
+            nContacts = str2num(contactsFileName{1});
+
+            experimentTitle = folderCell{end-3};
+
+        end
+
+        %%
+        function [xData, yData] = extractMeasure(obj, experimentName, varargin)
+            %% For a given experiment across all contact values, return the raw cost or quality measures
+            %yData is a cell array which is 1xnExperiment, each cell is
+            %nTrial x nContact x nMeasure
+            if isempty(varargin)
+                %If measure name is not specified, return all quality
+                %measures
+                measureName = obj.all_measure_name;
+            else
+                measureName = [varargin{:}];
+            end
+
+            %Extract the relevant values
+            experimentNameFlag = contains({obj.experimentDataStruct(:).Title}, experimentName, 'IgnoreCase', true);
+
+            experimentIdx = find(experimentNameFlag);
+            if length(experimentIdx) > length(experimentName)
+                experimentIdx = [];
+                for n = 1:length(experimentName)
+                    experimentNameFlag = strcmp({obj.experimentDataStruct(:).Title}, experimentName(n));
+                    if any(experimentNameFlag)
+                        experimentIdx(n) = find(experimentNameFlag);
+                    else
+                        warning("experiment name not found")
+                    end
+                end
+            end
+            nExperiment = length(experimentIdx);
+            xData = cell(nExperiment, 1);
+            yData = cell(nExperiment, 1);
+            for i = 1:nExperiment
+                nRun = length(obj.experimentDataStruct(experimentIdx(i)).nContact);
+                xData_contact = nan(1,nRun);
+                nTrial = max([obj.experimentDataStruct(experimentIdx(i)).trialData(:).nTrial]);
+
+
+                goalQualityNameFlag = ismember(measureName, obj.experimentDataStruct(experimentIdx(i)).trialData(1).senseGoalTable.Properties.VariableNames);
+                costNameFlag = ismember(measureName, obj.experimentDataStruct(experimentIdx(i)).trialData(1).costSummaryTable.Properties.VariableNames);
+
+                nMeasure = sum([goalQualityNameFlag, costNameFlag]);
+                yData_measureValue = nan(nTrial, nRun, nMeasure);
+
+
+                for r = 1:nRun
+                    xData_contact(r) = obj.experimentDataStruct(experimentIdx(i)).trialData(r).contactNumber;
+
+                    %Assign data to the output measure depending on
+                    %location of measure name
+
+
+                    yData_measureValue(:,r,goalQualityNameFlag==1) = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).senseGoalTable(:,measureName(goalQualityNameFlag)));
+                    yData_measureValue(:,r,costNameFlag==1) = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).costSummaryTable(:,measureName(costNameFlag)));
+
+                end
+
+                [xData{i}, i_ordered] = sort(xData_contact);
+                yData{i} = yData_measureValue(:,i_ordered,:);
+
+            end
+
+        end
+
+        function [medianVal, IQRVal] = findMedAndIQR(~, dataIn)
+            %FINDMEDANDIQR DataIn is not transformed and is in a matrix n x m
+            % where n is the number of data points and m is the number of
+            % sample sets
+            n = size(dataIn, 1);
+            m = size(dataIn, 2);
+            medianVal = median(dataIn{:}, 1);
+            IQRVal = iqr(dataIn{:}, 1);
+        end
+
+        function [xValKnee] = findKnee(~, xData, medianSetIn)
+            %FINDKNEE Apply the Knee algorithm to identify the number of
+            %contacts at which the rate of improvement drops off
+            %1: Smooth out the data
+            x_s = xData;
+            %Requires Curve Fitting Toolbox
+            y_s = smooth(medianSetIn,'sgolay', 1)';
+
+            %2: Normalise to a unit square
+            x_sn = rescale(x_s);
+            y_sn = rescale(y_s);
+
+            %3: Calculating the difference curve changes
+            x_d = x_sn;
+            y_d = y_sn - x_sn;
+
+            %plot(x_d, y_d)
+
+            %3.5 Horizontal Axis for cross comparison
+            diff = [x_d(end) - x_d(1), y_d(end) - y_d(1)];
+
+            %4: Calculating the local maxima of the difference curve
+            y_lm_flag = islocalmax(y_d);
+
+            y_lm = y_d(y_lm_flag==1);
+            x_lm = x_d(y_lm_flag==1);
+
+            %plot(x_d,y_d,x_lm,y_lm,'r*')
+
+            %5: Calculating threshold for each local maximum in the difference curve
+            %S is sensitivity
+            S = 0.9;
+            x_sn_p1 = x_sn;
+            n = length(x_sn);
+            x_sn_p1(1) = [];
+            T_lm_x = y_lm - S*(sum(x_sn_p1 - x_sn(1:n-1)) / (n-1));
+
+            %6: Each difference value is compared with threshold
+            lm_i = find(y_lm_flag);
+            % Add another index to check the last segment
+            lm_i(end+1) = length(x_sn);
+            nSect = length(y_lm);
+            knee_flag = zeros(1, nSect);
+            for i = 1:nSect
+                sect = y_d(lm_i(i):lm_i(i+1)-1);
+                knee_flag(i) = any(sect < T_lm_x(i));
+
+            end
+            x = x_lm(knee_flag==1);
+            try
+                knee_x_sn = x(1);
+            catch
+                e =1;
+            end
+            %hold on
+            %plot(x_lm, T_lm_x)
+
+            % Convert back to the actual range
+            kneeVal = min(xData) + (knee_x_sn * (max(xData) - min(xData)));
+
+            % Round to the nearest input xData
+            [~, idx] = min(abs(xData - kneeVal));
+            xValKnee = xData(idx);
+        end
+
+        %% Data Refinement and Transformations
+        function [refinedDataOut, successNumber, failureNumber] = excludeFailedGrasp(obj, experimentDataIn)
+            %EXCLUDEFAILEDGRASP For all trials, exclude any grasps that are
+            %classed as failing based on any of the measures
+            
+
+            %WARNING: Expects the order layer to match that found in
+            %obj.all_measure_name
+            %Define the masks for different measures
+            alignLayerID = find(strcmp(obj.all_measure_name, "normAlign"));
+            alignFailMask = find(experimentDataIn(:,:,alignLayerID) < 25e-2);
+
+            withinReachLayerID = find(strcmp(obj.all_measure_name, "withinReach"));
+            withinReachFailMask = find(experimentDataIn(:,:,withinReachLayerID) < 1e-1);
+
+            epsilonLayerID = find(strcmp(obj.all_measure_name, "Epsilon"));
+            epsilonFailMask = find(experimentDataIn(:,:,epsilonLayerID) < 1e-1);
+
+            volumeLayerID = find(strcmp(obj.all_measure_name, "Volume"));
+            volumeFailMask = find(experimentDataIn(:,:,volumeLayerID) < 1e-13);
+
+            
+            failIdx = [alignFailMask;withinReachFailMask;epsilonFailMask;volumeFailMask];
+            refineMask = ones(size(experimentDataIn, 1,2));
+            refineMask(unique(failIdx)) = nan;
+
+            refinedDataOut = experimentDataIn.*refineMask;
+            successNumber = sum(refineMask == 1);
+            failureNumber = sum(isnan(refineMask));
+            
+
+        end
+
+
+        function [figureHandle, skewVal] = experimentPDF(obj, experimentName, varargin)
+            %EXPERIMENTPDF Plot a tiled array of the experiments named as
+            %the first argument
+            %Options:
+            %experimentPDF(experimentName)
+            %experimentPDF(experimentName, measureName)
+            %experimentPDF(experimentName, measureName, refineFlag)
+
+            
+            if length(varargin) < 2
+                if isstring(varargin{1})
+                    measureName = varargin{1};
+                    refineFlag = 0;
+                elseif isnumeric(varargin{1})
+                    measureName = obj.all_measure_name;
+                    refineFlag = varargin{1};
+                end
+            else
+                measureName = varargin{1};
+                refineFlag = varargin{2};
+            end
+
+ 
+
+
+            if refineFlag
+                [~, rawY] = obj.extractMeasure(experimentName);
+                [refinedDataOut, successNumber, failureNumber] = obj.excludeFailedGrasp(rawY{1});
+                %[TODO] Add a way of only making yData = the measures of
+                %interest (for now just return all)
+                %Find the 3rd Dimension pages of interest
+                [r, c] = find(obj.all_measure_name == measureName(:));
+                [~, order_c] = sort(r);
+                yData = refinedDataOut(:,:,c(order_c));
+            else
+                [~, rawY] = obj.extractMeasure(experimentName, measureName);
+                yData = rawY{1};
+            end
+
+            if transformFlag
+                yData = obj.transformData(yData, measureName);
+            end
+                
+
+            %% Plot the PDF for all measures currently
+            nMeasure = length(measureName);
+            skewVal = nan(1,nMeasure);
+            figureHandle = figure;
+            t = tiledlayout('flow');
+            title(t, experimentName, 'Interpreter', 'none');
+            for m = 1:nMeasure
+                nexttile
+                [~, skewVal(m)] = obj.plotPDF(reshape(yData(:,:,m),[],1));
+                title(measureName(m));
+
+            end
+
+        end
+
+
+        function dataOut = transformData(obj, dataIn, varargin)
+            %TRANSFORMDATA Apply transforms to get normal distribution
+            %For each layer of the matrix in that corresponds with the
+            %measureName string array, apply the appropriate transformation
+            %to get an approximately normal distribution
+            dataOut = 1;
+            
+
+            if isempty(varargin)
+                measureName = obj.all_measure_name;
+            else
+                measureName = varargin{1};
+            end
+            nMeasure = length(measureName);
+
+            for n = 1: nMeasure
+                if strcmp(measureName(n), "Volume")
+                    x = reshape(dataIn(:,:,n),[],1);
+                    pd = fitdist(x, "Normal");
+                    qqplot(x,pd)
+
+                end
+                if strcmp(measureName(n), "normAlign")
+                    x = reshape(dataIn(:,:,n),[],1);
+                    pd = fitdist(x, "GeneralizedExtremeValue");
+                    qqplot(x,pd)
+
+                end
+                if strcmp(measureName(n), "Epsilon")
+                    x = reshape(dataIn(:,:,n),[],1);
+                    x(isnan(x)) = [];
+                    pd = fitdist(x, "GeneralizedExtremeValue");
+                    qqplot(x,pd)
+                end
+                if strcmp(measureName(n), "COM Offset")
+                    x = reshape(dataIn(:,:,n),[],1);
+                    pd = fitdist(x, "InverseGaussian");
+                    qqplot(x,pd)
+                end
+
+
+            end
+
+
+        end
+
+        function lambda_ini = boxcoxn(~, x)
+            % from T. Lan on Stack OVerflow
+            [m,n]=size(x);
+            lambda_ini=zeros(n,1);
+            for ii=1:n
+                [temp,lambda_ini(ii,1)]=boxcox(x(:,ii));
+            end
+            fun=@(lambda)(log(det((cov(((x.^repmat(lambda',m,1)-1)./repmat(lambda',m,1))))))*m/2-(lambda-1)'*(sum(log(x)))');
+            lambda=fminsearch(fun,lambda_ini);
+        end
+
+
 
         %% Final Visualisation Functions
 
@@ -131,258 +544,18 @@ classdef GraphPlotClass
             hold off
         end
 
-        %% Functions to load MAT files
-
-        function obj = addExperiment(obj, folderPathCell)
-            nFolder = length(folderPathCell);
-            for n = 1:nFolder
-                %Add the path to the file to the class to record which
-                %files have been processed
-                obj.experimentPath{end+1} = folderPathCell{n};
-
-
-
-                folderStruct = dir(folderPathCell{n});
-
-                %For all folders that are not hidden (experiments)
-                for i = 1:length(folderStruct)
-                    if ~strcmp(folderStruct(i).name(1), '.') && isfolder([folderPathCell{n}, '\', folderStruct(i).name])
-                        %"mat-files" is the subfolder name for .mat files in the runtime args
-                        subfolder = ['\', folderStruct(i).name, '\mat-files'];
-
-                        MATSubDir = [folderPathCell{n}, subfolder];
-
-                        obj = obj.addMATDir(MATSubDir);
-
-                    end
-                end
-            end
-        end
-
-        function obj = addMATDir(obj, MATFolderPath)
-
-            MATDirStruct = dir([MATFolderPath, '\*.mat']);
-
-            for i = 1:length(MATDirStruct)
-                fileName = [MATFolderPath, '\', MATDirStruct(i).name];
-
-                obj = obj.addTrial(fileName);
-
-
-            end
-
-        end
-
-        function obj = addTrial(obj, MATFile)
-            load(MATFile, 'senseGoalTable', 'costSummaryTable')
-            [experimentTitle, experimentContact, trialNumber] = obj.addressFromPath(MATFile);
-
-            existingExperimentFlag = ismember({obj.experimentDataStruct(:).Title}, experimentTitle);
-            if any(existingExperimentFlag)
-                entryIndex = find(existingExperimentFlag);
-            else
-                entryIndex = length(existingExperimentFlag) + 1;
-                obj.experimentDataStruct(entryIndex).Title = experimentTitle;
-            end
-
-
-
-            existingContactNumberFlag = ismember(obj.experimentDataStruct(entryIndex).nContact(:), experimentContact);
-            if any(existingContactNumberFlag)
-                contactIndex = find(existingContactNumberFlag);
-            else
-                contactIndex = length(existingContactNumberFlag)+1;
-                obj.experimentDataStruct(entryIndex).nContact(contactIndex) = experimentContact;
-                obj.experimentDataStruct(entryIndex).trialData(contactIndex).contactNumber = experimentContact;
-                obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = table.empty;
-                obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = table.empty;
-            end
-
-
-
-            existingGoalData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable;
-            existingCostData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable;
-            newGoalData = [existingGoalData; senseGoalTable];
-            newCostData = [existingCostData; costSummaryTable];
-            obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = newGoalData;
-            obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = newCostData;
-            obj.experimentDataStruct(entryIndex).trialData(contactIndex).nTrial = size(newGoalData,1);
-        end
-
-
-
-        function [experimentTitle, nContacts, trialNumber] = addressFromPath(~, MATPath)
-            folderCell = split(MATPath, '\');
-
-            matName = split(folderCell{end}, {'_', '.'});
-            trialNumber = str2num(matName{2});
-
-            contactsFileName = split(folderCell{end-2}, {'_', '.'});
-            nContacts = str2num(contactsFileName{1});
-
-            experimentTitle = folderCell{end-3};
-
-        end
-
-        %%
-        function [xData, yData] = extractMeasure(obj, experimentName, measureName)
-            %% For a given experiment across all contact values, find the point where the measure plateaus
-
-            %Extract the relevant values
-            experimentNameFlag = contains({obj.experimentDataStruct(:).Title}, experimentName, 'IgnoreCase', true);
-
-            experimentIdx = find(experimentNameFlag);
-            if length(experimentIdx) > length(experimentName)
-                experimentIdx = [];
-                for n = 1:length(experimentName)
-                    experimentNameFlag = strcmp({obj.experimentDataStruct(:).Title}, experimentName(n));
-                    if any(experimentNameFlag)
-                        experimentIdx(n) = find(experimentNameFlag);
-                    else
-                        warning("experiment name not found")
-                    end
-                end
-            end
-            nExperiment = length(experimentIdx);
-            xData = cell(nExperiment, 1);
-            yData = cell(nExperiment, 1);
-            for i = 1:nExperiment
-                nRun = length(obj.experimentDataStruct(experimentIdx(i)).nContact);
-                xData_contact = nan(1,nRun);
-                nTrial = max([obj.experimentDataStruct(experimentIdx(i)).trialData(:).nTrial]);
-
-
-                goalQualityNameFlag = ismember(measureName, obj.experimentDataStruct(experimentIdx(i)).trialData(1).senseGoalTable.Properties.VariableNames);
-                costNameFlag = ismember(measureName, obj.experimentDataStruct(experimentIdx(i)).trialData(1).costSummaryTable.Properties.VariableNames);
-
-                nMeasure = sum([goalQualityNameFlag, costNameFlag]);
-                yData_measureValue = nan(nTrial, nRun, nMeasure);
-
-
-                for r = 1:nRun
-                    xData_contact(r) = obj.experimentDataStruct(experimentIdx(i)).trialData(r).contactNumber;
-
-                    %Assign data to the output measure depending on
-                    %location of measure name
-
-
-                    yData_measureValue(:,r,goalQualityNameFlag==1) = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).senseGoalTable(:,measureName(goalQualityNameFlag)));
-                    yData_measureValue(:,r,costNameFlag==1) = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).costSummaryTable(:,measureName(costNameFlag)));
-
-                end
-
-                [xData{i}, i_ordered] = sort(xData_contact);
-                yData{i} = yData_measureValue(:,i_ordered,:);
-
-            end
-
-        end
-
-        function [medianVal, IQRVal] = findMedAndIQR(obj, dataIn)
-            %FINDMEDANDIQR DataIn is not transformed and is in a matrix n x m
-            % where n is the number of data points and m is the number of
-            % sample sets
-            n = size(dataIn, 1);
-            m = size(dataIn, 2);
-            medianVal = median(dataIn{:}, 1);
-            IQRVal = iqr(dataIn{:}, 1);
-        end
-
-        function [xValKnee] = findKnee(~, xData, medianSetIn)
-            %FINDKNEE Apply the Knee algorithm to identify the number of
-            %contacts at which the rate of improvement drops off
-            %1: Smooth out the data
-            x_s = xData;
-            %Requires Curve Fitting Toolbox
-            y_s = smooth(medianSetIn,'sgolay', 1)';
-
-            %2: Normalise to a unit square
-            x_sn = rescale(x_s);
-            y_sn = rescale(y_s);
-
-            %3: Calculating the difference curve changes
-            x_d = x_sn;
-            y_d = y_sn - x_sn;
-
-            %plot(x_d, y_d)
-
-            %3.5 Horizontal Axis for cross comparison
-            diff = [x_d(end) - x_d(1), y_d(end) - y_d(1)];
-
-            %4: Calculating the local maxima of the difference curve
-            y_lm_flag = islocalmax(y_d);
-
-            y_lm = y_d(y_lm_flag==1);
-            x_lm = x_d(y_lm_flag==1);
-
-            %plot(x_d,y_d,x_lm,y_lm,'r*')
-
-            %5: Calculating threshold for each local maximum in the difference curve
-            %S is sensitivity
-            S = 0.9;
-            x_sn_p1 = x_sn;
-            n = length(x_sn);
-            x_sn_p1(1) = [];
-            T_lm_x = y_lm - S*(sum(x_sn_p1 - x_sn(1:n-1)) / (n-1));
-
-            %6: Each difference value is compared with threshold
-            lm_i = find(y_lm_flag);
-            % Add another index to check the last segment
-            lm_i(end+1) = length(x_sn);
-            nSect = length(y_lm);
-            knee_flag = zeros(1, nSect);
-            for i = 1:nSect
-                sect = y_d(lm_i(i):lm_i(i+1)-1);
-                knee_flag(i) = any(sect < T_lm_x(i));
-
-            end
-            x = x_lm(knee_flag==1);
-            try
-                knee_x_sn = x(1);
-            catch
-                e =1;
-            end
-            %hold on
-            %plot(x_lm, T_lm_x)
-
-            % Convert back to the actual range
-            kneeVal = min(xData) + (knee_x_sn * (max(xData) - min(xData)));
-
-            % Round to the nearest input xData
-            [~, idx] = min(abs(xData - kneeVal));
-            xValKnee = xData(idx);
-        end
-
-
-
-        function dataOut = transformData(obj, dataIn)
-
-        end
-
-        function lambda_ini = boxcoxn(~, x)
-            % from T. Lan on Stack OVerflow
-            [m,n]=size(x);
-            lambda_ini=zeros(n,1);
-            for ii=1:n
-                [temp,lambda_ini(ii,1)]=boxcox(x(:,ii));
-            end
-            fun=@(lambda)(log(det((cov(((x.^repmat(lambda',m,1)-1)./repmat(lambda',m,1))))))*m/2-(lambda-1)'*(sum(log(x)))');
-            lambda=fminsearch(fun,lambda_ini);
-        end
-
-
-
-
-        function figureHandle = plotPDF(~, xData)
+        function [figureHandle, sk] = plotPDF(~, xData)
             pd = fitdist(xData, 'Normal');
             min_x = min(xData,[],'all');
             max_x = max(xData,[],'all');
             tick_size = range(xData,"all")/200;
             x_ticks = min_x:tick_size:max_x;
             pdf_y = pdf(pd, x_ticks);
-            sk = skewness(xData)
+            sk = skewness(xData);
+            hold on
             figureHandle = plot(x_ticks, pdf_y);
-            histfit(xData)
+            histogram(xData, 'Normalization','pdf');
+            hold off
 
         end
 

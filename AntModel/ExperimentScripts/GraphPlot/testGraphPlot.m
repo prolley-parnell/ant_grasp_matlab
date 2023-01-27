@@ -5,47 +5,38 @@
 % 
 % %Add all Experiment Folders
 % experimentFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
-% experimentDir = dir(experimentFolder);
-% resultsFolderCell = {};
-% for f = 1:length(experimentDir)
-%     subfolderPath = [experimentFolder, '\', experimentDir(f).name];
-%     if ~strcmp(experimentDir(f).name(1), '.') && isfolder(subfolderPath)
-%         %"mat-files" is the subfolder name for .mat files in the runtime args
-%         resultsFolderCell = [resultsFolderCell ; {subfolderPath}];
-%     end
-% end
-% 
-% %%
-% GPC = GPC.addExperiment(resultsFolderCell)
-% 
+% GPC = GPC.loadData;
 % save('GPC_Example.mat', 'GPC')
-%%
+%% Writing Exclude Failed Grasps Code
 experimentName = ["IPDAlign_RSS"];
-measureName = ["Epsilon"];
-[xData, yData] = GPC.extractMeasure(experimentName, measureName);
+measureName = ["Volume", "COM Offset","Epsilon", "normAlign"];
+refineFlag = 0;
+[~, skewVal] = GPC.experimentPDF(experimentName, measureName, refineFlag);
 
-
+%% Refine the data (testing)
+[~, yData] = GPC.extractMeasure(experimentName);
+[refinedDataOut, successNumber, failureNumber] = GPC.excludeFailedGrasp(yData{1});
+GPC.transformData(refinedDataOut)
 
 %% Visualise experiment
-[p,tbl,stats] = anova1(yData{1})
+% [p,tbl,stats] = anova1(yData{1})
 
 %%
-[medianVal, IQRVal] = GPC.findMedAndIQR(yData);
-kneeX = GPC.findKnee(xData, medianVal)
+% [medianVal, IQRVal] = GPC.findMedAndIQR(yData);
+% kneeX = GPC.findKnee(xData, medianVal)
 
 %% Finding Cross Correlation
-allExperimentName = {GPC.experimentDataStruct.Title};
-allQualityName = ["Volume", "Epsilon", "normAlign", "COM Offset"];
-[xData, yData] = GPC.extractMeasure(allExperimentName, allQualityName)
+% allExperimentName = {GPC.experimentDataStruct.Title};
+% allQualityName = ["Volume", "Epsilon", "normAlign", "COM Offset"];
+% [xData, yData] = GPC.extractMeasure(allExperimentName, allQualityName)
+% 
+% %Compound all the measures
+% 
+% goalSample = reshape(yData{:}, [], 4);
+% [R, P] = corrcoef(goalSample,'Rows','complete')
+
 
 %%
-%Compound all the measures
-
-goalSample = reshape(yData{:}, [], 4);
-[R, P] = corrcoef(goalSample,'Rows','complete')
-
-
-%%
-GPC.completePaperPlot
+%GPC.completePaperPlot
 
 
