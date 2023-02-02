@@ -4,9 +4,12 @@
 %GPC = GraphPlotClass();
 % 
 % %Add all Experiment Folders
-% experimentFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
+%experimentFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
 %GPC = GPC.loadData;
 %save('GPC_Example.mat', 'GPC')
+
+
+
 %% Writing Exclude Failed Grasps Code
 experimentName = ["IPDAlign_RSS"];
 measureName = ["Volume", "COM Offset","Epsilon", "Align"];
@@ -14,9 +17,11 @@ refineFlag = 0;
 [~, skewVal] = GPC.experimentPDF(experimentName, measureName, refineFlag);
 
 %% Refine the data (testing)
-[~, yData] = GPC.extractMeasure(experimentName);
+experimentName = ["IPDAlign_RSS"];
+measureName = [GPC.all_quality_name, "Simulation Time", "Real World Time"];
+[~, yData] = GPC.extractMeasure(experimentName, measureName);
 [refinedDataOut, successNumber, failureNumber] = GPC.excludeFailedGrasp(yData{1});
-GPC.transformMedian(refinedDataOut)
+GPC.transformMedian(refinedDataOut, measureName)
 
 %% Visualise experiment
 % [p,tbl,stats] = anova1(yData{1})
@@ -40,6 +45,22 @@ kneeX = GPC.findKnee(xData{1}, medianVal);
 
 
 %%
-[~, mapTable, resultCellArray] = GPC.completePaperPlot
+%[~, mapTable, resultCellArray] = GPC.completePaperPlot
+[resultTable] = GPC.extractPlotAndCostData;
+GPC.plotResults(resultTable);
 
+%%
+GPC.plotResults(resultTable)
 
+%%
+%[orderedResultTable] = GPC.orderGraspQualityPlateau(resultTable);
+
+%%
+[resultTable] = GPC.extractPlotAndCostData;
+[orderedResultTable] = GPC.orderGraspQualityPlateau(resultTable);
+GPC.plotOrderedResultTable(orderedResultTable)
+%%
+GPC.plotOrderedMedianTable(orderedResultTable)
+
+%%
+GPC.plotOrderedMedianQualityAndCost(orderedResultTable)

@@ -45,7 +45,7 @@ RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
 % external software
-RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
+RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 
 % To save the summary tables, antTree, and runtime args in a single MAT
 % file, enable. Use for internal matlab processing
@@ -54,9 +54,9 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
 % experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
 % stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
 
 %% Ant body setup
 % Body motion not required for these experiments
@@ -74,7 +74,7 @@ control_method = {'random'};
 refine_method = {};
             
 %If using 'mean' or 'GMM' then option to set variance {'IPD', 'varinc', 'vardec', 'var=1.2'};
-variance_mode = {'vardec', 'var=0.5'};
+variance_mode = {};
 
 antenna_control_cell = [motion_type,control_method,refine_method,variance_mode];
 
@@ -85,8 +85,9 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 % Checks all points for each of the modes included in the brackets
 %RUNTIME_ARGS.SENSE.MODE = {'align'};
 % Uses the centre of contact to generate a potential grasp along the PCA
-% axis [NOT IMPLEMENTED]
+% axis 
 RUNTIME_ARGS.SENSE.MODE = {'dist', 'align'};
+
 
 %% -------- Test Specific Set Up ------------ %%
 % 
