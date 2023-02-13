@@ -831,7 +831,7 @@ classdef GraphPlotClass
                     rankPercentSummary = table('RowNames', table_t.Title);
                 end
 
-                nameRank_t = table_t(:,["Title","Mean Percent"]);
+                nameRank_t = table_t(:,["Title", "Mean Percent"]);
                 rankPercentSummary(nameRank_t.Title, t) = nameRank_t(:,"Mean Percent");
                 rankPercentSummary.Properties.VariableNames(t) = append("Table ", int2str(t));
 
