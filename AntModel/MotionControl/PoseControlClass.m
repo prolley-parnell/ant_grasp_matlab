@@ -179,7 +179,8 @@ classdef PoseControlClass
                 for i = 1:nCollision
                     witness_pts = witnessPoints(3*body_i(i)-2:3*body_i(i), 2*collision_i(i)-1:2*collision_i(i));
                     pointOnObj(i,:) = witness_pts(:,2)';
-                    surface_normals(i,:) = tbox.findNormalCollision(env.FBT{collision_i(i)}, pointOnObj(i,:));
+                    %surface_normals(i,:) = tbox.findNormalCollision(env.FBT{collision_i(i)}, pointOnObj(i,:));
+                    [pointOnObj(i,:), surface_normals(i,:)] = tbox.findPointOnObjNormalID(env.FBT{collision_i(i)}, pointOnObj(i,:));
                 end
                 collision_points = pointOnObj;
 

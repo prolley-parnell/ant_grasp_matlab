@@ -22,7 +22,7 @@ addpath('MotionControl','ModelAntBody', 'BehaviourControl', 'Environment',...
     'urdf', 'Grasp', 'ExperimentOutput', 'ExperimentScripts', 'MainScript', 'ToolClasses');
 
 %Set the seed for any random number generation to be according to the
-%current time
+%current time (rng does not work with parallel computing)
 rng('shuffle');
 
 %% Initialise the Model Property handler - RuntimeArgs
@@ -33,7 +33,7 @@ RUNTIME_ARGS = RuntimeArgs();
 RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 2;
+RUNTIME_ARGS.N_TRIALS = 1;
 
 % Sampling rate in simulated time - smaller is smoother for plotting, but
 % takes longer to run (0.05 to 0.15)
@@ -54,9 +54,22 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
 % experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
 % stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
+%% Object to sense
+% % Scale is linear scale about the centre of the object, varies for all
+% % experiments.
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
+
+%% Object to sense
+% % Scale is linear scale about the centre of the object, varies for all
+% % experiments.
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
 
 %% Ant body setup
 % Body motion not required for these experiments

@@ -9,48 +9,48 @@
 %save('GPC_Example.mat', 'GPC')
 
 
-
 %% Writing Exclude Failed Grasps Code
 experimentName = ["IPDAlign_RSS"];
 measureName = ["Volume", "COM Offset","Epsilon", "Align"];
 refineFlag = 0;
 [~, skewVal] = GPC.experimentPDF(experimentName, measureName, refineFlag);
 
-%% Refine the data (testing)
+%% Refine the data (testing) Transform and Find Median
 experimentName = ["IPDAlign_RSS"];
 measureName = [GPC.all_quality_name, "Simulation Time", "Real World Time"];
 [~, yData] = GPC.extractMeasure(experimentName, measureName);
 [refinedDataOut, successNumber, failureNumber] = GPC.excludeFailedGrasp(yData{1});
-GPC.transformMedian(refinedDataOut, measureName)
-
-%% Visualise experiment
-% [p,tbl,stats] = anova1(yData{1})
-
-%%
-experimentName = ["IPDAlign_RSS"];
-measureName = ["COM Offset"];
-[xData, yData] = GPC.extractMeasure(experimentName, measureName);
-[medianVal, IQRVal] = GPC.findMedAndIQR(yData);
-kneeX = GPC.findKnee(xData{1}, medianVal);
+medianVal = GPC.transformMedian(refinedDataOut, measureName);
+%% Find the knee for the median values across the first row
+kneeX = GPC.findKnee(xData{1}, medianVal(1,:));
 
 %% Finding Cross Correlation
-% allExperimentName = {GPC.experimentDataStruct.Title};
-% allQualityName = ["Volume", "Epsilon", "Align", "COM Offset"];
-% [xData, yData] = GPC.extractMeasure(allExperimentName, allQualityName)
-% 
-% %Compound all the measures
-% 
-% goalSample = reshape(yData{:}, [], 4);
-% [R, P] = corrcoef(goalSample,'Rows','complete')
+allExperimentName = {GPC.experimentDataStruct.Title};
+allQualityName = ["Volume", "Epsilon", "Align", "COM Offset"];
+[xData, yData] = GPC.extractMeasure(allExperimentName, allQualityName)
+
+%Compound all the measures
+goalSample = reshape(yData{:}, [], 4);
+[R, P] = corrcoef(goalSample,'Rows','complete')
 
 
-%%
+%% Plot the full table of behaviours against the various measures
 %[~, mapTable, resultCellArray] = GPC.completePaperPlot
 [resultTable] = GPC.extractPlotAndCostData;
 GPC.plotResults(resultTable);
 
-%%
-GPC.plotResults(resultTable)
+%% Rank each behaviour to find the best
+[resultTable] = GPC.extractPlotAndCostData;
+maxKneeTable = GPC.findMaxKnee(resultTable);
+%% 
+pass05Table = GPC.addPercentPassColumn(maxKneeTable, 0.5);
+
+[pass05TableRank] = GPC.addRank(pass05Table);
+
+EndTable05 = GPC.addSummaryRank(pass05TableRank);
+
+%allMeasureSummaryTable = GPC.summariseTableRank(EndTable05, EndTable06);
+
 
 %%
 %[orderedResultTable] = GPC.orderGraspQualityPlateau(resultTable);

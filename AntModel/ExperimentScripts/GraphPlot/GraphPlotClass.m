@@ -13,6 +13,8 @@ classdef GraphPlotClass
         cost_colour_rwt
         cost_colour_st
 
+        rank_quality_table
+
 
     end
 
@@ -30,6 +32,13 @@ classdef GraphPlotClass
             obj.percent_colour = [0.9 0.75 0];
             obj.cost_colour_rwt = [0.15 0 0.9];
             obj.cost_colour_st = [0.5 0.4 1];
+
+
+            rank_quality_order = ["PercentSuccess MaxKnee", "KneeNContact Max", "SimulationTime MaxKnee", "RealWorldTime MaxKnee"];
+
+            rank_direction = ["descend", "ascend", "ascend", "ascend"];
+
+            obj.rank_quality_table = array2table([rank_quality_order',rank_direction'],'VariableNames',["QualityName", "Direction"]);
         end
 
 
@@ -181,7 +190,7 @@ classdef GraphPlotClass
                 measureName = [varargin{:}];
             end
 
-            
+
             %Extract the relevant values
             experimentNameFlag = contains({obj.experimentDataStruct(:).Title}, experimentName, 'IgnoreCase', true);
 
@@ -208,8 +217,9 @@ classdef GraphPlotClass
 
                 goalQualityNameFlag = ismember(measureName, obj.all_quality_name);
                 costNameFlag = ismember(measureName, obj.all_cost_name(2:end));
+                jointCostNameFlag = ismember(measureName, "Joint Change");
 
-                nMeasure = sum([goalQualityNameFlag, costNameFlag]);
+                nMeasure = sum([goalQualityNameFlag, jointCostNameFlag, costNameFlag]);
                 yData_measureValue = nan(nTrial, nRun, nMeasure);
 
 
@@ -222,6 +232,14 @@ classdef GraphPlotClass
 
                     yData_measureValue(:,r,goalQualityNameFlag==1) = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).senseGoalTable(:,measureName(goalQualityNameFlag)));
 
+                    if any(jointCostNameFlag)
+                        %Must Process joint change independently due to the
+                        %size
+                        %Extract the 50x14 array and process into a 50x1
+                        runJointChangeArray = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).costSummaryTable(:,"Joint Change"));
+                        yData_measureValue(:,r,jointCostNameFlag==1) = obj.scaleAndSumJointMotion(runJointChangeArray);
+                    end
+
                     yData_measureValue(:,r,costNameFlag==1) = table2array(obj.experimentDataStruct(experimentIdx(i)).trialData(r).costSummaryTable(:,measureName(costNameFlag)));
 
                 end
@@ -229,6 +247,24 @@ classdef GraphPlotClass
                 [xData{i}, i_ordered] = sort(xData_contact);
                 yData{i} = yData_measureValue(:,i_ordered,:);
 
+            end
+
+        end
+
+        function scaledJointCost = scaleAndSumJointMotion(obj, jointMotion)
+            %SCALEANDSUMJOINTMOTION Given the full sum of joint motion
+            %across the set of joints in the ant model, scale proportional
+            %to energy cost per joint.
+            %[TODO] This measure is included already within the computation
+            %time, IF the antennae are the only thing moving
+            % Complete this function if the winner is not clear enough
+            % using only time measures
+            nJoint = size(jointMotion,2);
+            weightMultiplier = ones([1,nJoint]); %Modify this value to scale joint according to energy cost
+            nTrial = size(jointMotion,1);
+            scaledJointCost = nan(nTrial,1);
+            for trial_i = 1:nTrial
+                scaledJointCost(trial_i) = sum(jointMotion(trial_i,:) .* weightMultiplier);
             end
 
         end
@@ -443,8 +479,13 @@ classdef GraphPlotClass
                 if strcmp(measureName(n), "Volume")
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        pd = fitdist(x, "Normal");
-                        medianOut(n, i) = pd.median;
+                        if all(isnan(x))
+                            medianOut(n, i) = NaN;
+                        else
+
+                            pd = fitdist(x, "Normal");
+                            medianOut(n, i) = pd.median;
+                        end
                     end
 
                 end
@@ -452,20 +493,24 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        pd = fitdist(x, "GeneralizedExtremeValue");
-                        medianOut(n, i) = pd.median;
+                        if all(isnan(x))
+                            medianOut(n, i) = NaN;
+                        else
+                            pd = fitdist(x, "GeneralizedExtremeValue");
+                            medianOut(n, i) = pd.median;
+                        end
                     end
 
                 end
                 if strcmp(measureName(n), "Epsilon")
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        %if isnan(median(x))
-                        %   medianOut(n, i) = NaN;
-                        %else
-                        pd = fitdist(x, "GeneralizedExtremeValue");
-                        medianOut(n, i) = pd.median;
-                        %end
+                        if all(isnan(x))
+                            medianOut(n, i) = NaN;
+                        else
+                            pd = fitdist(x, "GeneralizedExtremeValue");
+                            medianOut(n, i) = pd.median;
+                        end
                     end
 
                 end
@@ -473,8 +518,12 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        pd = fitdist(x, "GeneralizedExtremeValue");
-                        medianOut(n, i) = pd.median;
+                        if all(isnan(x))
+                            medianOut(n, i) = NaN;
+                        else
+                            pd = fitdist(x, "GeneralizedExtremeValue");
+                            medianOut(n, i) = pd.median;
+                        end
                     end
                 end
 
@@ -482,8 +531,12 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        pd = fitdist(x, "Gamma");
-                        medianOut(n, i) = pd.median;
+                        if all(isnan(x))
+                            medianOut(n, i) = NaN;
+                        else
+                            pd = fitdist(x, "Gamma");
+                            medianOut(n, i) = pd.median;
+                        end
                     end
                 end
 
@@ -491,8 +544,12 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        pd = fitdist(x, "Weibull");
-                        medianOut(n, i) = pd.median;
+                        if all(isnan(x))
+                            medianOut(n, i) = NaN;
+                        else
+                            pd = fitdist(x, "Weibull");
+                            medianOut(n, i) = pd.median;
+                        end
                     end
                 end
 
@@ -529,7 +586,7 @@ classdef GraphPlotClass
             controlMethod = ["Joint", "Location"];
             nControlMethod = length(controlMethod);
 
-            
+
             qualityTitle = obj.all_quality_name(1:4);
             costTitle = ["Simulation Time", "Real World Time"];
 
@@ -602,8 +659,8 @@ classdef GraphPlotClass
                                 %Find the layer index if measure names are
                                 %reordered
                                 median_idx = find(measureTitle == qualityTitle(meas_i));
-                                
-                                
+
+
                                 resultStruct.KneeNContact = obj.findKnee(xData{:}, medianOut(median_idx,:));
 
                                 %Find the column index that links to that
@@ -645,151 +702,158 @@ classdef GraphPlotClass
 
         end
 
-% 
-%          function [resultTable] = extractPlotData(obj)
-% 
-%             rowTitle = ["Distance", "Alignment", "Distance and Alignment", "PCA"];
-%             nRow = length(rowTitle);
-% 
-%             searchMethod = ["Random", "Mean Centred"];
-%             nSearchMethod = length(searchMethod);
-% 
-%             controlMethod = ["Joint", "Location"];
-%             nControlMethod = length(controlMethod);
-% 
-%             measureTitle = obj.all_quality_name(1:4);
-% 
-%             nMeasure = length(measureTitle);
-% 
-%             arrangeMap = {'Align_CMC_fixvar', 2, 2, 1  ; ...
-%                 'Align_RRaP', 2, 1, 1 ; ...
-%                 'Align_RSS', 2, 1, 2; ...
-%                 'Align_CGMMC_fixvar', 2, 2, 2;...
-%                 %'Align_CGMMC_varinc', 2, 2, 2;...
-%                 %'Align_CGMMC_vardec', 2, 2, 2;...
-%                 'IPDAlign_CMC_fixvar', 3, 2, 1  ; ...
-%                 %'IPDAlign_CMC_varinc', 3, 2, 1 ; ...
-%                 %'IPDAlign_CMC_vardec', 3, 2, 1 ; ...
-%                 'IPDAlign_RRaP', 3, 1, 1;...
-%                 'IPDAlign_RSS', 3, 1, 2;...
-%                 'IPDAlign_CGMMC_fixvar', 3, 2, 2;...
-%                 %'IPDAlign_CGMMC_varinc', 3, 2, 2;...
-%                 %'IPDAlign_CGMMC_vardec', 3, 2, 2;...
-%                 'IPD_CMC_fixvar', 1, 2, 1;...
-%                 'IPD_RRaP', 1, 1, 1;...
-%                 'IPD_RSS', 1, 1, 2;...
-%                 'IPD_CGMMC_fixvar', 1, 2, 2; ...
-%                 'PCA_CGMMC_fixvar', 4, 2, 2 ;...
-%                 %'PCA_CGMMC_varinc', 4, 2, 2 ; ...
-%                 %'PCA_CGMMC_vardec', 4, 2, 2 ; ...
-%                 'PCA_CMC_fixvar', 4, 2, 1 ;...
-%                 %'PCA_CMC_vardec', 4, 2, 1 ;...
-%                 %'PCA_CMC_varinc', 4, 2, 1 ;...
-%                 'PCA_RRaP', 4, 1, 1 ;...
-%                 'PCA_RSS', 4, 1, 2};
-% 
-%             mapTable = cell2table(arrangeMap, "VariableNames", ["Title", "Row Index", "Search Method", "Control Method"]);
-% 
-%             resultCellArray = cell(size(mapTable,1),nMeasure);
-% 
-%             for row_i = 1:nRow
-%                 for search_i = 1:nSearchMethod
-%                     for control_i = 1:nControlMethod
-%                         % Extract the experiments for the given row
-%                         rowFlag = (mapTable.("Row Index") == row_i & mapTable.("Control Method") == control_i  & mapTable.("Search Method") == search_i);
-%                         if any(rowFlag)
-%                             experimentTitle = mapTable.Title{rowFlag};
-% 
-%                             %Extract all data for this experiment
-%                             [xData, yData] = obj.extractMeasure({experimentTitle});
-% 
-%                             %Refine this data to exclude failed grasps
-%                             [refinedYData, successNumber, failureNumber] = obj.excludeFailedGrasp(yData);
-%                             percentRate = successNumber ./ (successNumber + failureNumber);
-% 
-%                             %Find the median of each measure for these
-%                             %experiments
-%                             medianOut = obj.transformMedian(refinedYData);
-% 
-% 
-% 
-%                             for meas_i = 1:nMeasure
-%                                 %Find the knee point for each measure of this experiment
-%                                 resultStruct = struct('KneeNContact', [], 'KneeY', [], 'PercentSuccess', []);
-%                                 % Find the number of contacts at the knee
-%                                 %Find the layer index if measure names are
-%                                 %reordered
-%                                 median_idx = find(obj.all_quality_name == measureTitle(meas_i));
-% 
-%                                 resultStruct.KneeNContact = obj.findKnee(xData{:}, medianOut(median_idx,:));
-% 
-%                                 %Find the column index that links to that
-%                                 %number of contacts at the knee
-%                                 x_i = find(xData{:}==resultStruct.KneeNContact);
-% 
-%                                 % Find the median value for the trial with
-%                                 % that number of contacts
-%                                 resultStruct.KneeY = medianOut(meas_i, x_i);
-% 
-%                                 % Find the failure rate for that number of
-%                                 % contacts
-%                                 resultStruct.PercentSuccess = percentRate(x_i);
-% 
-%                                 %% Assign the values to the output cell
-%                                 resultCellArray{find(rowFlag), meas_i} = resultStruct;
-% 
-%                             end
-% 
-% 
-%                         end
-%                     end
-%                 end
-% 
-% 
-%             end
-% 
-%             dataTable = cell2table(resultCellArray, 'VariableNames', measureTitle);
-% 
-%             resultTable = [mapTable, dataTable];
-% 
-%         end
 
-        function [orderedResultTable] = orderGraspQualityPlateau(obj, mapResultTable)
-            %ORDERGRASPQUALITYPLATEAU Reorder the experiments in the following
+
+        function [orderedResultTable] = findMaxKnee(obj, mapResultTable)
+            %FINDMAXKNEE Reorder the experiments in the following
             %priority
-            % 1: find median kneeNcontacts and the median success rate for a
-            % given experiment across all measures
-            % 2: Order the experiments by percentage success descending, then by ncontacts ascending
-            % [TODO]: See what the results are if I prioritise in the opposite
-            % order (number then percent)
+            % 1: find the maximum knee N contacts across all measures
+
 
             nRow = size(mapResultTable,1);
-            medianExperimentVal = nan([nRow,4]);
+            maxExperimentVal = nan([nRow,4]);
             for row_i = 1:nRow
                 %Find a median measure value and append to the table
                 %Extract the measure data
                 kneeStruct = mapResultTable(row_i,obj.all_quality_name(1:4)).Variables;
                 kneeTable = struct2table(kneeStruct);
-                s = summary(kneeTable);
-                medianExperimentVal(row_i,:) = [s.KneeNContact.Median, s.PercentSuccess.Median, s.SimulationTime.Median, s.RealWorldTime.Median];
+                [~, row_index] = max(kneeTable(:,1).Variables);
+                maxExperimentVal(row_i,:) = [kneeTable(row_index,["KneeNContact","PercentSuccess","RealWorldTime","SimulationTime"]).Variables];
             end
-            [sortMedian, sort_idx] = sortrows(medianExperimentVal, [2,1], {'descend', 'ascend'});
-            %[sortMedian, sort_idx] = sortrows(medianExperimentVal, [1,2], {'ascend', 'descend'});
 
-            medianTable = array2table(sortMedian, "VariableNames", ["KneeNContact Median", "PercentSuccess Median", "SimulationTime Median", "RealWorldTime Median"]);
-            orderedResultTable = [mapResultTable(sort_idx,:), medianTable];
+            maxTable = array2table(maxExperimentVal, "VariableNames", ["KneeNContact Max", "PercentSuccess MaxKnee", "SimulationTime MaxKnee", "RealWorldTime MaxKnee"]);
+            orderedResultTable = [mapResultTable, maxTable];
+
+        end
+
+        function passResultTable = addPercentPassColumn(~, resultTable, varargin)
+
+            if length(varargin) == 1
+                passPercent = varargin{1};
+            else
+                passPercent = 0.5;
+            end
+            passFlag = resultTable.("PercentSuccess MaxKnee")>passPercent;
+            passTable = table(passFlag, 'VariableNames', append("Percent Pass Flag > ", num2str(passPercent)));
+
+            passResultTable = [resultTable, passTable];
+
+        end
+
+
+        function [resultTableWithRank] = addRank(obj, resultTable, varargin)
+            %ORDERRESULTTABLE Assign rank to each of the experiments in the
+            %resultTable according to the string provided in varargin
+            % String Options
+            % ["PercentSuccess MaxKnee", "KneeNContact Max", "SimulationTime MaxKnee", "RealWorldTime MaxKnee"];
+            % obj.rank_quality_order
+
+            if size(varargin) < 1
+                rankStringArray = obj.rank_quality_table.QualityName;
+            else
+                rankStringArray = varargin{:};
+            end
+
+            nRank = length(rankStringArray);
+
+            % Find out which rows not to include in the sort
+            tableContainsPPFlag = contains(resultTable.Properties.VariableNames, "Percent Pass Flag");
+            if any(tableContainsPPFlag)
+                %If the table already contains a pass flag column
+                passFlagValueArray = resultTable(:,tableContainsPPFlag==1).Variables;
+            else
+                passFlagValueArray = ones(size(resultTable,1),1);
+            end
+
+            emptyRankVector = nan(size(passFlagValueArray));
+            [passTable] = resultTable(passFlagValueArray==1, :);
+            passTable.Properties.RowNames = passTable.Title;
+            pass_idx = find(passFlagValueArray==1);
+
+            resultTableWithRank = resultTable;
+            resultTableWithRank.Properties.RowNames = resultTableWithRank.Title;
+
+            for rank_idx = 1:nRank
+
+                qualityName = rankStringArray(rank_idx);
+                % Add an empty column to the output data for that rank
+                rankTitle = append(qualityName, " Rank");
+                resultTableWithRank.(rankTitle) = emptyRankVector;
+
+                %Find the sort direction
+                rowFlag = obj.rank_quality_table.QualityName == qualityName;
+                sortDirection = obj.rank_quality_table.Direction(rowFlag == 1);
+
+                %Sort only the passed behaviours according to the quality
+                [passTable, ~] = sortrows(passTable, qualityName, sortDirection);
+
+                unique_val = unique(passTable.(qualityName), 'stable');
+                m = passTable.(qualityName) == unique_val';
+
+                r = cumsum(sum(m));
+
+                rank_value = sum(m .* r , 2);
+
+                resultTableWithRank(passTable.Title, rankTitle).Variables = rank_value;
+
+
+            end
+
+
+
+
+        end
+
+        function summaryRankTable = addSummaryRank(obj, resultTableWithRank)
+            %ADDSUMMARYRANK Find the sum total of the score from each rank
+            %column over the total worst possible rank
+            rank_idx = find(contains(resultTableWithRank.Properties.VariableNames, " Rank"));
+            worstScore = max(resultTableWithRank(:,rank_idx).Variables, [], 1, 'omitnan');
+
+            resultTableWithRank.("Mean Percent") = sum(resultTableWithRank(:,rank_idx).Variables ./ worstScore, 2)/length(rank_idx);
+            resultTableWithRank.("Max Percent") = max(resultTableWithRank(:,rank_idx).Variables ./ worstScore,[], 2);
+
+            summaryRankTable = sortrows(resultTableWithRank, ["Mean Percent", "Max Percent"], "ascend");
+
+        end
+
+        function rankPercentSummary = summariseTableRank(~, varargin)
+            %SUMMARISETABLERANK For each table name, find the different
+            %rank scores from each table given in varargin
+
+            nTable = length(varargin);
+
+            rankPercentSummary = table.empty;
+
+            for t = 1:nTable
+                table_t = varargin{t};
+                if t == 1
+                    rankPercentSummary = table('RowNames', table_t.Title);
+                end
+
+                nameRank_t = table_t(:,["Title","Mean Percent"]);
+                rankPercentSummary(nameRank_t.Title, t) = nameRank_t(:,"Mean Percent");
+                rankPercentSummary.Properties.VariableNames(t) = append("Table ", int2str(t));
+
+            end
+
+            rankPercentSummary.("Sum") = sum(rankPercentSummary(:,1:t).Variables,2, 'includenan');
+            rankPercentSummary.("Standard Deviation") = std(rankPercentSummary(:,1:t).Variables,0,2, 'includenan');
+            rankPercentSummary = sortrows(rankPercentSummary, ["Sum", "Standard Deviation"], "ascend");
+
+
 
         end
 
         function [] = plotOrderedMedianQualityAndCost(obj, orderedResultTable)
-        %PLOTORDEREDQUALITYANDCOST Show the median knee for each method
-        %alongside a stacked barchart showing the different cost times
-        %against a different y axis
+            %PLOTORDEREDQUALITYANDCOST Show the median knee for each method
+            %alongside a stacked barchart showing the different cost times
+            %against a different y axis
 
-        %Retrieve the cost for the mean number of contacts
-        medianArray = orderedResultTable(:,["KneeNContact Median","PercentSuccess Median", "RealWorldTime Median", "SimulationTime Median"]).Variables;
-        experimentTitle = orderedResultTable(:,"Title").Variables;
-                
+            %Retrieve the cost for the mean number of contacts
+            medianArray = orderedResultTable(:,["KneeNContact Median","PercentSuccess Median", "RealWorldTime Median", "SimulationTime Median"]).Variables;
+            experimentTitle = orderedResultTable(:,"Title").Variables;
+
             kneeY = medianArray(:,1);
             percentSuccess = medianArray(:,2);
             realTime = medianArray(:,3);
@@ -820,7 +884,7 @@ classdef GraphPlotClass
             ax.TickLabelInterpreter = 'none';
 
             yyaxis right
-            b3 = bar(x_tick+(bar_width*0.5), medianArray(:,[3,4])', bar_width, 'stacked'); 
+            b3 = bar(x_tick+(bar_width*0.5), medianArray(:,[3,4])', bar_width, 'stacked');
             b3(1).DisplayName = "Real World Time";
             b3(1).FaceColor = obj.cost_colour_rwt;
             b3(2).DisplayName = "Simulation Time";
@@ -904,7 +968,7 @@ classdef GraphPlotClass
 
         end
 
-        function [] = plotResults(obj, mapResultTable)
+        function [obj, t] = plotResults(obj, mapResultTable)
             %Plot the complete data in a single figure
 
             rowTitle = ["Distance", "Alignment", "Distance and Alignment", "PCA"];
@@ -916,8 +980,8 @@ classdef GraphPlotClass
             controlMethod = ["Joint", "Location"];
             nControlMethod = length(controlMethod);
 
-            %qualityTitle = obj.all_quality_name(1:4);
-            qualityTitle = ["Epsilon", "COM Offset", "Align"];
+            qualityTitle = obj.all_quality_name(1:4);
+            %qualityTitle = ["Epsilon", "COM Offset", "Align"];
             costTitle = ["Simulation Time", "Real World Time"];
 
             measureTitle = [qualityTitle, costTitle];
@@ -926,7 +990,7 @@ classdef GraphPlotClass
 
             figure
             t = tiledlayout(nRow,nMeasure);
-            title(t,'Number of Antennal Contacts at Plateau', 'FontWeight', 'bold')
+            title(t,'Maximum Knee for Each Grasp Quality Measure', 'FontWeight', 'bold')
             xlabel(t,'Grasp Quality Measure')
             ylabel(t,'Grasp Synthesis Method')
             for row_i = 1:nRow
@@ -1006,14 +1070,13 @@ classdef GraphPlotClass
 
             end
 
-            legend
 
         end
 
-        function [obj, resultTable] = completePaperPlot(obj)
+        function [obj, resultTable, figureTileHandle] = completePaperPlot(obj)
             %Plot the complete data in a single figure
             [resultTable] = obj.extractPlotAndCostData;
-            obj.plotResults(resultTable);
+            [obj, figureTileHandle] = obj.plotResults(resultTable);
         end
 
 
@@ -1031,6 +1094,120 @@ classdef GraphPlotClass
             histogram(xData, 'Normalization','pdf');
             hold off
 
+        end
+
+        function [figureHandle] = plotKneeSelection(obj, experimentName)
+            %PLOTKNEESELECTION A function called with a given experiment
+            %name to plot the normalised values across the different number
+            %of contact points and identify the maximum and the
+            %corresponding percentage success
+
+
+            %Extract all data for this experiment
+            [xData, yData] = obj.extractMeasure(experimentName);
+
+            %Refine this data to exclude failed grasps
+            [refinedYData, successNumber, failureNumber] = obj.excludeFailedGrasp(yData);
+            percentRate = successNumber ./ (successNumber + failureNumber);
+
+            %Exclude the layer that specifies whether the
+            %grasp is within reach
+            excludeLayer = find(obj.all_quality_name == "Within Reach");
+            refinedYData(:,:,excludeLayer) = [];
+
+
+            %Find the median of each measure for these
+            %experiments
+            medianOut = obj.transformMedian(refinedYData, [obj.all_quality_name(1:4), "Simulation Time", "Real World Time"]);
+
+
+            %First subplot showing all quality measures
+            nQMeasure = 4;
+            kneeNContact = nan(1,nQMeasure);
+            smoothQMedian = nan(4, size(medianOut,2));
+            for n = 1:nQMeasure
+                kneeNContact(n) = obj.findKnee(xData{:}, medianOut(n,:));
+                smoothQMedian(n,:) = smooth(medianOut(n,:));
+            end
+
+            nCMeasure = 2;
+            smoothCMedian = nan(nCMeasure, size(medianOut,2));
+            for n = 1:nCMeasure
+                smoothCMedian(n,:) = smooth(medianOut(n+nQMeasure,:));
+            end
+
+            %Rescale all measures to be between 0 and 1
+            rowminQ = min(smoothQMedian, [], 2);
+            rowmaxQ = max(smoothQMedian, [], 2);
+            yQPlotData = rescale(smoothQMedian, 'InputMin', rowminQ, 'InputMax', rowmaxQ);
+
+            %Rescale all measures to be between 0 and 1
+            rowminC = min(smoothCMedian, [], 2);
+            rowmaxC = max(smoothCMedian, [], 2);
+            yCPlotData = rescale(smoothCMedian, 'InputMin', rowminC, 'InputMax', rowmaxC);
+
+
+
+            xPlotData = xData{:};
+
+            %Find the plot data for the knees of each experiment
+            kneeX = kneeNContact;
+            kneeY = sum(yQPlotData.*(xPlotData==kneeNContact'), 2)';
+            figureHandle = figure;
+
+
+            hold on
+            title("Example of Finding the Minimum Percent Success at the Best Possible Grasp")
+            subtitle(experimentName, 'Interpreter', 'none');
+
+            h = plot(xPlotData, yQPlotData, 'Color', [0 0.5 0.33]);
+            set(h, {'DisplayName'}, {obj.all_quality_name{1:4}}')
+
+            g = plot(xPlotData, yCPlotData);
+            set(g, {'DisplayName'}, {"Simulation Time"; "Real World Time"})
+            set(g, {'Color'}, {obj.cost_colour_st;obj.cost_colour_rwt});
+
+            ylabel('Normalised Measure')
+            xlabel('Number of Contact Points')
+
+            plot(kneeX, kneeY, '*', 'DisplayName', "Knee Point");
+
+
+            kneeCost = yCPlotData(:,xPlotData == max(kneeX));
+            r2_1 = refline(0, kneeCost(1));
+            r2_1.LineStyle = '-';
+            r2_1.Color = 'black';
+            r2_1.DisplayName = "Simulation Time Cost at Best Grasp";
+            r2_2 = refline(0, kneeCost(2));
+            r2_2.LineStyle = '-';
+            r2_2.Color = 'black';
+            r2_2.DisplayName = "Real World Time Cost at Best Grasp";
+
+            text(max(kneeX)+0.5, min(kneeCost), "\leftarrow Time Costs at Max Knee", "VerticalAlignment","top")
+
+
+            yyaxis right
+            ylabel('Percent Succesful Grasps')
+            percentSmooth = smooth(percentRate);
+            p = plot(xPlotData, percentSmooth, 'DisplayName', 'Percent Successful Grasps', 'Color', obj.percent_colour);
+            set(gca, 'YColor', obj.percent_colour);
+
+            xl = xline(max(kneeX), ':', 'DisplayName', 'Maximum Knee Point');
+            xl.LabelVerticalAlignment = 'middle';
+            xl.LabelHorizontalAlignment = 'center';
+
+
+            r = refline(0, percentSmooth(xPlotData == max(kneeX)));
+            r.LineStyle = '-';
+            r.Color = 'black';
+            r.DisplayName = "Best Grasp";
+
+            text(max(kneeX)+0.5, percentSmooth(xPlotData == max(kneeX)), "Percent Success at Max Knee \rightarrow", "VerticalAlignment","bottom")
+
+            %Show the cost plot
+
+
+            hold off
         end
 
 
