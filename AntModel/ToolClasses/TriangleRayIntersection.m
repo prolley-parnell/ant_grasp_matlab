@@ -193,11 +193,16 @@ else
   if ~any(ok), intersect = ok; return; end
   qvec = cross(tvec(ok,:), edge1(ok,:),2); % prepare to test V parameter
   v(ok,:) = sum(dir(ok,:).*qvec,2) ./ det(ok,:); % 2nd barycentric coordinate
-  if (~strcmpi(lineType,'line')) % 'position on the line' coordinate
+  %[EDIT] No distances are calculated for line type queries
+%   if (~strcmpi(lineType,'line')) % 'position on the line' coordinate
     t(ok,:) = sum(edge2(ok,:).*qvec,2)./det(ok,:);
-  end
+%   end
   % test if line/plane intersection is within the triangle
   ok = (ok & v>=-zero & u+v<=1.0+zero);
+
+  %[EDIT] remove any distances that do not intersect
+  t(~ok,:) = nan;
+  
 end
 
 %% Test where along the line the line/plane intersection occurs

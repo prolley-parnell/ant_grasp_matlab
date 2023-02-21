@@ -23,3 +23,9 @@ octave-workspace
 
 # Simulink autosave extension
 .autosave
+
+# Visual Studio Code
+.vs
+
+# Other
+desktop.ini

@@ -318,13 +318,13 @@ classdef CollisionObjects
 
 
                     if intersectID
-                        
+                        %any(contains(vargin, 'line'))
                         %Find the closest positive intersection
                         intersectDist = dist(intersectID);
                         
                         %Exclude intersections that are at the origin
                         if ~includeOrigin
-                            intersectID(intersectDist<1e-5) = [];
+                            intersectID(abs(intersectDist)<1e-5) = [];
                         end
 
                         if isempty(intersectID)
@@ -334,7 +334,8 @@ classdef CollisionObjects
                         end
 
 
-                        [closeDist, closeID] = min(intersectDist);
+                        [~, closeID] = min(abs(intersectDist));
+                        closeDist = intersectDist(closeID);
                         stlID = i;
                         faceID = intersectID(closeID);
                         contactPtArray = xcoor(faceID, :);

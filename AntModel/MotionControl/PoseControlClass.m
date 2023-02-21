@@ -151,9 +151,11 @@ classdef PoseControlClass
         function [limbOut, collision_points, surface_normals] = collisionCheck(obj, limbIn, q, env)
 
             collision_points = nan;
+            surface_normals = nan([1,3]);
+
             %objID = 1;
             distThreshold = 0.09;
-            surface_normals = nan([1,3]);
+            
             subpose = q(limbIn.joint_mask == 1);
             subtree = limbIn.subtree;
             limbOut = limbIn;
@@ -175,14 +177,20 @@ classdef PoseControlClass
 
                 %[body_i, collision_i] = ind2sub(size(dist), ind);
                 nCollision = length(collision_i);
-                pointOnObj = nan([nCollision, 3]);
+                point_on_obj = nan([nCollision, 3]);
+                point_normal = nan([nCollision, 3]);
                 for i = 1:nCollision
                     witness_pts = witnessPoints(3*body_i(i)-2:3*body_i(i), 2*collision_i(i)-1:2*collision_i(i));
-                    pointOnObj(i,:) = witness_pts(:,2)';
+                    
                     %surface_normals(i,:) = tbox.findNormalCollision(env.FBT{collision_i(i)}, pointOnObj(i,:));
-                    [pointOnObj(i,:), surface_normals(i,:)] = tbox.findPointOnObjNormalID(env.FBT{collision_i(i)}, pointOnObj(i,:));
+                    [point_on_obj(i,:), point_normal(i,:)] = tbox.findPointOnObjNormalID(env.FBT{collision_i(i)}, witness_pts(:,2)');
                 end
-                collision_points = pointOnObj;
+
+                %Prevent contact points that are identical to 3 decimal
+                %places
+                [~, unique_i] = unique(round(point_on_obj, 3), 'rows', 'stable');
+                collision_points = point_on_obj(unique_i,:);
+                surface_normals = point_normal(unique_i,:);
 
             elseif min_dist>=distThreshold
                 limbOut.collision_latch = 0;

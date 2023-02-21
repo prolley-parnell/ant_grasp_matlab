@@ -87,18 +87,19 @@ classdef graspSynthesis
             end
             obj = obj.calcCOC(antIn.contact_points);
             if obj.synth_method(3)
-                [goalOut] = obj.findPCAGrasp(antIn, env);
+                [graspAxesOut] = obj.findPCAGraspAxes(antIn);
             else
-                [goalOut, bestQuality] = obj.exhaustiveCPCheck(antIn);
-                obj.quality = bestQuality;
+                [graspAxesOut] = obj.findExhaustiveGoalAxes(antIn);
             end
-
 
             senseEvalTEnd = toc(senseTStart);
             goalCostStruct.time.sense_eval = senseEvalTEnd;
             % [COST] End exhaustive grasp search
             %[COST] Save the time taken to save the selected contact points
             %goalCostStruct.time.contact_set = goalSetTime;
+
+            [goalOut] = obj.approximateGrasp(graspAxesOut, env);
+            
 
             %end
             antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
@@ -107,12 +108,17 @@ classdef graspSynthesis
 
 
         end
-
-        function [goalOut] = findPCAGrasp(obj, antIn, env)
+        function [axesOut] = findPCAGraspAxes(obj, antIn)
+            %FINDPCAGRASP Use the contact points in memory to generate a
+            %grasp axis for the ant approach
+            % Input: 
+            % AntIn - Ant Object containing all contact points in memory
+            % env - CollisionObjects class with object triangulation
+            % Output:
+            % axesOut - consists of the desired midpoint of the grasp,
+            % the axis used to approach that point (Y axis), Z, and X axes
 
             cartPointArray = cat(1,antIn.contact_points(:).point);
-            %nContactPoint = length(antIn.contact_points);
-            goalOut = goalStruct();
 
             % Step 1: Calculate the covariance matrix
             CM = cov(cartPointArray);
@@ -128,111 +134,36 @@ classdef graspSynthesis
             % k desired features/dimension reduction = 1 to find largest
             % eigenvalue
             var_axis = decend_eVec(:,1)';
+
+            % Define X axis (perpendicular to the most variance compared with global Z)
             x_axis = cross(var_axis, [0 0 1]);
             x_axis_n = x_axis/norm(x_axis);
 
 
-            % Step 6: Use the cross product to find the orientation of the
-            % head
+            % Define Y axis (PC with most variance)
             y_axis_n = var_axis/norm(var_axis);
 
+            % Define Z axis (to find right angle grasp frame)
+            z_axis = cross(x_axis_n, y_axis_n);
+            z_axis_n = z_axis/norm(z_axis);
 
-%             z_axis = cross(x_axis_n, y_axis_n);
-%             z_axis_n = z_axis/norm(z_axis);
-
-
-%             %% Testing, plot to see
-%             figure(1)
-%             hold on
-%             plot3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), ':*','MarkerSize',7, 'LineWidth', 1)
-%             vector_base = obj.COC.mean - var_axis.*0.5;
-%             quiver3(vector_base(1), vector_base(2), vector_base(3), var_axis(1), var_axis(2), var_axis(3), 'LineWidth', 3, 'Color', 'k')
-%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), x_axis_n(1), x_axis_n(2), x_axis_n(3), 'LineWidth', 3, 'Color', 'r')
-%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), y_axis_n(1), y_axis_n(2), y_axis_n(3), 'LineWidth', 3, 'Color', 'g')
-%             quiver3(obj.COC.mean(1), obj.COC.mean(2), obj.COC.mean(3), z_axis_n(1), z_axis_n(2), z_axis_n(3), 'LineWidth', 3, 'Color', 'b')
-%             %hold off;
-            %%
-
-            %1: find the point of intersection along the X axis
-            startPt = obj.COC.mean;
-            rayVec = y_axis_n;
-            
-            includeOrigin = 1;
-            [mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, rayVec, includeOrigin, {});
-
-            % Approach shape Use either Y axis, or the furthest point
-            approachTipMP = mand_base_contact_pt - (y_axis_n * obj.mandible_depth);
-            approachTipA = approachTipMP + (x_axis_n * obj.mandible_max*0.5);
-            approachTipB = approachTipMP - (x_axis_n * obj.mandible_max*0.5);
-
-            %Define the rays of approach
-            approachRay = y_axis_n;
-
-%             figure(1)
-%             hold on
-%             quiver3(approachTipA(1), approachTipA(2), approachTipA(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
-%             quiver3(approachTipB(1), approachTipB(2), approachTipB(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
-
-            %4: Find the points of intersection and surface normal for those arcs. These are
-            %the contact points
-            %Set up an empty contact point struct
-            contactStruct = struct("point", [], "normal", []);
-            contactPts = repmat(contactStruct, [2,1]);
-            %If either point makes contact, the contact with the distance
-            %closest to the starting approachTip is the first contact
-            vargin = {'border','inclusive'};
-
-            [contactPts(1).point, contactPts(1).normal, ~, distA] = env.findRayIntersect(approachTipA, approachRay, includeOrigin, vargin);
-            [contactPts(2).point, contactPts(2).normal, ~, distB] = env.findRayIntersect(approachTipB, approachRay, includeOrigin, vargin);
-            finiteFlag = isfinite([distA, distB]);
-            if all(~finiteFlag)
-                %Approached without collision
-
-                %3: Draw the arcs where the ray points from the open position
-                %to the closed position
-                %[NOTE] for simplicity, drawing a line across rather than an
-                %arc to the point where the mandibles would actually contact.
-                %This is because the calculations require rotation of vectors
-                %to match the grasp frame
-                rayA = approachTipB - approachTipA;
-                rayB = -rayA;
-
-                %Use the default settings (no vargin)
-                [contactPts(1).point, contactPts(1).normal, ~] = env.findRayIntersect(approachTipA, rayA, includeOrigin, vargin);
-                [contactPts(2).point, contactPts(2).normal, ~] = env.findRayIntersect(approachTipB, rayB, includeOrigin, vargin);
-
-            else
-                [~, closeID] = min([distA, distB]);
-                if closeID == 1
-                    tipA = contactPts(1).point;
-                    closeRay = -x_axis_n;
-                    [contactPts(2).point, contactPts(2).normal, ~, ~] = env.findRayIntersect(tipA, closeRay, ~includeOrigin, vargin);
-                else
-                    tipB = contactPts(2).point;
-                    closeRay = x_axis_n;
-                    [contactPts(1).point, contactPts(1).normal, ~, ~] = env.findRayIntersect(tipB, closeRay, ~includeOrigin, vargin);
-
-                end
-
-            end
-
-
-            %5: Set the contact points in the goal struct
-            [goalOut, ~] = goalOut.setcontact(contactPts);
-
-
-
+            axesOut = struct('X', x_axis_n, 'Y', y_axis_n, 'Z', z_axis_n, 'MP', obj.COC.mean);
 
         end
 
-        function [goalOut, bestQuality] = exhaustiveCPCheck(obj, antIn)
+        function [axesOut, bestQuality] = findExhaustiveGoalAxes(obj, antIn)
+            %FINDEXHAUSTIVEGOALAXES Check all contact points stored in ant
+            %memory and compare with every other point to find the best
+            %grasp according to the grasp selection criteria
+            % Criteria: 'align', 'dist', 'align and dist'
+            % Can enable a mask that disqualifies any contact points that
+            % are too far apart (greater than the mandible reach)
             %Cartesian contact points
             cartPointArray = cat(1,antIn.contact_points(:).point);
             nContactPoint = length(antIn.contact_points);
             distanceMat = ones(nContactPoint);
             mandMaxFlag = ones(nContactPoint);
             alignMeasure = ones(nContactPoint);
-            goalOut = goalStruct();
 
             %For each goal, get the information gain measure
             if obj.synth_method(1) %Distance
@@ -250,20 +181,201 @@ classdef graspSynthesis
                 [alignMeasure, ~, ~] = obj.findInterPointGraspAlign(antIn.contact_points);
             end
 
-
             [bestQuality, goalIndex] = max(distanceMat.*mandMaxFlag.*alignMeasure,[],'all');
 
-            %Only update to a new goal if the goal is 10% better than the
-            %last
-            %if obj.quality*1.1 < bestQuality
             [a, b] = ind2sub([nContactPoint, nContactPoint], goalIndex);
-            [goalOut, setContactTime] = goalOut.setcontact(antIn.contact_points([a,b]));
 
-
-
+            if obj.RUNTIME_ARGS.PLOT.ENABLE(1)
+                contact_points = cat(1,antIn.contact_points([a,b]).point);
+                figure(1)
+                hold on
+                plot3(contact_points(:,1),contact_points(:,2),contact_points(:,3), 'r', 'LineStyle', ':');
+                hold off
+            end
+            axesOut = obj.calculateApproachAxis(antIn.contact_points([a,b]), antIn.position);
 
         end
 
+        function goalOut = approximateGrasp(obj, desiredGraspAxes, env)
+            %APPROXIMATEGRASP Given either a desired set of mandible
+            %contacts, or an axis of approach, select the true mandible
+            %collision points
+            % Input: 
+            % desiredGraspAxes: struct containing the X,Y,Z axes and MP.
+            % All axes point away from the MP
+            % env: CollisionObjects class instance containing
+            % triangulations for objects in the environment
+            % Output:
+            % goalOut: instance of goalStruct where the grasp contacts have
+            % been set based on the provided axis of approach in
+            % desiredGraspAxes
+
+            goalOut = goalStruct();
+            includeOrigin = 1;
+
+            %Set up an empty contact point struct
+            contactStruct = struct("point", [], "normal", []);
+            contactPts = repmat(contactStruct, [2,1]);
+           
+
+            %1: find the point of intersection along the X axis
+            startPt = desiredGraspAxes.MP;
+            approachRay = -desiredGraspAxes.Y;
+
+            %If either point makes contact, the contact with the distance
+            %closest to the starting approachTip is the first contact
+            %Use 'line' argument to consider if points are on either side of
+            %the mandible tip along the axis of approach
+            expandBorder = {'border','inclusive'};
+            infiniteLine = {'LineType', 'line'};
+            
+            % Use a ray to point along the Y axis, away from the MP
+            %[mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, -approachRay, includeOrigin, expandBorder);
+
+            % Approach shape along Y axis
+            % Find the midpoint of the mandibles at the furthest possible
+            % pose while 
+            %approachTipMP = mand_base_contact_pt - (approachRay * obj.mandible_depth); 
+            approachTipA = (startPt  + (desiredGraspAxes.X * obj.mandible_max*0.5)) - 5 * approachRay ; %Mandible tips at closest possible contact
+            approachTipB = (startPt  - (desiredGraspAxes.X * obj.mandible_max*0.5)) - 5 * approachRay ;
+
+
+            % Project from the furthest points of possible contact along
+            % the ray of approach to find any points of collision
+            [contactPts(1).point, contactPts(1).normal, ~, distA] = env.findRayIntersect(approachTipA, approachRay, includeOrigin, expandBorder);
+            [contactPts(2).point, contactPts(2).normal, ~, distB] = env.findRayIntersect(approachTipB, approachRay, includeOrigin, expandBorder);
+
+            if obj.RUNTIME_ARGS.PLOT.ENABLE(1)
+                figure(1)
+                hold on
+                quiver3(approachTipA(1), approachTipA(2), approachTipA(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+                quiver3(approachTipB(1), approachTipB(2), approachTipB(3), approachRay(1), approachRay(2), approachRay(3), 'LineWidth', 3, 'Color', 'c')
+                hold off
+            end
+
+            finiteFlag = isfinite([distA, distB]);
+            if all(~finiteFlag)
+                %Approach rays do not collide with the object therefore go
+                %to point where the mandible base is closest and close
+                %mandibles
+
+                % Use a ray to point along the Y axis, away from the MP
+                [mand_base_contact_pt] = env.findRayIntersect(startPt, -approachRay, includeOrigin, expandBorder);
+
+                %Find the mandible tips at the closest position
+                closestMandBase = mand_base_contact_pt + (approachRay * obj.mandible_depth);
+                tipA = closestMandBase + (desiredGraspAxes.X * obj.mandible_max*0.5); %Mandible tips at closest possible contact
+                tipB = closestMandBase - (desiredGraspAxes.X * obj.mandible_max*0.5);
+
+                %Draw the arcs where the ray points from the open position
+                %to the closed position
+                rayA = tipB - tipA;
+                rayB = -rayA;
+
+                
+                [contactPts(1).point, contactPts(1).normal, ~] = env.findRayIntersect(tipA, rayA, includeOrigin, expandBorder);
+                [contactPts(2).point, contactPts(2).normal, ~] = env.findRayIntersect(tipB, rayB, includeOrigin, expandBorder);
+
+            else
+                %Check for signed vector (-ve means the collision occurs
+                %further away than the estimated closest pose without
+                %collision)
+                [~, closeID] = min([distA, distB]);
+                if closeID == 1
+                    tipA = contactPts(1).point - (desiredGraspAxes.X * obj.mandible_max);
+                    closeRay = desiredGraspAxes.X;
+                    [contactPts(2).point, contactPts(2).normal, ~, ~] = env.findRayIntersect(tipA, closeRay, ~includeOrigin, expandBorder);
+                else
+                    tipB = contactPts(2).point + (desiredGraspAxes.X * obj.mandible_max);
+                    closeRay = -desiredGraspAxes.X;
+                    [contactPts(1).point, contactPts(1).normal, ~, ~] = env.findRayIntersect(tipB, closeRay, ~includeOrigin, expandBorder);
+
+                end
+
+            end
+
+            %5: Set the contact points in the goal struct
+            goalOut = goalOut.setGraspContact(contactPts);
+            goalOut = goalOut.saveGoalApproach(desiredGraspAxes);
+
+        end
+
+
+        function [axesOut] = calculateApproachAxis(obj, contactPointPair)
+            %CALCULATEAPPROACHAXIS From a set of contact points, calculate
+            %the axis of approach to grasp
+            % Used specifically for point to point grasp calculations
+            % Input:
+            % contactPointPair: 2x1 struct containing the relevant contact
+            % points (only cartesian position is needed)
+            % antPosition: 1x4 array showing the position of the ant at the
+            % current time step
+            % - Update from function goalStruct.SetGoal 21/02/23
+
+            pointArray = cat(1,contactPointPair(:).point);
+            
+            x_axis = pointArray(2,:) - pointArray(1,:);
+            x_axis_n = x_axis/norm(x_axis);
+
+            midpoint = mean(pointArray, 1);
+            
+            global_z_vector = [0 0 1];
+            y_axis = cross(x_axis_n, global_z_vector);
+            y_axis_n = y_axis/norm(y_axis);
+
+            z_axis = cross(x_axis_n, y_axis_n);           
+            z_axis_n = z_axis/norm(z_axis);
+
+            axesOut = struct('X', x_axis_n, 'Y', y_axis_n, 'Z', z_axis_n, 'MP', midpoint);
+            axesOut = obj.checkAlignment(axesOut);
+
+            if obj.RUNTIME_ARGS.PLOT.ENABLE(1)
+                figure(1)
+                hold on
+                quiver3(axesOut.MP(1),axesOut.MP(2),axesOut.MP(3), axesOut.X(1),axesOut.X(2),axesOut.X(3), 'Color','r');
+                quiver3(axesOut.MP(1),axesOut.MP(2),axesOut.MP(3), axesOut.Y(1),axesOut.Y(2),axesOut.Y(3), 'Color','g');
+                quiver3(axesOut.MP(1),axesOut.MP(2),axesOut.MP(3), axesOut.Z(1),axesOut.Z(2),axesOut.Z(3), 'Color','b');
+                hold off
+            end
+        end
+
+        function [axesOut] = checkAlignment(obj, axesIn)
+            %CHECKALIGNMENT Approach desired goal from the direction that
+            %points away from the Centre of Contacts
+            %If the distance between the MP+Y axis is closer than
+            %MP-Y axis then invert alignment, also ensure Z axis is always
+            %pointing up
+            % Input:
+            % axesIn: Struct with properties X,Y,Z and MP. Grasp is
+            % approached along -Y axis
+            % positionIn: 4x1 array with the ant current position
+            % Output:
+            % axesOut: Struct with properties X,Y,Z and MP. Y axis is
+            % modified to point away from the centre of contacs, and Z axis
+            % forced to be positive
+            
+            %[EDIT] Now finding axis pointing furthest from COC
+            axesOut = axesIn;
+            oldAlignment = axesIn.Y;
+
+            COCToMP = axesIn.MP - obj.COC.mean;
+            oldDist = vecnorm(COCToMP + oldAlignment, 2,2);
+            newDist = vecnorm(COCToMP - oldAlignment, 2,2);
+                        
+
+            if newDist > oldDist %
+                axesOut.Y = -oldAlignment;
+                %Maintain the right handed coordinate system and flip the X
+                %as well
+                axesOut.X = -axesIn.X;
+            end
+
+            % Ensure Z axis is positive
+            axesOut.Z = sign(axesIn.Z(3))*axesIn.Z;
+
+        end
+
+        
         function [flagArray] = mandibleLimit(obj, distanceArray)
 
             flagArray = ones(size(distanceArray));

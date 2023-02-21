@@ -33,7 +33,7 @@ RUNTIME_ARGS = RuntimeArgs();
 RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 5;
+RUNTIME_ARGS.N_TRIALS = 1;
 
 % Sampling rate in simulated time - smaller is smoother for plotting, but
 % takes longer to run (0.05 to 0.15)
@@ -45,7 +45,7 @@ RUNTIME_ARGS.PLOT.ENABLE = [1 0];
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
 % external software
-RUNTIME_ARGS.PRINTOUT.ENABLE = 1;
+RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 
 % To save the summary tables, antTree, and runtime args in a single MAT
 % file, enable. Use for internal matlab processing
@@ -77,7 +77,7 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 % ------------- Antenna Motion -------------- %
 % Select point-to-point or joint based control
-motion_type = {'p2p'}; %{'p2p', 'joint'};
+motion_type = {'joint'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}

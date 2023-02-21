@@ -1,8 +1,6 @@
 classdef Ant
     %ANT Object class Ant that holds the position and pose properties of an
     %ant RigidBodyTree, as well as its controllers and evaluation classes.
-    %   ChangeLog: 22/08/22 - Emily Rolley-Parnell - Updated FreePoint
-    %   function to use tbox class
 
     properties
 
@@ -54,7 +52,6 @@ classdef Ant
 
 
             obj.position = RUNTIME_ARGS.ANT_POSITION;
-
 
 
             obj.poseController = PoseControlClass(obj.antTree, RUNTIME_ARGS);
@@ -120,7 +117,7 @@ classdef Ant
             %If graspGenerator indicates to move
             if ~goalOut.isempty() && ~obj.grasp_complete
                 
-                [goalOut, costStruct.goal] = goalOut.setGoal(obj.position); 
+                %[goalOut, costStruct.goal] = goalOut.setGoal(obj.position); 
                 goalOut.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
                 %Evaluate goal
