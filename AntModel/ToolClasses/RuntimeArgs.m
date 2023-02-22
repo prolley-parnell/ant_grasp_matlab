@@ -30,7 +30,6 @@ classdef RuntimeArgs
         ANTENNA_CONTROL
         ANT_MEMORY(1,1) double = 20
 
-        %SEARCH_SPACE
         SEARCH
 
         SENSE
@@ -221,7 +220,7 @@ classdef RuntimeArgs
             obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
 
             % Force applied by mandibles
-            obj.GRASP.FORCE = 1;
+            obj.GRASP.FORCE = 0.5;
 
             % Friction of the surface of the object for calculations for
             % grasp quality

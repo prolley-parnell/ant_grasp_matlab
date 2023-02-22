@@ -38,10 +38,9 @@ classdef PoseControlClass
 
         function [ant, contactStructArray, poseCostStruct] = updatePose(obj, ant, env, motionFlag)
             %Update neck and head
-            %[ant, obj] = obj.moveNeck(ant);
             [ant] = obj.moveNeck(ant);
             [ant, contactStructArray, limbCostStruct] = obj.updateLimbs(ant, env, motionFlag);
-            % Compile the different cost tables in to one [TODO]
+
             poseCostStruct.limb = limbCostStruct;
         end
 

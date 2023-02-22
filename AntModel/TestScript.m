@@ -77,7 +77,7 @@ RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 % ------------- Antenna Motion -------------- %
 % Select point-to-point or joint based control
-motion_type = {'joint'}; %{'p2p', 'joint'};
+motion_type = {'p2p'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}
@@ -96,10 +96,10 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 
 % ------------- Goal Selection Method ---------- %
 % Checks all points for each of the modes included in the brackets
-%RUNTIME_ARGS.SENSE.MODE = {'align'};
+RUNTIME_ARGS.SENSE.MODE = {'align', 'dist'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis 
-RUNTIME_ARGS.SENSE.MODE = {'PCA'};
+%RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
 
 %% -------- Test Specific Set Up ------------ %%

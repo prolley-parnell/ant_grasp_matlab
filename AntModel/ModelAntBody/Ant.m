@@ -123,19 +123,8 @@ classdef Ant
                 %Evaluate goal
                 goalOut.qualityObj = obj.graspEval.evaluateGoal(goalOut, env);
 
-                if obj.RUNTIME_ARGS.BODY_MOTION_ENABLE
-
-                    %Add the environmental collision data to the map of the env
-                    obj.positionController = obj.positionController.updateGoal(obj.contact_points, obj.position, goalOut);
-
-                    %Find head pose trajectory
-                    obj.neckObj = obj.poseController.newNeckTrajectory(obj.neckObj, obj.q, obj.positionController.goal);
-                    % Open Mandibles
-                    obj.mandible_state = -1;
-
-                else
-                    obj.grasp_complete = 1;
-                end
+                % End the experiment trial loop
+                obj.grasp_complete = 1;
 
 
             end

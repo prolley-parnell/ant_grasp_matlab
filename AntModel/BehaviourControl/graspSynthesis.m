@@ -192,7 +192,7 @@ classdef graspSynthesis
                 plot3(contact_points(:,1),contact_points(:,2),contact_points(:,3), 'r', 'LineStyle', ':');
                 hold off
             end
-            axesOut = obj.calculateApproachAxis(antIn.contact_points([a,b]), antIn.position);
+            axesOut = obj.calculateApproachAxis(antIn.contact_points([a,b]));
 
         end
 
