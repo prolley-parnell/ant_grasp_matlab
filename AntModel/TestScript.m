@@ -49,7 +49,7 @@ RUNTIME_ARGS.PRINTOUT.ENABLE = 0;
 
 % To save the summary tables, antTree, and runtime args in a single MAT
 % file, enable. Use for internal matlab processing
-RUNTIME_ARGS.RECORD.ENABLE = 0;
+RUNTIME_ARGS.RECORD.ENABLE = 1;
 
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all

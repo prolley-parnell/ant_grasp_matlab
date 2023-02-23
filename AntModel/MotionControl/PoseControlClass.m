@@ -199,15 +199,15 @@ classdef PoseControlClass
 
         % ---------- Antenna functions
 
-        function [obj, antennaOut, qOut, antennaTrajTime] = moveAntenna(obj, antennaIn, qIn, globalPosition)
+        function [obj, antennaOut, qOut, antennaControlTime] = moveAntenna(obj, antennaIn, qIn, globalPosition)
             qOut = qIn;
             antennaOut = antennaIn;
-            antennaTrajTime = 0;
+            antennaControlTime = 0;
             %[TODO] If the trajectory is empty, update the joint mean by a
             %tiny proportion to match the mean pose of the other antenna
 
             if or(antennaIn.collision_latch, isempty(antennaIn.trajectory_queue))
-                [antennaOut, antennaTrajTime] = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
+                [antennaOut, antennaControlTime] = obj.actionGen.loadAntennaTrajectory(antennaIn, qIn, globalPosition);
             end
 
             [antennaOut, q, successFlag] = tbox.popTrajectory(antennaOut);

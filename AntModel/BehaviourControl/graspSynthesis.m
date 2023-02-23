@@ -64,15 +64,15 @@ classdef graspSynthesis
             nContactThresh = length(antIn.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
             if isempty(sensedData)
                 %[COST] End time if no new data has been collected
-                senseEvalTEnd = toc(senseTStart);
-                goalCostStruct.time.sense_eval = senseEvalTEnd;
+                graspSynthTEnd = toc(senseTStart);
+                goalCostStruct.time.grasp_synth = graspSynthTEnd;
                 return
             elseif nContactThresh < 0
                 %[COST] Record time up to point where not enough contacts
                 %have been gathered to gen goal
                 antOut.graspGen = obj.calcCOC(antIn.contact_points);
-                senseEvalTEnd = toc(senseTStart);
-                goalCostStruct.time.sense_eval = senseEvalTEnd;
+                graspSynthTEnd = toc(senseTStart);
+                goalCostStruct.time.grasp_synth = graspSynthTEnd;
                 return
             else
                 nMeasures = length(obj.synth_method);
@@ -80,8 +80,8 @@ classdef graspSynthesis
                     warning("No grasp synthesis method selected, goal cannot be generated");
                     %[COST] End time measure if no grasp selection method
                     %is selected
-                    senseEvalTEnd = toc(senseTStart);
-                    goalCostStruct.time.sense_eval = senseEvalTEnd;
+                    graspSynthTEnd = toc(senseTStart);
+                    goalCostStruct.time.grasp_synth = graspSynthTEnd;
                     return
                 end
             end
@@ -92,16 +92,12 @@ classdef graspSynthesis
                 [graspAxesOut] = obj.findExhaustiveGoalAxes(antIn);
             end
 
-            senseEvalTEnd = toc(senseTStart);
-            goalCostStruct.time.sense_eval = senseEvalTEnd;
+            graspSynthTEnd = toc(senseTStart);
+            goalCostStruct.time.grasp_synth = graspSynthTEnd;
             % [COST] End exhaustive grasp search
-            %[COST] Save the time taken to save the selected contact points
-            %goalCostStruct.time.contact_set = goalSetTime;
 
             [goalOut] = obj.approximateGrasp(graspAxesOut, env);
             
-
-            %end
             antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
 
             antOut.graspGen = obj;

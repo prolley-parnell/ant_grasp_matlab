@@ -7,7 +7,8 @@ classdef CostCalculator
         movementCost
         bodyMotion
         memoryCost
-        trialTime
+        antennaControlTime
+        goalCalcTime
         trialDuration
         weights
 
@@ -20,7 +21,8 @@ classdef CostCalculator
             %   Initialise the arrays to be empty
             obj.movementCost = [];
             obj.memoryCost = 0;
-            obj.trialTime = table(0, 0, 'VariableNames', {'limbCalculation', 'sumGoalTime'});
+            obj.antennaControlTime = table(0, 'VariableNames', {'antennaControlTime'});
+            obj.goalCalcTime = table(0, 'VariableNames', {'goalCalcTime'});
             obj.trialDuration = 0;
 
             
@@ -38,7 +40,7 @@ classdef CostCalculator
 
             if ~isempty(costStruct)
                 limbCalculationTime = sum(costStruct.pose.limb.time(:));
-                %updateContactMemoryTime = sum(costStruct.pose.limb.memory_time(:));
+                updateContactMemoryTime = sum(costStruct.pose.limb.memory_time(:));
                     
                 goalTimeMeasures = fieldnames(costStruct.goal.time); 
                 nGoalTimeMeasures = length(goalTimeMeasures);
@@ -48,8 +50,8 @@ classdef CostCalculator
                 end
 
 
-                 obj.trialTime.limbCalculation(1) = obj.trialTime.limbCalculation(1) + limbCalculationTime;
-                 obj.trialTime.sumGoalTime(1) = obj.trialTime.sumGoalTime(1) + sumGoalTime;
+                 obj.antennaControlTime.Variables = obj.antennaControlTime.Variables + limbCalculationTime;
+                 obj.goalCalcTime.Variables = obj.goalCalcTime.Variables + sumGoalTime;
                         
                  contactMemoryBytes = costStruct.memory.contact_points;
                  
@@ -60,6 +62,9 @@ classdef CostCalculator
         end
 
         function obj = calculateMotionCost(obj, replayTable)
+            %CALCULATEMOTIONCOST From the poses recorded in the replay
+            %table at the set sample rate, save the simulation time and the
+            %total joint and position costs
             movementCostStruct = obj.weightedMotionCost(obj.weights, replayTable);
             obj.movementCost = [movementCostStruct.joint_motion_total, movementCostStruct.position_cost];
             obj.trialDuration = movementCostStruct.duration;
@@ -151,12 +156,12 @@ classdef CostCalculator
             costTable.(1) = obj.movementCost;
             costTable.(2) = obj.memoryCost;
 
-            costTable.(3) = obj.trialTime.(1);
-            costTable.(4) = obj.trialTime.(2);
+            costTable.(3) = obj.antennaControlTime.Variables;
+            costTable.(4) = obj.goalCalcTime.Variables;
             costTable.(5) = obj.trialDuration;
             costTable.(6) = trialRWTime;
             
-            costTable.Properties.VariableNames = {'Joint Change', 'Total Contact Memory Bytes', 'limbControlCalculationTime', 'goalCalcTime', 'Simulation Time' , 'Real World Time' };
+            costTable.Properties.VariableNames = {'Joint Change', 'Total Contact Memory Bytes', 'antennaControlCalculationTime', 'goalCalcTime', 'Simulation Time' , 'Real World Time' };
                     
             
         end
