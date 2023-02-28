@@ -283,15 +283,26 @@ classdef tbox
                     [zero_id] = find(~round(CBDist, 6)); %Find the points where the BC matches C coords
 
                     if length(zero_id)>1
+                        pointOnObj(n,:) = CB(zero_id(1), :);
+                        faceIDArray(n,:) = nearV_neighbours{:}(zero_id(1));
                         multiNorm = faceNormal(fbTriang, nearV_neighbours{:}(zero_id)');
                         normalVArray(n,:) = mean(multiNorm);
-                        faceIDArray(n,:) = nearV_neighbours{:}(zero_id(1));
-                        pointOnObj(n,:) = CB(zero_id(1), :);
+                        
+
+
+                    elseif length(zero_id) == 1
+                        pointOnObj(n,:) = CB(zero_id, :);
+                        faceIDArray(n,:) = nearV_neighbours{:}(zero_id);
+                        normalVArray(n,:) = faceNormal(fbTriang, faceIDArray(n,:));
 
                     else
-                        normalVArray(n,:) = faceNormal(fbTriang, nearV_neighbours{:}(zero_id)');
-                        faceIDArray(n,:) = nearV_neighbours{:}(zero_id);
-                        pointOnObj(n,:) = CB(zero_id, :);
+                        %length(zero_id) == 0, find the closest
+                        [~, nearestID] = min(CBDist);
+                        pointOnObj(n,:) = CB(nearestID,:);
+                        faceIDArray(n,:) = nearV_neighbours{:}(nearestID);
+                        normalVArray(n,:) = faceNormal(fbTriang, faceIDArray(n,:));
+                        
+
                     end
 
                 end

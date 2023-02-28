@@ -1,6 +1,6 @@
 %% File to run the appropriate comparisons and load code as necessary
-% Created 06/02/2023
-
+% % Created 06/02/2023
+% 
 % GPC_dice = GraphPlotClass();
 % GPC_plank = GraphPlotClass();
 % GPC_wedge = GraphPlotClass();
@@ -11,11 +11,11 @@
 % GPC_wedge = GPC_wedge.loadData([experimentFolder, '\wedge']);
 % 
 % 
-% save('GPC_full.mat', 'GPC_dice', 'GPC_plank', "GPC_wedge")
+% save('GPC_full_v2.mat', 'GPC_dice', 'GPC_plank', "GPC_wedge")
 
 
 %% Plot to show how the knee points are used to select percentage
-experimentNameExample = "Align_RSS";
+experimentNameExample = "PCA_RRaP";
 GPC_dice.plotKneeSelection(experimentNameExample)
 
 %% Plot the full grid of experiments and their corresponding knee values
@@ -72,11 +72,17 @@ PaperTable = array2table([completeDiceTable(allMeasureSummaryTable.Properties.Ro
             completePlankTable(allMeasureSummaryTable.Properties.RowNames, ["KneeNContact Max", "PercentSuccess MaxKnee"]).Variables, ...
             completeWedgeTable(allMeasureSummaryTable.Properties.RowNames, ["KneeNContact Max", "PercentSuccess MaxKnee"]).Variables, ...
             allMeasureSummaryTable.Variables]);
-PaperTable.Properties.VariableNames = {'Dice K(C)', 'Dice K(P)', 'Plank K(C)', 'Plank K(P)', 'Wedge K(C)', 'Wedge K(P)', allMeasureSummaryTable.Properties.VariableNames{:}};
+PaperTable.Properties.VariableNames = ['Dice K(C)', 'Dice K(P)', 'Plank K(C)', 'Plank K(P)', 'Wedge K(C)', 'Wedge K(P)', allMeasureSummaryTable.Properties.VariableNames];
 
 PaperTable = mergevars(PaperTable, {'Dice K(C)', 'Plank K(C)', 'Wedge K(C)'}, "NewVariableName", 'K(C)', 'MergeAsTable',true);
 PaperTable = mergevars(PaperTable, {'Dice K(P)', 'Plank K(P)', 'Wedge K(P)'}, "NewVariableName", 'K(P)', MergeAsTable=true);
+PaperTable = mergevars(PaperTable, {'Dice', 'Plank', 'Wedge'}, "NewVariableName", 'Rank', 'MergeAsTable', true);
 PaperTable.Properties.RowNames = allMeasureSummaryTable.Properties.RowNames;
 
-PaperTable(:,"K(C)").Variables
-PaperTable(:,"K(P)").Variables
+% PaperTable(:,"K(C)").Variables;
+% PaperTable(:,"K(P)").Variables;
+
+
+%% Convert paper table in to a coherent plot
+
+GPC_plank.plotRank(PaperTable)

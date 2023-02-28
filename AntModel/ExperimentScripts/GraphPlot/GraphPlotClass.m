@@ -8,6 +8,8 @@ classdef GraphPlotClass
         all_quality_name
         all_cost_name
 
+        mapTable
+
         median_colour
         percent_colour
         cost_colour_rwt
@@ -29,10 +31,38 @@ classdef GraphPlotClass
             obj.all_cost_name = ["Joint Change", "Total Contact Memory Bytes", "limbControlCalculationTime", "goalCalcTime", "Simulation Time", "Real World Time"];
 
             obj.median_colour = [0.9 0.3 0];
-            obj.percent_colour = [0.9 0.75 0];
+            obj.percent_colour = [1 0.65 0];
             obj.cost_colour_rwt = [0.15 0 0.9];
             obj.cost_colour_st = [0.5 0.4 1];
 
+            arrangeMap = {'Align_CMC_fixvar', 2, 2, 1  ; ...
+                'Align_RRaP', 2, 1, 1 ; ...
+                'Align_RSS', 2, 1, 2; ...
+                'Align_CGMMC_fixvar', 2, 2, 2;...
+                %'Align_CGMMC_varinc', 2, 2, 2;...
+                %'Align_CGMMC_vardec', 2, 2, 2;...
+                'IPDAlign_CMC_fixvar', 3, 2, 1  ; ...
+                %'IPDAlign_CMC_varinc', 3, 2, 1 ; ...
+                %'IPDAlign_CMC_vardec', 3, 2, 1 ; ...
+                'IPDAlign_RRaP', 3, 1, 1;...
+                'IPDAlign_RSS', 3, 1, 2;...
+                'IPDAlign_CGMMC_fixvar', 3, 2, 2;...
+                %'IPDAlign_CGMMC_varinc', 3, 2, 2;...
+                %'IPDAlign_CGMMC_vardec', 3, 2, 2;...
+                'IPD_CMC_fixvar', 1, 2, 1;...
+                'IPD_RRaP', 1, 1, 1;...
+                'IPD_RSS', 1, 1, 2;...
+                'IPD_CGMMC_fixvar', 1, 2, 2; ...
+                'PCA_CGMMC_fixvar', 4, 2, 2 ;...
+                %'PCA_CGMMC_varinc', 4, 2, 2 ; ...
+                %'PCA_CGMMC_vardec', 4, 2, 2 ; ...
+                'PCA_CMC_fixvar', 4, 2, 1 ;...
+                %'PCA_CMC_vardec', 4, 2, 1 ;...
+                %'PCA_CMC_varinc', 4, 2, 1 ;...
+                'PCA_RRaP', 4, 1, 1 ;...
+                'PCA_RSS', 4, 1, 2};
+
+            obj.mapTable = cell2table(arrangeMap, "VariableNames", ["Title", "Row Index", "Search Method", "Control Method"]);
 
             rank_quality_order = ["PercentSuccess MaxKnee", "KneeNContact Max", "SimulationTime MaxKnee", "RealWorldTime MaxKnee"];
 
@@ -343,22 +373,23 @@ classdef GraphPlotClass
 
             end
             x = x_lm(knee_flag==1);
-            try
+            if ~isempty(x)
                 knee_x_sn = x(1);
-            catch
-                e =1;
+                %hold on
+                %plot(x_lm, T_lm_x)
+
+                % Convert back to the actual range
+                kneeVal = min(xData) + (knee_x_sn * (max(xData) - min(xData)));
+
+                % Round to the nearest input xData
+                [~, idx] = min(abs(xData - kneeVal));
+                xValKnee = xData(idx);
+
+                %plot(xData, medianSetIn, xValKnee, medianSetIn(idx), 'r*')
+            else
+                xValKnee = nan;
             end
-            %hold on
-            %plot(x_lm, T_lm_x)
 
-            % Convert back to the actual range
-            kneeVal = min(xData) + (knee_x_sn * (max(xData) - min(xData)));
-
-            % Round to the nearest input xData
-            [~, idx] = min(abs(xData - kneeVal));
-            xValKnee = xData(idx);
-
-            %plot(xData, medianSetIn, xValKnee, medianSetIn(idx), 'r*')
 
 
         end
@@ -376,7 +407,7 @@ classdef GraphPlotClass
             %obj.all_measure_name
             %Define the masks for different measures
             alignLayerID = find(strcmp(obj.all_quality_name, "Align"));
-            alignFailMask = find(experimentDataIn(:,:,alignLayerID) < 25e-2);
+            alignFailMask = find(experimentDataIn(:,:,alignLayerID) < 1e-1);
 
             withinReachLayerID = find(strcmp(obj.all_quality_name, "Within Reach"));
             withinReachFailMask = find(experimentDataIn(:,:,withinReachLayerID) < 1e-1);
@@ -594,44 +625,44 @@ classdef GraphPlotClass
 
             nMeasure = length(qualityTitle);
 
-            arrangeMap = {'Align_CMC_fixvar', 2, 2, 1  ; ...
-                'Align_RRaP', 2, 1, 1 ; ...
-                'Align_RSS', 2, 1, 2; ...
-                'Align_CGMMC_fixvar', 2, 2, 2;...
-                %'Align_CGMMC_varinc', 2, 2, 2;...
-                %'Align_CGMMC_vardec', 2, 2, 2;...
-                'IPDAlign_CMC_fixvar', 3, 2, 1  ; ...
-                %'IPDAlign_CMC_varinc', 3, 2, 1 ; ...
-                %'IPDAlign_CMC_vardec', 3, 2, 1 ; ...
-                'IPDAlign_RRaP', 3, 1, 1;...
-                'IPDAlign_RSS', 3, 1, 2;...
-                'IPDAlign_CGMMC_fixvar', 3, 2, 2;...
-                %'IPDAlign_CGMMC_varinc', 3, 2, 2;...
-                %'IPDAlign_CGMMC_vardec', 3, 2, 2;...
-                'IPD_CMC_fixvar', 1, 2, 1;...
-                'IPD_RRaP', 1, 1, 1;...
-                'IPD_RSS', 1, 1, 2;...
-                'IPD_CGMMC_fixvar', 1, 2, 2; ...
-                'PCA_CGMMC_fixvar', 4, 2, 2 ;...
-                %'PCA_CGMMC_varinc', 4, 2, 2 ; ...
-                %'PCA_CGMMC_vardec', 4, 2, 2 ; ...
-                'PCA_CMC_fixvar', 4, 2, 1 ;...
-                %'PCA_CMC_vardec', 4, 2, 1 ;...
-                %'PCA_CMC_varinc', 4, 2, 1 ;...
-                'PCA_RRaP', 4, 1, 1 ;...
-                'PCA_RSS', 4, 1, 2};
+%             arrangeMap = {'Align_CMC_fixvar', 2, 2, 1  ; ...
+%                 'Align_RRaP', 2, 1, 1 ; ...
+%                 'Align_RSS', 2, 1, 2; ...
+%                 'Align_CGMMC_fixvar', 2, 2, 2;...
+%                 %'Align_CGMMC_varinc', 2, 2, 2;...
+%                 %'Align_CGMMC_vardec', 2, 2, 2;...
+%                 'IPDAlign_CMC_fixvar', 3, 2, 1  ; ...
+%                 %'IPDAlign_CMC_varinc', 3, 2, 1 ; ...
+%                 %'IPDAlign_CMC_vardec', 3, 2, 1 ; ...
+%                 'IPDAlign_RRaP', 3, 1, 1;...
+%                 'IPDAlign_RSS', 3, 1, 2;...
+%                 'IPDAlign_CGMMC_fixvar', 3, 2, 2;...
+%                 %'IPDAlign_CGMMC_varinc', 3, 2, 2;...
+%                 %'IPDAlign_CGMMC_vardec', 3, 2, 2;...
+%                 'IPD_CMC_fixvar', 1, 2, 1;...
+%                 'IPD_RRaP', 1, 1, 1;...
+%                 'IPD_RSS', 1, 1, 2;...
+%                 'IPD_CGMMC_fixvar', 1, 2, 2; ...
+%                 'PCA_CGMMC_fixvar', 4, 2, 2 ;...
+%                 %'PCA_CGMMC_varinc', 4, 2, 2 ; ...
+%                 %'PCA_CGMMC_vardec', 4, 2, 2 ; ...
+%                 'PCA_CMC_fixvar', 4, 2, 1 ;...
+%                 %'PCA_CMC_vardec', 4, 2, 1 ;...
+%                 %'PCA_CMC_varinc', 4, 2, 1 ;...
+%                 'PCA_RRaP', 4, 1, 1 ;...
+%                 'PCA_RSS', 4, 1, 2};
+% 
+%             mapTable = cell2table(arrangeMap, "VariableNames", ["Title", "Row Index", "Search Method", "Control Method"]);
 
-            mapTable = cell2table(arrangeMap, "VariableNames", ["Title", "Row Index", "Search Method", "Control Method"]);
-
-            resultCellArray = cell(size(mapTable,1),nMeasure);
+            resultCellArray = cell(size(obj.mapTable,1),nMeasure);
 
             for row_i = 1:nRow
                 for search_i = 1:nSearchMethod
                     for control_i = 1:nControlMethod
                         % Extract the experiments for the given row
-                        rowFlag = (mapTable.("Row Index") == row_i & mapTable.("Control Method") == control_i  & mapTable.("Search Method") == search_i);
+                        rowFlag = (obj.mapTable.("Row Index") == row_i & obj.mapTable.("Control Method") == control_i  & obj.mapTable.("Search Method") == search_i);
                         if any(rowFlag)
-                            experimentTitle = mapTable.Title{rowFlag};
+                            experimentTitle = obj.mapTable.Title{rowFlag};
 
                             %Extract all data for this experiment
                             [xData, yData] = obj.extractMeasure({experimentTitle});
@@ -698,7 +729,7 @@ classdef GraphPlotClass
 
             dataTable = cell2table(resultCellArray, 'VariableNames', qualityTitle);
 
-            resultTable = [mapTable, dataTable];
+            resultTable = [obj.mapTable, dataTable];
 
         end
 
@@ -1047,8 +1078,9 @@ classdef GraphPlotClass
                     ax.YLim = [0 22];
 
                     %ax.XTickLabel =
-                    b1(1).DisplayName = searchMethod(1);
-                    b1(2).DisplayName = searchMethod(2);
+                    %b1(1).DisplayName = searchMethod(1);
+                    %b1(2).DisplayName = searchMethod(2);
+                    [b1.DisplayName] = deal(searchMethod(:));
 
                     xError = [b1(1).XEndPoints', b1(2).XEndPoints'];
 
@@ -1133,7 +1165,7 @@ classdef GraphPlotClass
             nCMeasure = 2;
             smoothCMedian = nan(nCMeasure, size(medianOut,2));
             for n = 1:nCMeasure
-                smoothCMedian(n,:) = smooth(medianOut(n+nQMeasure,:));
+                smoothCMedian(n,:) = smooth(medianOut(n+nQMeasure,:), 9);
             end
 
             %Rescale all measures to be between 0 and 1
@@ -1157,33 +1189,36 @@ classdef GraphPlotClass
 
 
             hold on
-            title("Example of Finding the Minimum Percent Success at the Best Possible Grasp")
-            subtitle(experimentName, 'Interpreter', 'none');
+            fontsize(gca,12,"points")
+            title(["Example of Finding the Minimum Percent Success" , "at the Best Possible Grasp"], 'FontSize', 14);
+            subtitle(experimentName, 'Interpreter', 'none', 'FontSize', 12);
 
             h = plot(xPlotData, yQPlotData, 'Color', [0 0.5 0.33]);
             set(h, {'DisplayName'}, {obj.all_quality_name{1:4}}')
+            set(h, {'LineStyle'}, {'-','--',':','-.'}')
 
             g = plot(xPlotData, yCPlotData);
             set(g, {'DisplayName'}, {"Simulation Time"; "Real World Time"})
             set(g, {'Color'}, {obj.cost_colour_st;obj.cost_colour_rwt});
+            set(g, {'LineStyle'}, {'--',':'}');  
 
-            ylabel('Normalised Measure')
-            xlabel('Number of Contact Points')
+            ylabel('Normalised Measure', 'FontSize', 13)
+            xlabel('Number of Contact Points', 'FontSize', 13)
 
-            plot(kneeX, kneeY, '*', 'DisplayName', "Knee Point");
+            k = plot(kneeX, kneeY, '*', 'DisplayName', "Knee Point");
 
 
             kneeCost = yCPlotData(:,xPlotData == max(kneeX));
-            r2_1 = refline(0, kneeCost(1));
-            r2_1.LineStyle = '-';
-            r2_1.Color = 'black';
-            r2_1.DisplayName = "Simulation Time Cost at Best Grasp";
-            r2_2 = refline(0, kneeCost(2));
-            r2_2.LineStyle = '-';
-            r2_2.Color = 'black';
-            r2_2.DisplayName = "Real World Time Cost at Best Grasp";
+%             r2_1 = refline(0, kneeCost(1));
+%             r2_1.LineStyle = '-';
+%             r2_1.Color = g(1).Color;
+%             r2_1.DisplayName = "Simulation Time Cost at Best Grasp";
+%             r2_2 = refline(0, kneeCost(2));
+%             r2_2.LineStyle = '-';
+%             r2_2.Color = g(2).Color;
+%             r2_2.DisplayName = "Real World Time Cost at Best Grasp";
 
-            text(max(kneeX)+0.5, min(kneeCost), "\leftarrow Time Costs at Max Knee", "VerticalAlignment","top")
+            % text(max(kneeX)+0.5, min(kneeCost), "\leftarrow Time Costs at Max Knee", "VerticalAlignment","top")
 
 
             yyaxis right
@@ -1191,20 +1226,23 @@ classdef GraphPlotClass
             percentSmooth = smooth(percentRate);
             p = plot(xPlotData, percentSmooth, 'DisplayName', 'Percent Successful Grasps', 'Color', obj.percent_colour);
             set(gca, 'YColor', obj.percent_colour);
+            %set(p, 'T')
 
             xl = xline(max(kneeX), ':', 'DisplayName', 'Maximum Knee Point');
+            x1.Color = obj.percent_colour;
             xl.LabelVerticalAlignment = 'middle';
             xl.LabelHorizontalAlignment = 'center';
 
 
             r = refline(0, percentSmooth(xPlotData == max(kneeX)));
             r.LineStyle = '-';
-            r.Color = 'black';
+            r.Color = k.Color;
             r.DisplayName = "Best Grasp";
 
-            text(max(kneeX)+0.5, percentSmooth(xPlotData == max(kneeX)), "Percent Success at Max Knee \rightarrow", "VerticalAlignment","bottom")
-
-            %Show the cost plot
+            text(max(kneeX)+0.5, percentSmooth(xPlotData == max(kneeX)), "Percent Success at Max Knee \rightarrow", "VerticalAlignment","bottom", 'FontSize',13)
+            temp_tick = yticks;
+            yticks(sort([temp_tick, percentSmooth(xPlotData == max(kneeX))]));
+            
 
 
             hold off
@@ -1242,6 +1280,18 @@ classdef GraphPlotClass
                 pause(0.1);
 
             end
+        end
+
+        function plotRank(obj, paperRankTable)
+            %PLOTRANK Show in a comparative graph the different ranks with
+            %each behaviour shown in the correct order
+
+            %Collect stacked bar data
+            rank_array = paperRankTable.Rank.Variables;
+            shape_label = paperRankTable.Rank.Properties.VariableNames;
+            rank_b = bar(rank_array, 'stacked');
+            [rank_b.DisplayName] = deal(shape_label{:});
+
         end
 
 
