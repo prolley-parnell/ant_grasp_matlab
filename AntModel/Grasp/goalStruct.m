@@ -75,6 +75,17 @@ classdef goalStruct
             outTable = [goalTable , qualityTable];
         end
 
+        function obj = fromTable(obj, tableIn)
+                        
+            obj.emptyFlag = false;
+            obj.time_s = tableIn.Time;
+            obj.midpoint = tableIn.Midpoint;
+            obj.contact_point_array = [tableIn.("Point A");tableIn.("Point B")];
+            obj.contact_axis = tableIn.("Contact Axis");
+            obj.contact_norm = [tableIn.("Surf Norm A");tableIn.("Surf Norm B")];
+
+        end
+
         function obj = settime(obj, currentTime)
             obj.time_s = currentTime;
         end
@@ -103,6 +114,7 @@ classdef goalStruct
                         figure(i)
                         hold on;
                         plot3(obj.contact_point_array(:,1), obj.contact_point_array(:,2), obj.contact_point_array(:,3), ':*','MarkerSize',7, 'LineWidth', 1)
+                        quiver3(obj.midpoint(1), obj.midpoint(2), obj.midpoint(3), obj.contact_axis(1), obj.contact_axis(2), obj.contact_axis(3), 'LineWidth', 3, 'Color', 'r')
                         quiver3(vector_base(1), vector_base(2), vector_base(3), obj.alignment_axis(1), obj.alignment_axis(2), obj.alignment_axis(3), 'LineWidth', 3, 'Color', 'g')
                         quiver3(obj.midpoint(1), obj.midpoint(2), obj.midpoint(3), obj.goal_z_axis(1), obj.goal_z_axis(2), obj.goal_z_axis(3), 'LineWidth', 3, 'Color', 'b')
                         hold off;

@@ -220,7 +220,7 @@ classdef RuntimeArgs
             obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
 
             % Force applied by mandibles
-            obj.GRASP.FORCE = 0.5;
+            obj.GRASP.FORCE = 1;
 
             % Friction of the surface of the object for calculations for
             % grasp quality
