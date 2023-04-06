@@ -71,8 +71,12 @@ classdef OutputData
             % tocTime: Real world time taken from start to end of trial
             
             %Compile the sensory data
-            contactsTable = cell2table(vertcat(obj.contact_data{:}));
-            contactsTable.Properties.VariableNames =  {'Time', 'Contact Location', 'Surface Normal', 'Contact Limb'};
+            if isempty(obj.contact_data)
+                contactsTable = table.empty;
+            else
+                contactsTable = cell2table(vertcat(obj.contact_data{:}));
+                contactsTable.Properties.VariableNames =  {'Time', 'Contact Location', 'Surface Normal', 'Contact Limb'};
+            end
 
             %Compile the pose for the whole trial
             replayTable = cell2table(vertcat(obj.replay_data{:}));

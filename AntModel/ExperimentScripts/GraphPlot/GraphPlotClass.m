@@ -406,7 +406,7 @@ classdef GraphPlotClass
             %obj.all_measure_name
             %Define the masks for different measures
             alignLayerID = find(strcmp(obj.all_quality_name, "Align"));
-            alignFailMask = find(experimentDataIn(:,:,alignLayerID) < 1e-1);
+            alignFailMask = find(experimentDataIn(:,:,alignLayerID) <= 1e-1);
 
             withinReachLayerID = find(strcmp(obj.all_quality_name, "Within Reach"));
             withinReachFailMask = find(experimentDataIn(:,:,withinReachLayerID) < 1e-1);
@@ -846,7 +846,19 @@ classdef GraphPlotClass
             rankPercentSummary.("Max Max Shape Score") = max(splitTabl{:, wildcardPattern + "_Max Score"}, [], 2, 'includenan');
             rankPercentSummary.("Max Mean Score") = max(splitTabl{:, wildcardPattern + "_Mean Score"}, [], 2, 'includenan');
             rankPercentSummary.("SD Max Shape Score") = std(splitTabl{:, wildcardPattern + "_Max Score"},0,2, 'includenan');
-            rankPercentSummary = sortrows(rankPercentSummary, ["Max Mean Score", "SD Max Shape Score", "Max Max Shape Score" ], "ascend");
+            rankPercentSummary = sortrows(rankPercentSummary, ["Max Mean Score", "Max Max Shape Score" , "SD Max Shape Score" ], "ascend");
+
+
+
+        end
+
+
+
+        function tableOut = reorderRows(obj, tableIn, propertyName)
+
+            mapTableCopy = obj.mapTable;
+            sortMapTable = sortrows(mapTableCopy, propertyName, "ascend")
+            tableOut = tableIn(sortMapTable.Title, :);
 
 
 
@@ -1136,19 +1148,24 @@ classdef GraphPlotClass
             expectedSlope = [1,1,-1,1,1,1];
             for n = 1:nQMeasure
                 kneeNContact(n) = obj.findKnee(xData{:}, medianOut(n,:), expectedSlope(n));
-                smoothQMedian(n,:) = smooth(medianOut(n,:), 9);
+                smoothQMedian(n,:) = smooth(medianOut(n,:), 5);
+                %smoothQMedian(n,:) = medianOut(n,:);
             end
 
             nCMeasure = 2;
             smoothCMedian = nan(nCMeasure, size(medianOut,2));
             for n = 1:nCMeasure
-                smoothCMedian(n,:) = smooth(medianOut(n+nQMeasure,:), 9);
+                smoothCMedian(n,:) = smooth(medianOut(n+nQMeasure,:), 5);
+                %smoothCMedian(n,:) = medianOut(n+nQMeasure,:);
             end
 
             %Rescale all measures to be between 0 and 1
             rowminQ = min(smoothQMedian, [], 2);
             rowmaxQ = max(smoothQMedian, [], 2);
             yQPlotData = rescale(smoothQMedian, 'InputMin', rowminQ, 'InputMax', rowmaxQ);
+
+            %Invert COM Offset so the best is 1 and not zero
+            yQPlotData(3,:) = 1 - yQPlotData(3,:);
 
             %Rescale all measures to be between 0 and 1
             rowminC = min(smoothCMedian, [], 2);
@@ -1175,7 +1192,7 @@ classdef GraphPlotClass
             set(h, {'LineStyle'}, {'-','--',':','-.'}')
 
             g = plot(xPlotData, yCPlotData);
-            set(g, {'DisplayName'}, {"Simulation Time"; "Real World Time"})
+            set(g, {'DisplayName'}, {"Simulation Time (\tau_S)"; "Real World Time (\tau_{RW})"})
             set(g, {'Color'}, {obj.cost_colour_st;obj.cost_colour_rwt});
             set(g, {'LineStyle'}, {'--',':'}');
 
@@ -1186,24 +1203,13 @@ classdef GraphPlotClass
 
 
             kneeCost = yCPlotData(:,xPlotData == max(kneeX));
-            %             r2_1 = refline(0, kneeCost(1));
-            %             r2_1.LineStyle = '-';
-            %             r2_1.Color = g(1).Color;
-            %             r2_1.DisplayName = "Simulation Time Cost at Best Grasp";
-            %             r2_2 = refline(0, kneeCost(2));
-            %             r2_2.LineStyle = '-';
-            %             r2_2.Color = g(2).Color;
-            %             r2_2.DisplayName = "Real World Time Cost at Best Grasp";
-
-            % text(max(kneeX)+0.5, min(kneeCost), "\leftarrow Time Costs at Max Knee", "VerticalAlignment","top")
-
+            tKnee = plot([max(kneeX);max(kneeX)], yCPlotData(:,xPlotData == max(kneeX)), 'Color', obj.cost_colour_st, 'Marker','x', 'DisplayName', '\tau^{Knee}', 'LineStyle', 'none');
 
             yyaxis right
             ylabel('Percent Succesful Grasps')
             percentSmooth = smooth(percentRate,9);
             p = plot(xPlotData, percentSmooth, 'DisplayName', 'Percent Successful Grasps', 'Color', obj.percent_colour);
             set(gca, 'YColor', obj.percent_colour);
-            %set(p, 'T')
 
             xl = xline(max(kneeX), ':', 'DisplayName', 'Maximum Knee Point');
             x1.Color = obj.percent_colour;
@@ -1220,10 +1226,13 @@ classdef GraphPlotClass
             temp_tick = yticks;
             yticks(sort([temp_tick, percentSmooth(xPlotData == max(kneeX))]));
 
+            pKnee = plot(max(kneeX), percentSmooth(xPlotData == max(kneeX)), 'Color', obj.percent_colour, 'Marker','x', 'DisplayName', 'P^{Knee}', 'LineStyle', 'none');
+            
 
-
+            legend
             hold off
         end
+
 
 
         %Rewatch Experiment
@@ -1281,10 +1290,13 @@ classdef GraphPlotClass
             ylim(ax, [0,1.1]);
             yticks([0:0.1:1.1])
             ylabel("Rank Score [0 \rightarrow 1]", 'FontSize', 14)
+            xlabel("Experiment ID", 'FontSize', 14);
             [rank_b.DisplayName] = deal(shape_label{:});
 
             %errorbar(rank_b(1).XEndPoints, worstRank', sdMaxRank, -sdMaxRank, LineStyle="none");
             grid("minor")
+
+            legend
 
             hold off
 
@@ -1299,129 +1311,89 @@ classdef GraphPlotClass
             T_s = paperRankTable{:,"tau S"}.Variables;
             T_rw = paperRankTable{:,"tau RW"}.Variables;
 
-            %Fill with zeros for spacing
-            spacedContactsKnee = zeros([16,6]);
-            spacedContactsKnee(:,[1,3,5]) = contactsKnee;
-
-            spacedPercentKnee = zeros([16,6]);
-            spacedPercentKnee(:,[2,4,6]) = percentKnee;
             figure
-            
+
             hold on
-            
-
-
-
-
-
-
             fullColour = c([35, 42, 50],:);
 
             t = tiledlayout(3,1)
             title(t, "Ranked Qualities and Costs", 'FontSize',16, "FontWeight", "bold")
-            
-            %percentBar = bar(spacedPercentKnee);
-            %             percentBar = bar([1:16], percentKnee);
-            %             %percentBar = bar([1:16], percentKnee .* contactsKnee);
-            %             percentBar(1).FaceColor = fullColour(1,:);
-            %             percentBar(2).FaceColor = fullColour(2,:);
-            %             percentBar(3).FaceColor = fullColour(3,:);
-            %
-            %             percentBar(1).DisplayName = "Dice";
-            %             percentBar(2).DisplayName = "Plank";
-            %             percentBar(3).DisplayName = "Wedge";
 
 
-            %contactBar = bar(spacedContactsKnee);
             ax1 = nexttile
-            
-            contactBar = bar(ax1, [1:16], contactsKnee);
+            hold on
+
+            contactBar = plot(ax1, [1:16], contactsKnee, 'LineStyle', 'none', 'Marker','o');
             ax1.FontSize = 12;
-            ylabel(ax1, "K(C)", "FontSize", 14)
+            ylabel(ax1, "C^{Knee}", "FontSize", 14)
             xticks(ax1, [1:16])
-            
+
             grid(ax1, "minor")
-            
 
-
-            contactBar(1).FaceColor = fullColour(1,:);
-            contactBar(2).FaceColor = fullColour(2,:);
-            contactBar(3).FaceColor = fullColour(3,:);
+            contactBar(1).Color = fullColour(1,:);
+            contactBar(2).Color = fullColour(2,:);
+            contactBar(3).Color = fullColour(3,:);
             contactBar(1).DisplayName = "Dice";
             contactBar(2).DisplayName = "Plank";
             contactBar(3).DisplayName = "Wedge";
             legend(FontSize=12)
-%             contactBar(1).FaceAlpha = 0.4;
-%             contactBar(2).FaceAlpha = 0.4;
-%             contactBar(3).FaceAlpha = 0.4;
+
 
             ax2 = nexttile
+            hold on
             ax2.FontSize = 12;
-            ylabel(ax2, "K(P)", "FontSize", 14)
+            ylabel(ax2, "P^{Knee}", "FontSize", 14)
             grid(ax2, "minor")
             xticks(ax2, [1:16])
-            percentLine_1 = line([1:16],percentKnee(:,1));
-            percentLine_1.LineStyle = "-";
+            percentLine_1 = plot([1:16],percentKnee(:,1), 'LineStyle', 'none', 'Marker','+');
             percentLine_1.Color = fullColour(1,:);
             percentLine_1.DisplayName = "Dice";
 
-            percentLine_2 = line([1:16],percentKnee(:,2));
+            percentLine_2 = plot([1:16],percentKnee(:,2), 'LineStyle', 'none', 'Marker','+');
             percentLine_2.Color = fullColour(2,:);
-            percentLine_1.LineStyle = "-";
             percentLine_2.DisplayName = "Plank";
 
-            percentLine_3 = line([1:16],percentKnee(:,3));
+            percentLine_3 = plot([1:16],percentKnee(:,3),'LineStyle', 'none', 'Marker','+');
             percentLine_3.Color = fullColour(3,:);
-            percentLine_1.LineStyle = "-";
             percentLine_3.DisplayName = "Wedge";
 
             ax3 = nexttile
+            hold on
             ax3.FontSize = 12;
-            ylabel(ax3, "\tau (seconds)", "FontSize", 14)
+            ylabel(ax3, "\tau^{Knee}", "FontSize", 14)
             grid(ax3, "minor")
             xticks(ax3, [1:16])
             yticks(ax3, [0,10,20,30,40])
             xlabel(ax3, "Experiment ID", "FontSize", 14)
-            refRWT = line([1:16], zeros([1,16]));
-            refRWT.LineStyle = ':';
+            refRWT = plot([1:16], zeros([1,16]), 'Marker','*');
+            refRWT.LineStyle = 'none';
             refRWT.Color = 'black';
             refRWT.DisplayName = "\tau_{RW}";
 
-            refST = line([1:16], zeros([1,16]));
-            refST.LineStyle = '--';
+            refST = line([1:16], zeros([1,16]), 'Marker','x');
+            refST.LineStyle = 'none';
             refST.Color = 'black';
             refST.DisplayName = "\tau_{S}";
-            
 
-            timeRLine_1 = line([1:16],T_rw(:,1));
-            timeRLine_1.LineStyle = ":";
+
+            timeRLine_1 = plot([1:16],T_rw(:,1), 'LineStyle', 'none','Marker','*');
             timeRLine_1.Color = fullColour(1,:);
 
-
-            timeRLine_2 = line([1:16],T_rw(:,2));
+            timeRLine_2 = plot([1:16],T_rw(:,2), 'LineStyle', 'none', 'Marker','*');
             timeRLine_2.Color = fullColour(2,:);
-            timeRLine_2.LineStyle = ":";
 
-
-            timeRLine_3 = line([1:16],T_rw(:,3));
+            timeRLine_3 = plot([1:16],T_rw(:,3), 'LineStyle', 'none', 'Marker','*');
             timeRLine_3.Color = fullColour(3,:);
-            timeRLine_3.LineStyle = ":";
 
-
-
-            timeSLine_1 = line([1:16],T_s(:,1));
-            timeSLine_1.LineStyle = "--";
+            timeSLine_1 = plot([1:16],T_s(:,1), 'LineStyle', 'none', 'Marker','x');
             timeSLine_1.Color = fullColour(1,:);
 
-
-            timeSLine_2 = line([1:16],T_s(:,2));
+            timeSLine_2 = plot([1:16],T_s(:,2), 'LineStyle', 'none', 'Marker','x');
             timeSLine_2.Color = fullColour(2,:);
-            timeSLine_2.LineStyle = "--";
 
-
-            timeSLine_3 = line([1:16],T_s(:,3));
+            timeSLine_3 = plot([1:16],T_s(:,3), 'LineStyle', 'none', 'Marker','x');
             timeSLine_3.Color = fullColour(3,:);
-            timeSLine_3.LineStyle = "--";
+
 
 
             legend(FontSize=12)

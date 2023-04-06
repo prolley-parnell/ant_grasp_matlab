@@ -19,6 +19,7 @@ classdef RuntimeArgs
         TRIAL_NAME
         PRINTOUT
         RECORD
+        TIMEOUT(1,1) double = 1000
 
         COLLISION_OBJ
 
@@ -127,6 +128,10 @@ classdef RuntimeArgs
             %type: char array (not string)
             obj.RECORD.FOLDER = 'mat-files';
 
+
+            %TIMEOUT allows the trial to be saved and recorded after a
+            %certain number of seconds
+            %default is 1000s
 
             %Sense object file path relative to AntModel
             obj.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';

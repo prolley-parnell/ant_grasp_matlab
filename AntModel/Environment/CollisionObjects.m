@@ -23,7 +23,7 @@ classdef CollisionObjects
             obj.DT = {};
             obj.FBT = {};
             obj.COM = {};
-            obj = obj.addMultiStl(RUNTIME_ARGS.COLLISION_OBJ);
+            obj = obj.addMultiSTLorEmpty(RUNTIME_ARGS.COLLISION_OBJ);
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
             obj = obj.plotObjects();
@@ -94,7 +94,102 @@ classdef CollisionObjects
 
         end
 
+        function obj = addMultiSTLorEmpty(obj, ARGS)
+            %ADDMULTISTLOREMPTY Add multiple STLs from a folder path, but
+            %updated to include the ability to have empty paths
 
+            %Check whether a mat file has already been generated for this
+            %mesh
+
+            
+            if isfolder(ARGS.FILE_PATH)
+                matFileName = [ARGS.FILE_PATH, '\meshMatSave.mat'];
+                matStruct = dir(matFileName);
+                if ~isempty(matStruct)
+                    loadMat = load(matFileName);
+                    obj.objectHandles = loadMat.objectHandles_save;
+                    obj.DT = loadMat.DT_save;
+                    obj.FBT = loadMat.FBT_save;
+                    obj.COM = loadMat.COM_save;
+                    return
+                end
+                folderStruct = dir([ARGS.FILE_PATH, '\*.stl']);
+            else
+                folderStruct = dir(ARGS.FILE_PATH);
+                if isempty(folderStruct)
+                    return
+                else
+                    fileName = split(folderStruct.name, '.');
+                    matFileName = [folderStruct(1).folder, '\', fileName{1},'_meshMatSave.mat'];
+                    matStruct = dir(matFileName);
+                    if ~isempty(matStruct)
+                        loadMat = load(matFileName);
+                        obj.objectHandles = loadMat.objectHandles_save;
+                        obj.DT = loadMat.DT_save;
+                        obj.FBT = loadMat.FBT_save;
+                        obj.COM = loadMat.COM_save;
+                        return
+                    end
+                end
+            end
+            allVerticesArray = [];
+            nSTL = length(folderStruct);
+
+            model = cell([1, nSTL]);
+            for i = 1:nSTL
+                %initialise a PDE object
+                model{i} = createpde();
+                %Import mesh from file
+                importGeometry(model{i}, [folderStruct(i).folder,'\',folderStruct(i).name]);
+                %Scale mesh according to RUNTIME_ARGS
+                scale(model{i}.Geometry, ones([1,3])*ARGS.SCALE);
+                scaledMesh = generateMesh(model{i}, GeometricOrder="linear");
+                allVerticesArray = cat(1,allVerticesArray,scaledMesh.Nodes');
+            end
+
+            CentreOfMass = mean(allVerticesArray,1);
+
+            for j=1:nSTL
+
+
+                %Translate all vertices so the total mean COM is at 0 0 0
+                zeroMesh = model{j}.Mesh.Nodes' - CentreOfMass;
+
+                k = convhulln(zeroMesh);
+                %Need to remove indices not referenced by convhill
+                newVertIdx = unique(k);
+                newVertexArray = zeroMesh(newVertIdx,:);
+
+
+                %Store the Centre of mass for every STL as the full object COM
+                %Set as [0 0 0] as the shapes are already offset by the
+                %mean centrepoint of the entire shape - not necessarily the
+                %same as the centrepoint of the subshape
+                obj.COM{j} = [0 0 0];
+
+                %Convert the translated meshes to CollisionObjects
+                collision_mesh = collisionMesh(newVertexArray);
+                collision_mesh.Pose = trvec2tform(ARGS.POSITION);
+
+                obj.objectHandles{j} = collision_mesh;
+
+                %Translate to the object pose for the DT calculations
+                translateNode = newVertexArray + ARGS.POSITION;
+
+                %Calculate the surface normals for each face
+                [obj.DT{j}, obj.FBT{j}] = obj.collisionToDelaunay(translateNode);
+
+
+
+            end
+            %Save the generated meshes to be loaded later
+            objectHandles_save = obj.objectHandles;
+            DT_save = obj.DT;
+            FBT_save = obj.FBT;
+            COM_save = obj.COM;
+            save(matFileName, 'objectHandles_save', 'DT_save', 'FBT_save', 'COM_save');
+
+        end
         function obj = addMultiStl(obj, ARGS)
             %ADDMULTISTL Add multiple STLs from a folder path
 

@@ -41,7 +41,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
 
     while ~ant.grasp_complete
 
-        tic;
+        stepStart = tic;
 
         [ant, sensedDataArray, goalObj, costStruct] = ant.update(env);
         if ant.grasp_complete == 1
@@ -51,7 +51,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
 
         % TODO Add a pause point in case the user interacts with a graph
         if any(RUNTIME_ARGS.PLOT.ENABLE)
-            endtime = toc;
+            endtime = toc(stepStart);
             diff = endtime - (RUNTIME_ARGS.RATE*2);
             pause(abs(min(diff, 0)));
         end
@@ -61,6 +61,10 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
         end
 
         trial_time = trial_time + RUNTIME_ARGS.RATE;
+
+        if toc(tStart) > RUNTIME_ARGS.TIMEOUT
+            break
+        end
 
     end
 

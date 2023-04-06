@@ -1,9 +1,9 @@
 %% File to plot the new GPC when force has been changed
 % % Created 28/02/2023
-
+% Saved as GPC_full_force1.mat
 
 %% Plot to show how the knee points are used to select percentage
-experimentNameExample = "PCA_RRaP";
+experimentNameExample = "IPDAlign_RRaP";
 GPC_wedge.percent_colour = [1 0.55 0];
 GPC_wedge.plotKneeSelection(experimentNameExample)
 
@@ -54,6 +54,10 @@ allMeasureSummaryTable = GPC_plank.summariseTableRank(completeDiceTable, complet
 allMeasureSummaryTable.Properties.VariableNames{1} = 'Dice';
 allMeasureSummaryTable.Properties.VariableNames{2} = 'Plank';
 allMeasureSummaryTable.Properties.VariableNames{3} = 'Wedge';
+
+%% Order by map table not by rank
+allMeasureSummaryTable = GPC_wedge.reorderRows(allMeasureSummaryTable, ["Control Method", "Search Method", "Row Index"]);
+
 
 %% Copy out the max percent and knee in order of the measures summary Table
 
