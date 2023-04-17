@@ -1,17 +1,28 @@
 %% File to run the appropriate comparisons and load code as necessary
 % % Created 06/02/2023
 % 
-% GPC_dice = GraphPlotClass();
-% GPC_plank = GraphPlotClass();
-% GPC_wedge = GraphPlotClass();
+GPC_dice = GraphPlotClass();
+GPC_plank = GraphPlotClass();
+GPC_wedge = GraphPlotClass();
+GPC_grass_seed = GraphPlotClass();
 % %Add all Experiment Folders
-% experimentFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
-% GPC_dice = GPC_dice.loadData([experimentFolder, '\dice']);
-% GPC_plank = GPC_plank.loadData([experimentFolder, '\plank']);
-% GPC_wedge = GPC_wedge.loadData([experimentFolder, '\wedge']);
+experimentFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
+GPC_dice = GPC_dice.loadData([experimentFolder, '\dice']);
+GPC_plank = GPC_plank.loadData([experimentFolder, '\plank']);
+GPC_wedge = GPC_wedge.loadData([experimentFolder, '\wedge']);
+GPC_grass_seed = GPC_grass_seed.loadData([experimentFolder, '\grass_seed']);
+
+%% Import all the baseline values for each shape
+baselineFile = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts\baseline_evaluation_scripts\baselineQualityRangeStruct.mat';
+load(baselineFile)
+GPC_dice = GPC_dice.addBaselineQualities(diceQualityRange);
+GPC_plank = GPC_plank.addBaselineQualities(plankQualityRange);
+GPC_wedge = GPC_wedge.addBaselineQualities(wedgeQualityRange);
+GPC_grass_seed = GPC_grass_seed.addBaselineQualities(grassSeedQualityRange);
+
+
 % 
-% 
-% save('GPC_full_v2.mat', 'GPC_dice', 'GPC_plank', "GPC_wedge")
+save('GPC_4shape_d_p_w_gs.mat', 'GPC_dice', 'GPC_plank', "GPC_wedge", "GPC_grass_seed")
 
 
 %% Plot to show how the knee points are used to select percentage

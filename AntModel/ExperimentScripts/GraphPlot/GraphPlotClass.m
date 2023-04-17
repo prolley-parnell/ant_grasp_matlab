@@ -9,6 +9,7 @@ classdef GraphPlotClass
         all_cost_name
 
         mapTable
+        baseline_grasp_quality
 
         median_colour
         percent_colour
@@ -63,6 +64,7 @@ classdef GraphPlotClass
                 'PCA_RSS', 4, 1, 2};
 
             obj.mapTable = cell2table(arrangeMap, "VariableNames", ["Title", "Row Index", "Search Method", "Control Method"]);
+            obj.baseline_grasp_quality = struct.empty();
 
             rank_quality_order = ["PercentSuccess MaxKnee", "KneeNContact Max", "SimulationTime MaxKnee", "RealWorldTime MaxKnee"];
 
@@ -281,6 +283,10 @@ classdef GraphPlotClass
 
         end
 
+        function obj = addBaselineQualities(obj, qualityStruct)
+            obj.baseline_grasp_quality = qualityStruct;
+        end
+
         function scaledJointCost = scaleAndSumJointMotion(obj, jointMotion)
             %SCALEANDSUMJOINTMOTION Given the full sum of joint motion
             %across the set of joints in the ant model, scale proportional
@@ -339,8 +345,6 @@ classdef GraphPlotClass
             end
 
             %plot(x_d, y_d)
-
-
 
 
             %4: Calculating the local maxima of the difference curve
@@ -582,25 +586,45 @@ classdef GraphPlotClass
                         end
                     end
                 end
+            end
+        end
+
+        function scaledMedianOut = scaleToBaseline(obj, medianIn, varargin)
+
+            if isempty(varargin)
+                measureName = obj.all_quality_name(1:4);
+            else
+                measureName = varargin{1};
+            end
+            nMeasure = length(measureName);
+
+            scaledMedianOut = medianIn;
+
+            for n = 1: nMeasure
+                shape_min = 0;
+                shape_max = 1;
+                if strcmp(measureName(n), "Volume")
+                    shape_min = obj.baseline_grasp_quality.volume.min;
+                    shape_max = obj.baseline_grasp_quality.volume.max;
+
+                elseif strcmp(measureName(n), "Align")
+                    shape_min = obj.baseline_grasp_quality.normAlign.min;
+                    shape_max = obj.baseline_grasp_quality.normAlign.max;
 
 
+                elseif strcmp(measureName(n), "Epsilon")
+                    shape_min = obj.baseline_grasp_quality.epsilon.min;
+                    shape_max = obj.baseline_grasp_quality.epsilon.max;
+
+                elseif strcmp(measureName(n), "COM Offset")
+                    shape_min = obj.baseline_grasp_quality.com_offset.min;
+                    shape_max = obj.baseline_grasp_quality.com_offset.max;
+                end
+                scaledMedianOut(n,:) = (medianIn(n,:) - shape_min)/ (shape_max - shape_min);
 
             end
 
-
         end
-
-        function lambda_ini = boxcoxn(~, x)
-            % from T. Lan on Stack OVerflow
-            [m,n]=size(x);
-            lambda_ini=zeros(n,1);
-            for ii=1:n
-                [temp,lambda_ini(ii,1)]=boxcox(x(:,ii));
-            end
-            fun=@(lambda)(log(det((cov(((x.^repmat(lambda',m,1)-1)./repmat(lambda',m,1))))))*m/2-(lambda-1)'*(sum(log(x)))');
-            lambda=fminsearch(fun,lambda_ini);
-        end
-
 
 
         %% Final Visualisation Functions
@@ -652,6 +676,11 @@ classdef GraphPlotClass
                             %experiments
                             medianOut = obj.transformMedian(refinedYData, measureTitle);
 
+                            %Give the option to scale the median by the
+                            %range set by the baseline
+                            if ~isempty(obj.baseline_grasp_quality)
+                                scaleMedian = obj.scaleToBaseline(medianOut);
+                            end
 
 
                             for meas_i = 1:nMeasure
@@ -661,9 +690,13 @@ classdef GraphPlotClass
                                 %Find the layer index if measure names are
                                 %reordered
                                 median_idx = find(measureTitle == qualityTitle(meas_i));
-
                                 expectedSlope = [1,1,-1,1,1,1];
-                                resultStruct.KneeNContact = obj.findKnee(xData{:}, medianOut(median_idx,:), expectedSlope(median_idx));
+
+                                if ~isempty(obj.baseline_grasp_quality)
+                                    resultStruct.KneeNContact = obj.findKnee(xData{:}, scaleMedian(median_idx,:), expectedSlope(median_idx));
+                                else
+                                    resultStruct.KneeNContact = obj.findKnee(xData{:}, medianOut(median_idx,:), expectedSlope(median_idx));
+                                end
 
                                 %Find the column index that links to that
                                 %number of contacts at the knee
@@ -729,6 +762,9 @@ classdef GraphPlotClass
         end
 
         function passResultTable = addPercentPassColumn(~, resultTable, varargin)
+            %ADDPERCENTPASSCOLUMN Add a column to the result table that
+            %indicates whether the percent of successful grasps at the
+            %maximum knee is above the defined amount.
 
             if length(varargin) == 1
                 passPercent = varargin{1};
@@ -744,7 +780,7 @@ classdef GraphPlotClass
 
 
         function [resultTableWithRank] = addRank(obj, resultTable, varargin)
-            %ORDERRESULTTABLE Assign rank to each of the experiments in the
+            %ADDRANK Assign rank to each of the experiments in the
             %resultTable according to the string provided in varargin
             % String Options
             % ["PercentSuccess MaxKnee", "KneeNContact Max", "SimulationTime MaxKnee", "RealWorldTime MaxKnee"];
@@ -801,10 +837,8 @@ classdef GraphPlotClass
 
             end
 
-
-
-
         end
+
 
         function summaryRankTable = addSummaryRank(obj, resultTableWithRank)
             %ADDSUMMARYRANK Find the sum total of the score from each rank
@@ -863,129 +897,6 @@ classdef GraphPlotClass
 
 
         end
-
-        %         function [] = plotOrderedMedianQualityAndCost(obj, orderedResultTable)
-        %             %PLOTORDEREDQUALITYANDCOST Show the median knee for each method
-        %             %alongside a stacked barchart showing the different cost times
-        %             %against a different y axis
-        %
-        %             %Retrieve the cost for the mean number of contacts
-        %             medianArray = orderedResultTable(:,["KneeNContact Median","PercentSuccess Median", "RealWorldTime Median", "SimulationTime Median"]).Variables;
-        %             experimentTitle = orderedResultTable(:,"Title").Variables;
-        %
-        %             kneeY = medianArray(:,1);
-        %             percentSuccess = medianArray(:,2);
-        %             realTime = medianArray(:,3);
-        %             simTime = medianArray(:,4);
-        %
-        %             plotPercentSuccess = kneeY .* percentSuccess;
-        %
-        %             x_label = categorical(experimentTitle);
-        %             x_tick = 1:length(x_label);
-        %             bar_width = 0.4;
-        %
-        %             b1 = bar(x_tick-(bar_width*0.5), kneeY, bar_width, DisplayName='Number of Contacts');
-        %             b1.FaceColor = obj.median_colour;
-        %
-        %             hold on
-        %
-        %             b2 = bar(x_tick-(bar_width*0.5), plotPercentSuccess, bar_width,  DisplayName='Percentage Success');
-        %             b2.FaceColor = obj.percent_colour;
-        %             xError = b2.XEndPoints;
-        %             percentlabels = string(percentSuccess);
-        %             text(xError,plotPercentSuccess*0.5,percentlabels,'HorizontalAlignment','center',...
-        %                 'VerticalAlignment','middle', 'Rotation', 90);
-        %
-        %             xticks(x_tick)
-        %             xticklabels(x_label);
-        %             xtickangle(90)
-        %             ax = gca;
-        %             ax.TickLabelInterpreter = 'none';
-        %
-        %             yyaxis right
-        %             b3 = bar(x_tick+(bar_width*0.5), medianArray(:,[3,4])', bar_width, 'stacked');
-        %             b3(1).DisplayName = "Real World Time";
-        %             b3(1).FaceColor = obj.cost_colour_rwt;
-        %             b3(2).DisplayName = "Simulation Time";
-        %             b3(2).FaceColor = obj.cost_colour_st;
-        %
-        %             hold off
-        %
-        %             legend
-        %
-        %             title(ax, "Knee At Plateau Ordered ordered as Median across Measures")
-        %
-        %
-        %
-        %         end
-        %
-        %         function [] = plotOrderedResultTable(obj, orderedResultTable)
-        %
-        %             measureStructArray = orderedResultTable(:,obj.all_quality_name(1:4)).Variables;
-        %
-        %             kneeY = reshape([measureStructArray.KneeNContact], size(measureStructArray));
-        %             percentSuccess = reshape([measureStructArray.PercentSuccess], size(measureStructArray));
-        %
-        %             plotPercentSuccess = kneeY .* percentSuccess;
-        %
-        %             x_label = categorical(orderedResultTable.Title);
-        %             x_tick = 1:length(x_label);
-        %
-        %             bar(x_tick, kneeY, 'red', DisplayName='Number of Contacts')
-        %
-        %
-        %             hold on
-        %             b = bar(x_tick, plotPercentSuccess, 'yellow', DisplayName='Percentage Success');
-        %             xError = [b(1).XEndPoints',b(2).XEndPoints',b(3).XEndPoints',b(4).XEndPoints'];
-        %             percentlabels = string(percentSuccess(:));
-        %             text(xError(:),plotPercentSuccess(:)*0.5,percentlabels,'HorizontalAlignment','center',...
-        %                 'VerticalAlignment','middle', 'LineWidth', b(1).BarWidth, 'Rotation', 90);
-        %
-        %             ax = gca;
-        %             ax.TickLabelInterpreter = 'none';
-        %             xticks(x_tick)
-        %             xticklabels(x_label);
-        %             xtickangle(90)
-        %             hold off
-        %
-        %             title(ax, "Knee At Plateau Ordered for all Measures")
-        %
-        %         end
-        %
-        %         function [] = plotOrderedMedianTable(obj, orderedResultTable)
-        %
-        %             medianArray = orderedResultTable(:,["KneeNContact Median","PercentSuccess Median"]).Variables;
-        %
-        %             kneeY = medianArray(:,1);
-        %             percentSuccess = medianArray(:,2);
-        %
-        %             plotPercentSuccess = kneeY .* percentSuccess;
-        %
-        %             x_label = categorical(orderedResultTable.Title);
-        %             x_tick = 1:length(x_label);
-        %
-        %             bar(x_tick, kneeY, 'red', DisplayName='Number of Contacts')
-        %
-        %
-        %             hold on
-        %             b = bar(x_tick, plotPercentSuccess, 'yellow', DisplayName='Percentage Success')
-        %             xError = b.XEndPoints;
-        %             percentlabels = string(percentSuccess);
-        %             text(xError,plotPercentSuccess*0.5,percentlabels,'HorizontalAlignment','center',...
-        %                 'VerticalAlignment','middle', 'LineWidth', b(1).BarWidth);
-        %
-        %             xticks(x_tick)
-        %             xticklabels(x_label);
-        %             xtickangle(90)
-        %             ax = gca;
-        %             ax.TickLabelInterpreter = 'none';
-        %             hold off
-        %
-        %             legend
-        %
-        %             title(ax, "Knee At Plateau Ordered ordered as Median across Measures")
-        %
-        %         end
 
         function [obj, t] = plotResults(obj, mapResultTable)
             %Plot the complete data in a single figure
@@ -1227,7 +1138,7 @@ classdef GraphPlotClass
             yticks(sort([temp_tick, percentSmooth(xPlotData == max(kneeX))]));
 
             pKnee = plot(max(kneeX), percentSmooth(xPlotData == max(kneeX)), 'Color', obj.percent_colour, 'Marker','x', 'DisplayName', 'P^{Knee}', 'LineStyle', 'none');
-            
+
 
             legend
             hold off
@@ -1304,7 +1215,7 @@ classdef GraphPlotClass
 
         function plotPaperKnee(obj, paperRankTable)
 
-            c = colormap(turbo(50));
+            c = colormap(turbo(65));
 
             contactsKnee = paperRankTable{:,"K(C)"}.Variables;
             percentKnee = paperRankTable{:,"K(P)"}.Variables;
@@ -1314,7 +1225,7 @@ classdef GraphPlotClass
             figure
 
             hold on
-            fullColour = c([35, 42, 50],:);
+            fullColour = c([35, 42, 50, 1],:);
 
             t = tiledlayout(3,1)
             title(t, "Ranked Qualities and Costs", 'FontSize',16, "FontWeight", "bold")
@@ -1333,9 +1244,11 @@ classdef GraphPlotClass
             contactBar(1).Color = fullColour(1,:);
             contactBar(2).Color = fullColour(2,:);
             contactBar(3).Color = fullColour(3,:);
+            contactBar(4).Color = fullColour(4,:);
             contactBar(1).DisplayName = "Dice";
             contactBar(2).DisplayName = "Plank";
             contactBar(3).DisplayName = "Wedge";
+            contactBar(4).DisplayName = "Grass Seed";
             legend(FontSize=12)
 
 
@@ -1356,6 +1269,11 @@ classdef GraphPlotClass
             percentLine_3 = plot([1:16],percentKnee(:,3),'LineStyle', 'none', 'Marker','+');
             percentLine_3.Color = fullColour(3,:);
             percentLine_3.DisplayName = "Wedge";
+
+            percentLine_3 = plot([1:16],percentKnee(:,4),'LineStyle', 'none', 'Marker','+');
+            percentLine_3.Color = fullColour(4,:);
+            percentLine_3.DisplayName = "Grass Seed";
+
 
             ax3 = nexttile
             hold on
