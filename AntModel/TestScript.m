@@ -60,9 +60,9 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
 % experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
 % stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all

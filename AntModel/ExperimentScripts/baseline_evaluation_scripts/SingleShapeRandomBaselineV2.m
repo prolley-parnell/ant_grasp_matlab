@@ -54,7 +54,8 @@ randomScale = rand([nRandomPt,3]);
 randomSampleFull = r(minV,maxV,randomScale);
 
 %% Find the points on the surface of the object that are guided by these points
-% for single triangulation only [TODO] need to remove points that are
+% for single triangulation only 
+%[TODO] need to remove points that are
 % considered to be internal
 %{TODO] Can I do this by literally adding all of the triangulations
 %together?
