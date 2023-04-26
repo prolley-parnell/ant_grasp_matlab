@@ -32,6 +32,20 @@
 % GPC_plank.experimentDataStruct = t.GPC_plank.experimentDataStruct;
 % GPC_dice.experimentDataStruct = t.GPC_dice.experimentDataStruct;
 % save('GPC_4shape_d_p_w_gs.mat', 'GPC_dice', 'GPC_plank', "GPC_wedge", "GPC_grass_seed")
+
+%% Plot to show how the knee points are used to select percentage
+experimentNameExample = "PCA_RRaP";
+GPC_grass_seed.plotKneeSelection(experimentNameExample)
+
+%%
+
+experimentNameExample = "PCA_RRaP";
+GPC_grass_seed.plotKneeSelection(experimentNameExample)
+
+%%
+[~, ~, tileGS] = GPC_grass_seed.completePaperPlot()
+subtitle(tileGS, 'Grass Seed Object')
+
 %% Extract results table per shape
 
 [plank_resultTable] = GPC_plank.extractPlotAndCostData;

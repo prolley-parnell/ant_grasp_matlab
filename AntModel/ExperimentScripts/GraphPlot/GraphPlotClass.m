@@ -1058,7 +1058,8 @@ classdef GraphPlotClass
             smoothQMedian = nan(4, size(medianOut,2));
             expectedSlope = [1,1,-1,1,1,1];
             for n = 1:nQMeasure
-                kneeNContact(n) = obj.findKnee(xData{:}, medianOut(n,:), expectedSlope(n));
+                %kneeNContact(n) = obj.findKnee(xData{:}, medianOut(n,:), expectedSlope(n));
+                kneeNContact(n) = obj.findKnee(xData{:}, medianOut(n,:));
                 smoothQMedian(n,:) = smooth(medianOut(n,:), 5);
                 %smoothQMedian(n,:) = medianOut(n,:);
             end
@@ -1215,7 +1216,7 @@ classdef GraphPlotClass
 
         function plotPaperKnee(obj, paperRankTable)
 
-            c = colormap(turbo(65));
+            c = colormap(turbo(50));
 
             contactsKnee = paperRankTable{:,"K(C)"}.Variables;
             percentKnee = paperRankTable{:,"K(P)"}.Variables;
@@ -1225,10 +1226,10 @@ classdef GraphPlotClass
             figure
 
             hold on
-            fullColour = c([35, 42, 50, 1],:);
+            fullColour = c([35, 42, 50, 26],:);
 
             t = tiledlayout(3,1)
-            title(t, "Ranked Qualities and Costs", 'FontSize',16, "FontWeight", "bold")
+            title(t, "Experiment Qualities and Costs", 'FontSize',16, "FontWeight", "bold")
 
 
             ax1 = nexttile
