@@ -35,6 +35,8 @@ classdef RuntimeArgs
 
         SENSE
 
+        STOP
+
         GRASP
 
         MAP_SIZE
@@ -220,6 +222,20 @@ classdef RuntimeArgs
             %false: does not consider this
             obj.SENSE.MAND_MAX = true;
 
+
+            %Define the mode used to initiate the grasp evaluation and stop
+            %the process
+            %obj.STOP.MODE default = 'n_contact'
+            %other options: 'coc'
+            obj.STOP.MODE = {'n_contact'};
+
+            %Set the other arguments for the stopping criterion
+            obj.STOP.THRESH = obj.SENSE.MINIMUM_N;
+
+            %How many time steps must the stopping criteria be above the threshold
+            %before actually stopping - for n_contacts, == 1
+            obj.STOP.COUNT = 1;
+
             %Qhull arguments, different modes enabled to get a fast
             %representation of the convex grasp wrench space using QHULL
             obj.GRASP.QUALITY.Q_HULL_ARGS = {'QJ', 'Pp', 'Qt'};
@@ -362,6 +378,34 @@ classdef RuntimeArgs
                 rangeValueStr = extractBetween(cellInstruct{rangeFlag==1}, '[', ']');
                 obj.SEARCH.RANGE = str2num(rangeValueStr{:});
             end %Otherwise leave as default
+
+
+        end
+
+        function obj = setStoppingCriterion(obj, varargin)
+            %SETSTOPPINGCRITERION Add the option of varying the trigger
+            %that ends the evaluation and causes the sensory data to be
+            %evaluated as a grasp
+            %e.g.
+            % setStoppingCriterion(obj, method_char)
+            % setStoppingCriterion(obj, method_char, threshold)
+            % setStoppingCriterion(obj, method_char, threshold, count)
+
+            n_arg = length(varargin);
+            if n_arg > 0
+                if ischar(varargin{1})
+                    obj.STOP.MODE = varargin{1};
+                else
+                    warning("First argument must be a char array name of the stopping criterion");
+                end
+                if n_arg >= 2
+                    obj.STOP.THRESH = varargin{2};
+                end
+                if n_arg >=3
+                    obj.STOP.COUNT = varargin{3};
+                end
+            end
+            
 
 
         end
