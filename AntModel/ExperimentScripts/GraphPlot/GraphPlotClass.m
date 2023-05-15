@@ -1027,6 +1027,68 @@ classdef GraphPlotClass
 
         end
 
+        function [figureHandle] = plotProportionalKnee(obj, experimentName)
+            %PLOTKNEESELECTION A function called with a given experiment
+            %name to plot the normalised values across the different number
+            %of contact points and identify the maximum and the
+            %corresponding percentage success
+
+
+            %Extract all data for this experiment
+            [xData, yData] = obj.extractMeasure(experimentName);
+
+            %Refine this data to exclude failed grasps
+            [refinedYData, successNumber, failureNumber] = obj.excludeFailedGrasp(yData);
+            percentRate = successNumber ./ (successNumber + failureNumber);
+
+            %Exclude the layer that specifies whether the
+            %grasp is within reach
+            excludeLayer = find(obj.all_quality_name == "Within Reach");
+            refinedYData(:,:,excludeLayer) = [];
+
+
+            %Find the median of each measure for these
+            %experiments
+            medianOut = obj.transformMedian(refinedYData, [obj.all_quality_name(1:4), "Simulation Time", "Real World Time"]);
+
+
+            %First subplot showing all quality measures
+            nQMeasure = 4;
+            kneeNContact = nan(1,nQMeasure);
+            smoothQMedian = nan(4, size(medianOut,2));
+            
+            %% Carry out the scaling
+            % Percent success divided by number of contacts
+            scalePercent = percentRate ./ xData{:};
+            scaleTime = medianOut(5,:) ./ xData{:};
+            
+            xPlotData = xData{:};
+
+            figureHandle = figure;
+
+
+            hold on
+            fontsize(gca,12,"points")
+            title(["Test Plot of the Scaled Percent and Time", "by the number of contacts"], 'FontSize', 13);
+            subtitle(experimentName, 'Interpreter', 'none', 'FontSize', 12);
+            
+            yyaxis left
+            h = plot(xPlotData, scalePercent);
+            set(h, {'DisplayName'}, {'Percent per Contact'}')
+            set(h, {'LineStyle'}, {'-'}')
+
+            yyaxis right
+            t = plot(xPlotData, scaleTime);
+            set(t, {'DisplayName'}, {'Sim time per Contact'}')
+            set(t, {'LineStyle'}, {'-.'}')
+
+            ylabel('% \div C', 'FontSize', 13, 'Interpreter','latex')
+            xlabel('Number of Contact Points', 'FontSize', 13)
+
+            legend
+            hold off
+        end
+
         function [figureHandle] = plotKneeSelection(obj, experimentName)
             %PLOTKNEESELECTION A function called with a given experiment
             %name to plot the normalised values across the different number
@@ -1212,6 +1274,118 @@ classdef GraphPlotClass
 
             hold off
 
+        end
+
+        function plotPaperKneeV2(obj, paperRankTable)
+
+            c = colormap(turbo(50));
+
+            contactsKnee = paperRankTable{:,"K(C)"}.Variables;
+            percentKnee = paperRankTable{:,"K(P)"}.Variables;
+            T_s = paperRankTable{:,"tau S"}.Variables;
+            T_rw = paperRankTable{:,"tau RW"}.Variables;
+
+            figure
+
+            hold on
+            fullColour = c([35, 42, 50, 26],:);
+
+            t = tiledlayout(3,1)
+            title(t, "Experiment Qualities and Costs", 'FontSize',16, "FontWeight", "bold")
+
+
+            ax1 = nexttile
+            hold on
+
+            contactBar = plot(ax1, [1:16], contactsKnee, 'LineStyle', 'none', 'Marker','o');
+            ax1.FontSize = 12;
+            ylabel(ax1, "C^{Knee}", "FontSize", 14)
+            xticks(ax1, [1:16])
+
+            grid(ax1, "minor")
+
+            contactBar(1).Color = fullColour(1,:);
+            contactBar(2).Color = fullColour(2,:);
+            contactBar(3).Color = fullColour(3,:);
+            contactBar(4).Color = fullColour(4,:);
+            contactBar(1).DisplayName = "Dice";
+            contactBar(2).DisplayName = "Plank";
+            contactBar(3).DisplayName = "Wedge";
+            contactBar(4).DisplayName = "Grass Seed";
+            legend(FontSize=12)
+
+            %Plot bars over the top
+            max_c = max(contactsKnee, [], 2);
+            min_c = min(contactsKnee, [], 2);
+            median_c = median(contactsKnee, 2);
+
+            contact_range = errorbar(ax1, [1:16], median_c, min_c-median_c, max_c-median_c);
+
+            ax2 = nexttile
+            hold on
+            ax2.FontSize = 12;
+            ylabel(ax2, "P^{Knee}", "FontSize", 14)
+            grid(ax2, "minor")
+            xticks(ax2, [1:16])
+            percentLine_1 = plot([1:16],percentKnee(:,1), 'LineStyle', 'none', 'Marker','+');
+            percentLine_1.Color = fullColour(1,:);
+            percentLine_1.DisplayName = "Dice";
+
+            percentLine_2 = plot([1:16],percentKnee(:,2), 'LineStyle', 'none', 'Marker','+');
+            percentLine_2.Color = fullColour(2,:);
+            percentLine_2.DisplayName = "Plank";
+
+            percentLine_3 = plot([1:16],percentKnee(:,3),'LineStyle', 'none', 'Marker','+');
+            percentLine_3.Color = fullColour(3,:);
+            percentLine_3.DisplayName = "Wedge";
+
+            percentLine_3 = plot([1:16],percentKnee(:,4),'LineStyle', 'none', 'Marker','+');
+            percentLine_3.Color = fullColour(4,:);
+            percentLine_3.DisplayName = "Grass Seed";
+
+
+            ax3 = nexttile
+            hold on
+            ax3.FontSize = 12;
+            ylabel(ax3, "\tau^{Knee}", "FontSize", 14)
+            grid(ax3, "minor")
+            xticks(ax3, [1:16])
+            yticks(ax3, [0,10,20,30,40])
+            xlabel(ax3, "Experiment ID", "FontSize", 14)
+            refRWT = plot([1:16], zeros([1,16]), 'Marker','*');
+            refRWT.LineStyle = 'none';
+            refRWT.Color = 'black';
+            refRWT.DisplayName = "\tau_{RW}";
+
+            refST = line([1:16], zeros([1,16]), 'Marker','x');
+            refST.LineStyle = 'none';
+            refST.Color = 'black';
+            refST.DisplayName = "\tau_{S}";
+
+
+            timeRLine_1 = plot([1:16],T_rw(:,1), 'LineStyle', 'none','Marker','*');
+            timeRLine_1.Color = fullColour(1,:);
+
+            timeRLine_2 = plot([1:16],T_rw(:,2), 'LineStyle', 'none', 'Marker','*');
+            timeRLine_2.Color = fullColour(2,:);
+
+            timeRLine_3 = plot([1:16],T_rw(:,3), 'LineStyle', 'none', 'Marker','*');
+            timeRLine_3.Color = fullColour(3,:);
+
+            timeSLine_1 = plot([1:16],T_s(:,1), 'LineStyle', 'none', 'Marker','x');
+            timeSLine_1.Color = fullColour(1,:);
+
+            timeSLine_2 = plot([1:16],T_s(:,2), 'LineStyle', 'none', 'Marker','x');
+            timeSLine_2.Color = fullColour(2,:);
+
+            timeSLine_3 = plot([1:16],T_s(:,3), 'LineStyle', 'none', 'Marker','x');
+            timeSLine_3.Color = fullColour(3,:);
+
+
+
+            legend(FontSize=12)
+
+            hold off
         end
 
         function plotPaperKnee(obj, paperRankTable)

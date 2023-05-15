@@ -109,3 +109,5 @@ GPC_plank.plotPaperRank(PaperTable)
 %%
 GPC_plank.plotPaperKnee(PaperTable)
 
+%%
+GPC_plank.plotPaperKneeV2(PaperTable)
