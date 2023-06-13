@@ -19,7 +19,7 @@ classdef PoseControlClass
 
     methods
         function obj = PoseControlClass(antTree, RUNTIME_ARGS)
-            %MOTIONCLASS
+            %PoseControlCLASS
             if strcmp(RUNTIME_ARGS.SEARCH.MODE{1}, 'p2p')
                 obj.actionGen = SampleActionGen(antTree, RUNTIME_ARGS);
             elseif strcmp(RUNTIME_ARGS.SEARCH.MODE{1}, 'joint')

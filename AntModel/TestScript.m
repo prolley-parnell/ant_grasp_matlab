@@ -54,15 +54,15 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
 % % experiments.
-% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
-% % stl file (binary) to import
-% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
+% stl file (binary) to import
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
 % experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
-% stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
@@ -73,11 +73,11 @@ RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Ant body setup
 % Body motion not required for these experiments
-RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
+RUNTIME_ARGS.BODY_MOTION_ENABLE = 1;
 
 % ------------- Antenna Motion -------------- %
 % Select point-to-point or joint based control
-motion_type = {'p2p'}; %{'p2p', 'joint'};
+motion_type = {'joint'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}
@@ -101,9 +101,9 @@ RUNTIME_ARGS.SENSE.MODE = {'dist'};
 % axis 
 %RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
-%Set the stopping Criterion to be when the change in COC is less than 0.1
-%for 3 contacts
-RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('COC', 0.05, 6)
+%Set the stopping Criterion to be when the change in COC is less than 0.05
+%for 6 contacts
+%RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('COC', 0.05, 6)
 
 %% -------- Test Specific Set Up ------------ %%
 % 

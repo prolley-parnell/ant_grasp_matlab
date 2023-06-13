@@ -503,8 +503,6 @@ classdef SampleActionGen
                     %Remove the duplicate position
                     q(:,1) = [];
                     mandibleOut.trajectory_queue = q;
-                    %mandibleOut.trajectory_queue =
-                    %obj.jointtrajectory(startQ, endQ, velLimits)
                 else
                     mandibleOut.trajectory_queue = [];
 

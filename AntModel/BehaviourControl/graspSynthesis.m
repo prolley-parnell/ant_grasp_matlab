@@ -73,13 +73,6 @@ classdef graspSynthesis
                 graspSynthTEnd = toc(senseTStart);
                 goalCostStruct.time.grasp_synth = graspSynthTEnd;
                 return
-                %             elseif nContactThresh < 0
-                %                 %[COST] Record time up to point where not enough contacts
-                %                 %have been gathered to gen goal
-                %                 antOut.graspGen = obj.calcCOC(antIn.contact_points);
-                %                 graspSynthTEnd = toc(senseTStart);
-                %                 goalCostStruct.time.grasp_synth = graspSynthTEnd;
-                %                 return
             else
                 nMeasures = length(obj.synth_method);
                 if nMeasures < 1
