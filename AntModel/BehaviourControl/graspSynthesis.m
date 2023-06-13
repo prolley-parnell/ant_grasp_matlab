@@ -9,6 +9,8 @@ classdef graspSynthesis
         enforce_mand_max
         %exhaustive_search_flag
 
+        sc_count
+
         quality
         COC
 
@@ -37,7 +39,11 @@ classdef graspSynthesis
                 end
             end
             obj.synth_method = any(measureFlag,1);
-            %obj.exhaustive_search_flag = ~any(measureFlag, 1);
+
+            % Stopping criteria counter, counts the number of time steps
+            % that the stopping criteria is past the set threshold
+            obj.sc_count = 0;
+
 
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
@@ -61,19 +67,19 @@ classdef graspSynthesis
             antOut = antIn;
 
             %Deal with exceptions (no contact points, or no grasp synthesis method)
-            nContactThresh = length(antIn.contact_points) - obj.RUNTIME_ARGS.SENSE.MINIMUM_N;
+
             if isempty(sensedData)
                 %[COST] End time if no new data has been collected
                 graspSynthTEnd = toc(senseTStart);
                 goalCostStruct.time.grasp_synth = graspSynthTEnd;
                 return
-            elseif nContactThresh < 0
-                %[COST] Record time up to point where not enough contacts
-                %have been gathered to gen goal
-                antOut.graspGen = obj.calcCOC(antIn.contact_points);
-                graspSynthTEnd = toc(senseTStart);
-                goalCostStruct.time.grasp_synth = graspSynthTEnd;
-                return
+                %             elseif nContactThresh < 0
+                %                 %[COST] Record time up to point where not enough contacts
+                %                 %have been gathered to gen goal
+                %                 antOut.graspGen = obj.calcCOC(antIn.contact_points);
+                %                 graspSynthTEnd = toc(senseTStart);
+                %                 goalCostStruct.time.grasp_synth = graspSynthTEnd;
+                %                 return
             else
                 nMeasures = length(obj.synth_method);
                 if nMeasures < 1
@@ -86,6 +92,16 @@ classdef graspSynthesis
                 end
             end
             obj = obj.calcCOC(antIn.contact_points);
+            [obj, stop_flag] = obj.evaluateStoppingCriterion(antIn.contact_points);
+            if ~stop_flag
+                %[COST] Record time up to point where not enough contacts
+                %have been gathered to gen goal
+                antOut.graspGen = obj;
+                graspSynthTEnd = toc(senseTStart);
+                goalCostStruct.time.grasp_synth = graspSynthTEnd;
+                return
+            end
+            
             if obj.synth_method(3)
                 [graspAxesOut] = obj.findPCAGraspAxes(antIn);
             else
@@ -97,17 +113,52 @@ classdef graspSynthesis
             % [COST] End exhaustive grasp search
 
             [goalOut] = obj.approximateGrasp(graspAxesOut, env);
-            
+
             antOut = obj.mandibleMotionStateMachine(antIn, sensedData);
 
             antOut.graspGen = obj;
 
 
         end
+        %This may not work and may not update the object
+        function [obj, stop_flag] = evaluateStoppingCriterion(obj, contact_point_struct)
+            %EVALUATESTOPPINGCRITERION determine based on the RuntimeArgs
+            %whether the sensed information is enough to calculate a goal.
+
+            %Output: stop_flag - If true then stop the process and evaluate the
+            %currently sensed data for a grasp location, else continue to sense
+            stop_flag = 0;
+
+            enabled_sc = {'n_contact', 'coc'};
+            sc_mode_flag = strcmpi(obj.RUNTIME_ARGS.STOP.MODE, enabled_sc);
+
+            if sc_mode_flag(1) %Stop based on the number of contacts
+                nContactThresh = length(contact_point_struct) - obj.RUNTIME_ARGS.STOP.THRESH;
+                if nContactThresh > 0
+                    obj.sc_count = obj.sc_count + 1;
+                else
+                    obj.sc_count = 0;
+                end
+
+            elseif sc_mode_flag(2) %Stop when the change in COC is below a threshold
+                if obj.COC.delta < obj.RUNTIME_ARGS.STOP.THRESH
+                    obj.sc_count = obj.sc_count + 1;
+                else
+                    obj.sc_count = 0;
+                end
+            else
+                warning("No stopping criterion has been selected, a grasp may never be evaluated")
+            end
+            if obj.sc_count >= obj.RUNTIME_ARGS.STOP.COUNT
+                stop_flag = 1;
+            end
+
+        end
+
         function [axesOut] = findPCAGraspAxes(obj, antIn)
             %FINDPCAGRASP Use the contact points in memory to generate a
             %grasp axis for the ant approach
-            % Input: 
+            % Input:
             % AntIn - Ant Object containing all contact points in memory
             % env - CollisionObjects class with object triangulation
             % Output:
@@ -196,7 +247,7 @@ classdef graspSynthesis
             %APPROXIMATEGRASP Given either a desired set of mandible
             %contacts, or an axis of approach, select the true mandible
             %collision points
-            % Input: 
+            % Input:
             % desiredGraspAxes: struct containing the X,Y,Z axes and MP.
             % All axes point away from the MP
             % env: CollisionObjects class instance containing
@@ -212,7 +263,7 @@ classdef graspSynthesis
             %Set up an empty contact point struct
             contactStruct = struct("point", [], "normal", []);
             contactPts = repmat(contactStruct, [2,1]);
-           
+
 
             %1: find the point of intersection along the X axis
             startPt = desiredGraspAxes.MP;
@@ -224,14 +275,14 @@ classdef graspSynthesis
             %the mandible tip along the axis of approach
             expandBorder = {'border','inclusive'};
             infiniteLine = {'LineType', 'line'};
-            
+
             % Use a ray to point along the Y axis, away from the MP
             %[mand_base_contact_pt, ~, ~] = env.findRayIntersect(startPt, -approachRay, includeOrigin, expandBorder);
 
             % Approach shape along Y axis
             % Find the midpoint of the mandibles at the furthest possible
-            % pose while 
-            %approachTipMP = mand_base_contact_pt - (approachRay * obj.mandible_depth); 
+            % pose while
+            %approachTipMP = mand_base_contact_pt - (approachRay * obj.mandible_depth);
             approachTipA = (startPt  + (desiredGraspAxes.X * obj.mandible_max*0.5)) - 5 * approachRay ; %Mandible tips at closest possible contact
             approachTipB = (startPt  - (desiredGraspAxes.X * obj.mandible_max*0.5)) - 5 * approachRay ;
 
@@ -268,7 +319,7 @@ classdef graspSynthesis
                 rayA = tipB - tipA;
                 rayB = -rayA;
 
-                
+
                 [contactPts(1).point, contactPts(1).normal, ~] = env.findRayIntersect(tipA, rayA, includeOrigin, expandBorder);
                 [contactPts(2).point, contactPts(2).normal, ~] = env.findRayIntersect(tipB, rayB, includeOrigin, expandBorder);
 
@@ -309,17 +360,17 @@ classdef graspSynthesis
             % - Update from function goalStruct.SetGoal 21/02/23
 
             pointArray = cat(1,contactPointPair(:).point);
-            
+
             x_axis = pointArray(2,:) - pointArray(1,:);
             x_axis_n = x_axis/norm(x_axis);
 
             midpoint = mean(pointArray, 1);
-            
+
             global_z_vector = [0 0 1];
             y_axis = cross(x_axis_n, global_z_vector);
             y_axis_n = y_axis/norm(y_axis);
 
-            z_axis = cross(x_axis_n, y_axis_n);           
+            z_axis = cross(x_axis_n, y_axis_n);
             z_axis_n = z_axis/norm(z_axis);
 
             axesOut = struct('X', x_axis_n, 'Y', y_axis_n, 'Z', z_axis_n, 'MP', midpoint);
@@ -349,7 +400,7 @@ classdef graspSynthesis
             % axesOut: Struct with properties X,Y,Z and MP. Y axis is
             % modified to point away from the centre of contacs, and Z axis
             % forced to be positive
-            
+
             %[EDIT] Now finding axis pointing furthest from COC
             axesOut = axesIn;
             oldAlignment = axesIn.Y;
@@ -357,7 +408,7 @@ classdef graspSynthesis
             COCToMP = axesIn.MP - obj.COC.mean;
             oldDist = vecnorm(COCToMP + oldAlignment, 2,2);
             newDist = vecnorm(COCToMP - oldAlignment, 2,2);
-                        
+
 
             if newDist > oldDist %
                 axesOut.Y = -oldAlignment;
@@ -371,7 +422,7 @@ classdef graspSynthesis
 
         end
 
-        
+
         function [flagArray] = mandibleLimit(obj, distanceArray)
 
             flagArray = ones(size(distanceArray));
@@ -433,6 +484,7 @@ classdef graspSynthesis
         end
         function obj = calcCOC(obj, contactStruct)
             new_COC = mean(cat(1,contactStruct(:).point),1);
+            obj.COC.delta = inf;
             if ~isempty(obj.COC.mean)
                 delta = sqrt(sum((obj.COC.mean - new_COC).^2));
                 obj.COC.delta = delta;
