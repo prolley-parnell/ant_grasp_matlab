@@ -24,9 +24,11 @@ classdef SampleActionGen
             %SAMPLEACTIONGEN A Class to generate the interpolated waypoints
             %for a path of action for an antenna
             obj.interval = RUNTIME_ARGS.RATE;
-            obj.maxvelocities = ones([10,1]) * deg2rad(3) / obj.interval;
-            %Make the scape pedicel joint have a higher speed limit
-            obj.maxvelocities([7 10]) = deg2rad(7) / obj.interval;
+            obj.maxvelocities = RUNTIME_ARGS.SEARCH.VEL;
+
+%             obj.maxvelocities = ones([10,1]) * deg2rad(5) / obj.interval;
+%             %Make the scape pedicel joint have a higher speed limit
+%             obj.maxvelocities([7 10]) = deg2rad(9) / obj.interval;
 
             obj.search_config = RUNTIME_ARGS.SEARCH;
             obj.search_range = RUNTIME_ARGS.SEARCH.RANGE;

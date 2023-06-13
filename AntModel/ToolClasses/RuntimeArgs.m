@@ -28,7 +28,7 @@ classdef RuntimeArgs
         ANT_POSE
         ANT_POSITION(1,4) double = [0 0 0 0]
 
-        ANTENNA_CONTROL
+        %ANTENNA_CONTROL
         ANT_MEMORY(1,1) double = 20
 
         SEARCH
@@ -181,6 +181,9 @@ classdef RuntimeArgs
             % See below function for specific default values
             obj = obj.setAntennaControl({});
 
+            obj.SEARCH.VEL = ones([10,1]) * deg2rad(5) / obj.RATE;
+            %Make the scape pedicel joint have a higher speed limit
+            obj.SEARCH.VEL([7 10]) = deg2rad(9) / obj.RATE;
 
             %Arguments required for the refinement of sampled points
             %For REFINE, specifically for the Information Gain Estimation

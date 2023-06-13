@@ -10,5 +10,5 @@ experimentNameExample = "IPDAlign_CMC_fixvar";
 GPC_grass_seed.plotProportionalKnee(experimentNameExample)
 
 
-%% Resolve issue
+%% 
  

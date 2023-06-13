@@ -82,9 +82,18 @@ classdef GraphPlotClass
             % path to the class instance. WARNING: Does not overwrite
             % existing experiments but adds to the end. May result in
             % repeated data
+            specifyVarFlag = strcmp(varargin, 'variables');
+            if any(specifyVarFlag)
+                nameIdx = find(specifyVarFlag);
+                variableCellName = varargin{nameIdx+1};
+                varargin([nameIdx, nameIdx+1]) = [];
+            else
+                variableCellName = {'senseGoalTable', 'costSummaryTable', 'contactsTable'};
+            end
             if isempty(varargin)
                 folderPath = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
             else
+                
                 folderPath = varargin{:};
             end
             experimentDir = dir(folderPath);
@@ -98,11 +107,11 @@ classdef GraphPlotClass
             end
 
             %%
-            obj = obj.addExperiment(resultsFolderCell);
-            obj = obj.renameTableColumns;
+            obj = obj.addExperiment(variableCellName, resultsFolderCell);
+            %obj = obj.renameTableColumns;
         end
 
-        function obj = addExperiment(obj, folderPathCell)
+        function obj = addExperiment(obj, variableCellName, folderPathCell)
             nFolder = length(folderPathCell);
             for n = 1:nFolder
                 %Add the path to the file to the class to record which
@@ -121,21 +130,21 @@ classdef GraphPlotClass
 
                         MATSubDir = [folderPathCell{n}, subfolder];
 
-                        obj = obj.addMATDir(MATSubDir);
+                        obj = obj.addMATDir(variableCellName, MATSubDir);
 
                     end
                 end
             end
         end
 
-        function obj = addMATDir(obj, MATFolderPath)
+        function obj = addMATDir(obj, variableCellName, MATFolderPath)
 
             MATDirStruct = dir([MATFolderPath, '\*.mat']);
 
             for i = 1:length(MATDirStruct)
                 fileName = [MATFolderPath, '\', MATDirStruct(i).name];
 
-                obj = obj.addTrial(fileName);
+                obj = obj.addTrialV2(variableCellName, fileName);
 
 
             end
@@ -178,6 +187,49 @@ classdef GraphPlotClass
             obj.experimentDataStruct(entryIndex).trialData(contactIndex).nTrial = size(newGoalData,1);
         end
 
+        function obj = addTrialV2(obj, variableCellName, MATFile)
+            tableStruct = load(MATFile, variableCellName{:});
+            [experimentTitle, experimentContact, trialNumber] = obj.addressFromPath(MATFile);
+
+            existingExperimentFlag = ismember({obj.experimentDataStruct(:).Title}, experimentTitle);
+            if any(existingExperimentFlag)
+                entryIndex = find(existingExperimentFlag);
+            else
+                entryIndex = length(existingExperimentFlag) + 1;
+                obj.experimentDataStruct(entryIndex).Title = experimentTitle;
+            end
+
+
+
+            existingContactNumberFlag = ismember(obj.experimentDataStruct(entryIndex).nContact(:), experimentContact);
+            if any(existingContactNumberFlag)
+                contactIndex = find(existingContactNumberFlag);
+            else
+                contactIndex = length(existingContactNumberFlag)+1;
+                obj.experimentDataStruct(entryIndex).nContact(contactIndex) = experimentContact;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).contactNumber = experimentContact;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = table.empty;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = table.empty;
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).contactsTable = table.empty;
+            end
+
+            varName = fieldnames(tableStruct);
+            for n = 1 : length(varName)
+                existingData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).(varName{n});
+                if strcmp(varName{n}, 'contactsTable')
+                    trialContact = addvars(tableStruct.(varName{n}), ...
+                                            repmat(trialNumber, size(tableStruct.(varName{n}),1),1), ...
+                                            'Before', 1, ...
+                                            'NewVariableNames', 'Trial Number');
+                    newData = [existingData; trialContact];
+                else
+                    newData = [existingData; tableStruct.(varName{n})];
+                end
+                obj.experimentDataStruct(entryIndex).trialData(contactIndex).(varName{n}) = newData;
+
+            end
+            obj.experimentDataStruct(entryIndex).trialData(contactIndex).nTrial = size(obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable,1);
+        end
 
 
         function obj = renameTableColumns(obj)
