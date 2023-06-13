@@ -101,6 +101,9 @@ RUNTIME_ARGS.SENSE.MODE = {'dist'};
 % axis 
 %RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
+%Set the stopping Criterion to be when the change in COC is less than 0.1
+%for 3 contacts
+RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('COC', 0.05, 6)
 
 %% -------- Test Specific Set Up ------------ %%
 % 
