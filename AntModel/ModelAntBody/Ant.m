@@ -1,6 +1,5 @@
 classdef Ant
-    %ANT Object class Ant that holds the position and pose properties of an
-    %ant RigidBodyTree, as well as its controllers and evaluation classes.
+    %ANT Object class Ant that holds the position and pose properties of an ant RigidBodyTree, as well as its controllers and evaluation classes.
 
     properties
 
@@ -68,10 +67,10 @@ classdef Ant
             types = [{"Antenna"}, {"Antenna"},{"Mandible"},{"Mandible"}];
             control_type = [{RUNTIME_ARGS.SEARCH.MODE}, {RUNTIME_ARGS.SEARCH.MODE},{nan},{nan}];
             colours = [{'blue'}, {'red'}, {'green'}, {'green'}];
-            % "end_effectors" are the link names found in the URDF of the
+            % "end_effectors" are the link names found in the rigidBodyTree of the
             % last link in the chain
             end_effectors = [{"l_tip"}, {"r_tip"}, {"left_jaw_tip"}, {"right_jaw_tip"}];
-            % "base names" are the link names found in the URDF of the first link in the chain
+            % "base names" are the link names found in the rigidBodyTree of the first link in the chain
             base_names = [{"left_antenna_base"}, {"right_antenna_base"}, {"left_jaw_base"}, {"right_jaw_base"}];
 
             for i = 1:length(names)
@@ -110,15 +109,15 @@ classdef Ant
             %Initialise the state of the grasp to be incomplete, and 0
             obj.grasp_complete = 0;
 
-            %Call the function to display the model URDF with all of the
+            %Call the function to display the model rigidBodyTree with all of the
             %obj parameters
             obj.plotAnt();
 
         end
 
         function plotAnt(obj)
-            %% PLOTANT Visualise the model URDF in Figure 1
-            % If this specific plot is enabled then display the ant URDF
+            %% PLOTANT Visualise the model rigidBodyTree in Figure 1
+            % If this specific plot is enabled then display the ant rigidBodyTree
             % using the pose and position stored in this instance of the
             % class.
             %%
@@ -128,7 +127,7 @@ classdef Ant
             end
         end
 
-        function [obj, sensedData, goalOut, costStruct] = update(obj, env)
+        function [obj, sensedData, graspOut, costStruct] = update(obj, env)
             %% UPDATE The main function for the Ant Class which is called at every time step.
             % Input:
             % obj - the current instance of the class Ant that calls the
@@ -147,48 +146,60 @@ classdef Ant
             %%
             %Initialise an empty cost table
             costStruct = struct();
-            
 
-            %Update global position, and position in both the current Ant
-            %instance, and the cost struct
+            %Update global position, and position in both the current Ant instance, and the cost struct
             [obj.positionController, obj.position, motionFlag, costStruct.position] = obj.positionController.updatePosition(obj.position, obj.q);
             
             %Plot the ant pose and position
             obj.plotAnt();
 
+            %Update the pose controller and return any sensed information,
+            %uses motionFlag to determine whether the position has changed
+            %since the last pose update
             [obj, sensedData, costStruct.pose] = obj.poseController.updatePose(obj, env, motionFlag);
 
             %Plot the ant pose and position
             obj.plotAnt();
 
-
             %Evaluate the sensory data to instruct behaviour
-            [obj, goalOut, costStruct.goal] = obj.graspGen.check(obj, sensedData, env);
+            % Returns a grasp location (not the target goal) if the right conditions have been met
+            [obj, graspOut, costStruct.goal] = obj.graspGen.check(obj, sensedData, env);
 
-            % Update goals
-            %If graspGenerator indicates to move
-            if ~goalOut.isempty() && ~obj.grasp_complete
+            % If a grasp has been generated for the first time
+            if ~graspOut.isempty() && ~obj.grasp_complete
                
-                goalOut.plotGoal(obj.RUNTIME_ARGS.PLOT);
+                %Visualise the grasp
+                graspOut.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
-                %Evaluate goal
-                goalOut.qualityObj = obj.graspEval.evaluateGoal(goalOut, env);
+                %Evaluate the external quality of the grasp (based on true
+                %values not model perspective)
+                graspOut.qualityObj = obj.graspEval.evaluateGoal(graspOut, env);
 
                 % End the experiment trial loop
                 obj.grasp_complete = 1;
 
 
             end
-            %% [COST] Calculate memory space occupied by contact points
+            % [COST] Calculate memory space occupied by contact points
             ant_contact_points = obj.contact_points;
             whos_struct = whos('ant_contact_points');
             costStruct.memory.contact_points = whos_struct.bytes;
         end
 
         function distance = findMaxMandibleDist(obj)
+            %% FindMaxMandibleDist Find the euclidian distance between the two mandible tips when fully open.
+            % Input:
+            % obj - current instance of the Ant class
+            % Output:
+            % distance - The euclidian distance between the two mandible
+            % tip "links" when the mandible joints are fully open.
+            %%
 
+            % Initialise an empty array to store the cartesian tip
+            % locations
             end_point = [];
-            %Return the maximum joint positions of the mandibles
+
+            %Find the maximum joint positions of the mandibles
             for i=1:length(obj.limbs)
                 if strcmp(obj.limbs{i}.type, "Mandible")
                     %Find the joint limits
@@ -196,23 +207,41 @@ classdef Ant
 
                     %Find the end position of the mandible tip given this
                     %pose
+                    %Although the rest of the rigidBodyTree pose should not impact
+                    %the calculations, it is included
                     pose = obj.q;
                     pose(obj.limbs{i}.joint_mask == 1) = max_q;
+                    %Find the transform between the base link of the
+                    %obj.antTree and the end effector of the single
+                    %mandible
                     TF = getTransform(obj.antTree, pose, obj.limbs{i}.end_effector);
 
+                    %Convert the 4x4 Transform into a translation vector
                     end_point(end+1,:) = tform2trvec(TF);
                 end
             end
 
+            % Calculate the vector offset between the two end points
             A2B = end_point(1,:) - end_point(2,:);
+            % Find the euclidian distance of this vector
             distance = sqrt(sum(A2B.^2));
-
-
 
         end
 
         function distance = findMandibleDepth(obj)
-
+            %% FINDMANDIBLEDEPTH Used to find the distance between the 
+            % mandible tips when fully open and the model head, connected 
+            % at the base of the mandible, to represent the depth of clearance 
+            % available when grasping.
+            % Input:
+            % obj - Current instance of the Ant class
+            % Output:
+            % distance - Mean euclidian distance between the base link and
+            % the tip of the chain that makes up each mandible half.
+            %%
+            
+            %Initialise empty arrays to hold the positions of the tip and
+            %base links
             tip = [];
             base = [];
             %Return the maximum joint positions of the mandibles
@@ -225,28 +254,45 @@ classdef Ant
                     %pose
                     pose = obj.q;
                     pose(obj.limbs{i}.joint_mask == 1) = max_q;
+
+                    %Find the position of the tip and base of each mandible
+                    %in the Ant rigidBodyTree reference frame.
                     tip(end+1,:) = tform2trvec(getTransform(obj.antTree, pose, obj.limbs{i}.end_effector));
                     base(end+1,:) = tform2trvec(getTransform(obj.antTree, pose, obj.limbs{i}.base_name));
-                
                 end
             end
 
+            %Find the midpoint of each tip and the midpoint of each base
             tip_midpoint = mean(tip,1);
             base_midpoint = mean(base,1);
             
+            %Find the euclidian distance between the midpoint of the tips
+            %and bases
             distance = vecnorm(tip_midpoint - base_midpoint);
-
 
         end
 
         function obj = addContact(obj, contactStruct)
+        %% ADDCONTACT Add the properties of the sensed contact point to the struct array in this instance of the Ant class
+        % Input: 
+        % contactStruct - cell array of structs with the contact
+        % information of the sensed collisions from a single time step
+        % Output:
+        % obj - A copy of the current instance of the Ant class with any
+        % modifications made
+        %%
             for n = 1:length(contactStruct)
                 if ~isempty(contactStruct)
                     obj.contact_points(end+1).point = contactStruct{n}.point;
                     obj.contact_points(end).normal = contactStruct{n}.normal;
                     obj.contact_points(end).limb = contactStruct{n}.limb;
-
+                    
+                    % Determine whether the new length of the contact point
+                    % struct array is over the memory limit
                     length_difference = length(obj.contact_points) - obj.memory_size;
+                    % Remove any points from the bottom of the stack that
+                    % cause the memory of contact points to be over the
+                    % limit.
                     if length_difference > 0
                         obj.contact_points(1:length_difference) = [];
                     end
