@@ -165,20 +165,23 @@ classdef Ant
             % Returns a grasp location (not the target goal) if the right conditions have been met
             [obj, graspOut, costStruct.goal] = obj.graspGen.check(obj, sensedData, env);
 
+
             % If a grasp has been generated for the first time
             if ~graspOut.isempty() && ~obj.grasp_complete
                
                 %Visualise the grasp
                 graspOut.plotGoal(obj.RUNTIME_ARGS.PLOT);
 
+                %Test whether the neck control still works
+                obj.neckObj = obj.poseController.newNeckTrajectory(obj.neckObj, obj.q, graspOut);
+
                 %Evaluate the external quality of the grasp (based on true
                 %values not model perspective)
                 graspOut.qualityObj = obj.graspEval.evaluateGoal(graspOut, env);
 
                 % End the experiment trial loop
-                obj.grasp_complete = 1;
-
-
+                %obj.grasp_complete = 1;
+                
             end
             % [COST] Calculate memory space occupied by contact points
             ant_contact_points = obj.contact_points;

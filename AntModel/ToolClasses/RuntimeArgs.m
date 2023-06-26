@@ -309,7 +309,9 @@ classdef RuntimeArgs
             jointControlMethod = {'mean'};
             varianceMethod = {'varinc', 'vardec', 'IPD', 'var='};
 
-
+            % In case any arguments have been included as empty cells
+            emptyFlag = cellfun(@isempty, cellInstruct);
+            cellInstruct(emptyFlag) = [];
             methodFlag = contains(availableMethod, cellInstruct);
 
 
@@ -349,6 +351,9 @@ classdef RuntimeArgs
                 jointControlFlag = contains(jointControlMethod, cellInstruct);
                 if any(jointControlFlag)
                     obj.SEARCH.MODE{2} = jointControlMethod{jointControlFlag == 1};
+                elseif contains('GMM', cellInstruct)
+                    warning('GMM Not compatible with joint control, set to "mean"')
+                    obj.SEARCH.MODE{2} = 'mean';
                 end
 
             end

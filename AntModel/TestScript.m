@@ -54,15 +54,15 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
 % % experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
-% stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
 % experiments.
-% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
+ RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
 % % stl file (binary) to import
-% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
+ RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
@@ -70,6 +70,14 @@ RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
 % RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
 % % stl file (binary) to import
 % RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
+
+%% Object to sense
+% % Scale is linear scale about the centre of the object, varies for all
+% % experiments.
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
+% % stl file (binary) to import
+%RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
+
 
 %% Ant body setup
 % Body motion not required for these experiments
@@ -81,7 +89,7 @@ motion_type = {'joint'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}
-control_method = {'random'};
+control_method = {'mean'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
@@ -96,10 +104,10 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 
 % ------------- Goal Selection Method ---------- %
 % Checks all points for each of the modes included in the brackets
-RUNTIME_ARGS.SENSE.MODE = {'dist'};
+%RUNTIME_ARGS.SENSE.MODE = {'dist'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis 
-%RUNTIME_ARGS.SENSE.MODE = {'PCA'};
+RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
 %Set the stopping Criterion to be when the change in COC is less than 0.05
 %for 6 contacts

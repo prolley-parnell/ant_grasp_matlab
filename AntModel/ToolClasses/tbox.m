@@ -86,6 +86,106 @@ classdef tbox
 
         end
 
+
+        function waypoints = generateNeckTrajectory(neckIn, qIn, goalStructIn)
+            %% GENERATENECKTRAJECTORY For rotating the head of the model using the neck joints
+            % Input:
+            % obj - current instance of the SampleActionGen class
+            % neckIn - an instance of the Neck class
+            % qIn - The full joint configuration of the ant rigidBodyTree
+            % goalStructIn - a filled instance of the goalStruct class
+            % Output:
+            % waypoints - 4x4xn array of transformations mapping to each intermediate pose towards the goal 
+            %%
+
+            % Find the rotation transform required to make the ant head
+            % align with the desired grasp
+            [~,global2goalR] = tbox.findGoalrotmat(goalStructIn);
+
+            % Extract the start and end links in the kinematic chain
+            sourcebody = neckIn.base_name;
+            targetbody = neckIn.end_effector;
+
+            % Find the transform between the neck end and base (reverse) within the
+            % full ant model tree at the current pose
+            currentPoseTF = getTransform(neckIn.full_tree, qIn, targetbody, sourcebody);
+            % Find the transform between the neck end and base (reverse) with the
+            % full ant model but at the default home pose
+            base2EETF = getTransform(neckIn.full_tree, homeConfiguration(neckIn.full_tree), targetbody, sourcebody);
+
+            % Transform from the neutral pose, not the current pose to find
+            % the goal head rotation
+            goalPose = rotm2tform(global2goalR) * base2EETF;
+
+
+            % interpolate between the current pose and the rotated pose
+            tSamples = 0:0.05:1;
+            [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
+
+
+            
+        end
+
+
+
+        function [mandibleOut, successFlag] = loadMandibleTrajectory(mandibleIn, qIn, maxVelocity, interval)
+            %% LOADMANDIBLETRAJECTORY Generate a joint trajectory to follow the path of motion set in a mandible Limb instance
+            % Input:
+            % obj - current instance of the SampleActionGen class
+            % mandibleIn - An instance of the Limb class corresponding to
+            % a mandibular jaw
+            % qIn - the current full body joint configuration
+            % maxVelocity - The velocity limits of the full ant
+            % rigidBodyTree
+            % interval - The time step between each cycle of the simulation
+            % (RA.RATE)
+            % Output:
+            % mandibleOut - The modified instance of the Limb class relating to the mandible
+            % successFlag - Boolean flag to indicate whether a trajectory
+            % was successfully added to the Limb instance
+            %%
+            % Initialise the mandibleOut to be a copy of mandibleIn
+            mandibleOut = mandibleIn;
+
+            try
+                if and(abs(mandibleIn.motion_state), ~mandibleIn.collision_latch) %If the mandible is opening or closing and is not in collision currently
+                    if mandibleIn.motion_state < 0
+                        %opening
+                        col = 2;
+                    else
+                        %closing
+                        col = 1;
+                    end
+
+                    %Find the joint limits for the mandibleIn
+                    goal_joint_val = mandibleIn.joint_limits(:,col);
+                    %Find the current pose of the mandible subtree
+                    current_joint_val = qIn(mandibleIn.joint_mask==1);
+
+                    %Find the start and end joint pose values to
+                    %interpolate between
+                    points = [current_joint_val , goal_joint_val];
+
+                    %Divide the trajectory into 10 intervals
+                    numSamples = 10;
+
+                    %Find the joint values to move between the current and
+                    %the desired mandible pose
+                    [q, ~, ~, ~, ~] = trapveltraj(points, numSamples, 'PeakVelocity', maxVelocity(mandibleIn.joint_mask==1)*interval);
+                    %Remove the duplicate position
+                    q(:,1) = [];
+
+                    %Save the joint trajectory to the mandible Limb object
+                    mandibleOut.trajectory_queue = q;
+                else
+                    mandibleOut.trajectory_queue = [];
+                end
+                successFlag = 1;
+            catch
+                successFlag = 0;
+            end
+        end
+
         function goalOut = offsetPositionByTransform(goalIn, tformIn, positionIn)
             %OFFSETPOSITIONBYTRANSFORM Given a goal position to navigate to,
             %change that position so that it is reached by a given

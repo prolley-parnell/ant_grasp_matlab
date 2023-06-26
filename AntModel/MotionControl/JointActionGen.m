@@ -282,73 +282,8 @@ classdef JointActionGen
 
         end
 
-        function outputTrajectory = loadNeckTrajectory(obj, neckIn, qIn, goalStructIn)
-
-            [yawOut,global2goalR] = tbox.findGoalrotmat(goalStructIn);
-
-            % -- Apply the difference in rotation to the current pose of
-            % the head
-
-            sourcebody = neckIn.base_name;
-            targetbody = neckIn.end_effector;
-            currentPoseTF = getTransform(neckIn.full_tree, qIn, targetbody, sourcebody);
-            base2EETF = getTransform(neckIn.full_tree, homeConfiguration(neckIn.full_tree), targetbody, sourcebody);
 
 
-            goalPose = rotm2tform(global2goalR) * base2EETF;
-
-
-            % -- interpolate between the current pose and the rotated pose
-            tSamples = 0:0.05:1;
-            [waypoints,~,~] = transformtraj(currentPoseTF,goalPose,[0 1],tSamples);
-
-            outputTrajectory = obj.trajfromWP(neckIn, waypoints, qIn);
-
-        end
-
-
-
-        function [mandibleOut, successFlag] = loadMandibleTrajectory(obj, mandibleIn, qIn)
-            mandibleOut = mandibleIn;
-            try
-                %Stock the trajectory variable with the joint positions to
-                %match the motion direction
-
-                if and(abs(mandibleIn.motion_state), ~mandibleIn.collision_latch)
-                    if mandibleIn.motion_state < 0
-                        %opening
-                        col = 2;
-                    else
-                        %closing
-                        col = 1;
-                    end
-
-
-                    %Find the maximum open joint values
-                    goal_joint_val = mandibleIn.joint_limits(:,col);
-                    current_joint_val = qIn(mandibleIn.joint_mask==1);
-
-                    points = [current_joint_val , goal_joint_val];
-                    numSamples = 10;
-
-                    [q, ~, ~, ~, ~] = trapveltraj(points, numSamples, 'PeakVelocity', obj.maxvelocities(mandibleIn.joint_mask==1)*obj.interval);
-                    %Remove the duplicate position
-                    q(:,1) = [];
-                    mandibleOut.trajectory_queue = q;
-
-                else
-                    mandibleOut.trajectory_queue = [];
-
-                end
-
-                successFlag = 1;
-
-            catch
-
-                successFlag = 0;
-
-            end
-        end
     end
 end
 

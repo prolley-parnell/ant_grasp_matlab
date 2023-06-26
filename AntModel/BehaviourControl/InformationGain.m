@@ -23,7 +23,7 @@ classdef InformationGain
             %INFORMATIONGAIN Construct an instance of this class
             %   Use the runtime args to define which components are
             %   considered in information gain
-            measureArg = RUNTIME_ARGS.SEARCH_SPACE.REFINE.ARG;
+            measureArg = RUNTIME_ARGS.SEARCH.REFINE.ARG;
             nMeasureArg = length(measureArg);
             measureIGEF = {'psi1', 'psi2', 'psi3', 'psi4'};
             measureFlag = zeros([nMeasureArg,4]);
@@ -40,10 +40,10 @@ classdef InformationGain
     
             %Parameters set by Active Tactile Exploration Based on
             %Cost-Aware Information Gain Maximisation
-            obj.sig1 = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(1);
-            obj.sig3 = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(2);
-            obj.sigalpha = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(3);
-            obj.mu3 = RUNTIME_ARGS.SEARCH_SPACE.REFINE.PARAM(4);
+            obj.sig1 = RUNTIME_ARGS.SEARCH.REFINE.PARAM(1);
+            obj.sig3 = RUNTIME_ARGS.SEARCH.REFINE.PARAM(2);
+            obj.sigalpha = RUNTIME_ARGS.SEARCH.REFINE.PARAM(3);
+            obj.mu3 = RUNTIME_ARGS.SEARCH.REFINE.PARAM(4);
 
         end
 
@@ -54,15 +54,12 @@ classdef InformationGain
             goalOut = goalPropStruct(1);
             %Deal with exceptions (no contact points, or no refinement
             %measures)
-            if length(obj.cp) < 1
+            nMeasures = length(obj.information_measures);
+            if nMeasures < 1
+                warning("No refinement measures defined, selecting goal 1")
                 return
-            else
-                nMeasures = length(obj.information_measures);
-                if nMeasures < 1
-                    warning("No refinement measures defined, selecting goal 1")
-                    return
-                end
             end
+
             nGoal = length(goalPropStruct);
             psi1 = ones([nGoal,1]);
             psi2 = ones([nGoal,1]);

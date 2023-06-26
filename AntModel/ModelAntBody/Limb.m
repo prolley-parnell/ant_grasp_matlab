@@ -179,99 +179,171 @@ classdef Limb
 
 
         function [body_idx, subtree] = findTreeIdx(obj, tree, varargin)
+            %% FINDTREEIDX Using the full rigidBodyTree, extract the Limb subtree and the corresponding link indices that map to the full tree
+            % Input:
+            % tree - a rigidBodyTree object usually of the full Ant model
+            % varargin - options
+            %   a) a rigidBodyTree object already extracted that is a subtree
+            %   of the full tree
+            %   b) multiple cells as text descriptors of where to break the
+            %   full tree e.g. {'antenna', 'right'} or {'jaw'} - Throws an
+            %   error if the side is not specified and the first cell is
+            %   not the object type
+            %   Will throw an error is the subtree is not in the first
+            %   parameter and a base link name is also included
+            % Output:
+            % body_idx - The integer values that can be used to address the
+            % "Bodies" that make up the full rigidBodyTree of the Ant and
+            % map to the links that make up the subtree
+            % subtree - The rigidBodyTree object made up of the links and
+            % joints after the specified base link name.
+            %%
 
-
+            % Rename functions to identify whether the input argument is a
+            % valid rigidBodyTree and to detemine whether the input is a
+            % valid text format. Used for readability.
             validTree = @(x)isa(x, 'rigidBodyTree');
             validText = @(x) isstring(x) || ischar(x) ;
 
 
-            %If the user provides a subtree, skip ahead
-            if and(length(varargin) == 1, validTree(varargin{1}))
-                %do nothing new
+            %If the user provides only a valid subtree, use this input
+            if and(length(varargin) == 1, validTree(varargin{1}))                
                 subtree = varargin{1};
 
+            % If the first input parameter is a valid text input
             elseif validText(varargin{1})
+                % Define the possible components of the text input
                 LR = ['left', 'right'];
                 AJ = ['antenna', 'jaw'];
-                %If the user provides an effector side as well as a
-                %base_link_name, make a new subtree
+
+                %If the first input argument specifies a limb type (found in AJ), and they provide more than one input
                 if and(any(strcmp(varargin{1}, AJ)) , length(varargin) >1)
-
+                    
+                    %Extract the specific string in the correct text case
                     part_name = AJ(strcmp(varargin{1}, AJ));
-
                     side_name = LR(strcmp(varargin{2}, LR));
 
-                    %Crop the subtree to only the side specified
+                    % Compose a string matching the link naming structure
                     new_base_name = side_name + '_' + part_name + '_base';
+                    %Crop the subtree to only the side specified
                     subtree = obj.makeSubTree(tree, new_base_name);
 
-                else
-                    %If the user provides no subtree but a base_link_name, then
-                    %make a new subtree
+                else %If there is more than one input argument or the first parameter is not matching one of the limb types
+                    % Assume the first input argiment is a text string that
+                    % matches the naming structure of the base link in the
+                    % full rigidBodyTree
                     base_link_name = varargin{1};
+                    %Extract the subtree after this link
                     subtree = obj.makeSubTree(tree, base_link_name);
                 end
 
             else
+                % Error, Idx of subtree cannot be found
                 disp("You must provide reference to a subtree to index")
                 return
             end
 
+            % Extract the string names of all the bodies that make up the
+            % subtree
             link_names = subtree.BodyNames;
 
+            % Initialise the set of body_idx to be nan
+            body_idx = nan(1, length(link_names));
+
+            % Loop through all the link names and find the index of the
+            % corresponding link in the full rigidBodyTree
             for i = 1:length(link_names)
                 name = link_names{i};
                 body_idx(i) = find(strcmp(tree.BodyNames, name));
-
             end
         end
 
         function [mask, joint_limits] = findJointMask(~, tree, body_idx)
-            %Find the mask that represents the joints in the mandibles
+            %% FINDJOINTMASK Return a binary mask that identifies the variable joints from a rigidBodyTree object that connect to the links indexed by body_idx
+            % Input:
+            % tree - a rigidBodyTree object
+            % body_idx - integer array with each value mapping to a link in
+            % the input tree object
+            % Output:
+            % mask - a binary nx1 array where n is the total number of variable
+            % joints in "tree", and equal to 1 if the joint is connected to
+            % links defined by body_idx and 0 otherwise
+            % joint_limits - Extracts the maximum and minimum joint limits
+            % for the joints indicated by the mask
+            %%
+
+            %Initialise the arrays to be empty
             tree_q = [];
             joint_limits = [];
 
+            % Extract the array of all Bodies found in the input tree
             bodies = tree.Bodies(:);
+
+            % Loop across all Bodies in the array
             for i = 1:length(bodies)
-
+                
                 joint_type = bodies{i}.Joint.Type;
-
+                % If the type of the joint is not 'fixed'
                 if ~strcmp(joint_type,'fixed')
-
+                    % Find whether this specific body is requested by the
+                    % body_idx
                     index = find(body_idx == i);
+                    
+                    % If the movable joint is relevant as the index is not
+                    % empty
                     if ~isempty(index)
+                        % Set the mask = 1
                         tree_q(end+1) = 1;
+
+                        % Extract the joint limits of this specific joint
                         joint_limits(end+1,:) = bodies{i}.Joint.PositionLimits;
 
                     else
+                        % Set the mask = 0
                         tree_q(end+1) = 0;
-
-
                     end
                 end
             end
-
+            
+            % Ensure the mask matches the array size needed for later use
             mask = tree_q';
 
 
         end
 
-        function qOut = findIKforGlobalPt(obj, goalPoint)
-            nGoal = size(goalPoint,2); %Assumes a 3xn matrix of points
-            qOut = [];
-            for i = 1:nGoal
-                goalPose = trvec2tform(goalPoint(:,i)');
-                weights = [0 0 0 0.8 0.8 0.8]; %Weight the tolerance for cartesian position (4:6) rather than orientation (1:3)
-                initialguess = homeConfiguration(obj.subtree);
-            
-                ik = inverseKinematics('RigidBodyTree', obj.subtree);
-                [configSol,solInfo] = ik(obj.end_effector,goalPose,weights,initialguess);
-                qOut = [qOut, configSol];
-                
-            end
-
-
-        end
+%         function qOut = findIKforGlobalPt(obj, goalPoint)
+%             %% FINDIKFORGLOBALPT [REDUNDANT]
+%             % Indicate the number of goals (assumes cartesian goal)
+%             nGoal = size(goalPoint,2); %Assumes a 3xn matrix of points
+%             %Initialise qOut to be a 0x0 array
+%             qOut = [];
+% 
+%             %Loop across all provided goals
+%             for i = 1:nGoal
+%                 % convert the goal into a 4x4 transform
+%                 goalPose = trvec2tform(goalPoint(:,i)');
+%                 % set the weights for IK to consider the location more than
+%                 % the orientation of the end effector
+%                 weights = [0 0 0 0.8 0.8 0.8]; %Weight the tolerance for cartesian position (4:6) rather than orientation (1:3)
+%                 % Set the initial guess to be the home location (may give
+%                 % inappropriate joint poses, but minimises the joint
+%                 % variation to reach the goal)
+%                 initialguess = homeConfiguration(obj.subtree);
+%             
+%                 %Define the inverse kinematic solver for the subtree
+%                 ik = inverseKinematics('RigidBodyTree', obj.subtree);
+% 
+%                 % Find the joint configuration to reach the goal pose
+%                 [configSol,solInfo] = ik(obj.end_effector,goalPose,weights,initialguess);
+% 
+%                 % Append the joint configuration for goal i to the end of
+%                 % the array
+%                 qOut = [qOut, configSol];
+%                 
+%             end
+% 
+% 
+%         end
 
     end
 end

@@ -25,8 +25,8 @@ classdef PoseControlClass
             elseif strcmp(RUNTIME_ARGS.SEARCH.MODE{1}, 'joint')
                 obj.actionGen = JointActionGen(RUNTIME_ARGS);
             end
-            
-            
+
+
 
             obj.antTree = antTree;
 
@@ -49,7 +49,7 @@ classdef PoseControlClass
         % --------- Generalised Limb Update Function
         function [ant, contactStructArray, limbCostStruct] = updateLimbs(obj, ant, env, motionFlag)
             limbCostStruct = struct();
-            
+
             limbs = ant.limbs;
             contactStructArray = [];
 
@@ -68,7 +68,6 @@ classdef PoseControlClass
                 [limbs{i}, dataStruct] = obj.tactileSenseEval(limbs{i}, ant.q, ant.position, env);
                 contactStructArray = cat(1,contactStructArray, [dataStruct{:}]');
 
-
                 switch(limbs{i}.type)
                     case "Antenna"
                         [obj, limbs{i}, qLocal, moveTime] = obj.moveAntenna(limbs{i}, ant.q, ant.position);
@@ -77,6 +76,7 @@ classdef PoseControlClass
                     case "Leg"
                         warning("Leg control is not yet implemented");
                 end
+
                 %%[COST] Save the movetime cost for each limb
                 limbCostStruct.time(i) = moveTime;
                 qFull = ant.q;
@@ -154,7 +154,7 @@ classdef PoseControlClass
 
             %objID = 1;
             distThreshold = 0.09;
-            
+
             subpose = q(limbIn.joint_mask == 1);
             subtree = limbIn.subtree;
             limbOut = limbIn;
@@ -180,7 +180,7 @@ classdef PoseControlClass
                 point_normal = nan([nCollision, 3]);
                 for i = 1:nCollision
                     witness_pts = witnessPoints(3*body_i(i)-2:3*body_i(i), 2*collision_i(i)-1:2*collision_i(i));
-                    
+
                     %surface_normals(i,:) = tbox.findNormalCollision(env.FBT{collision_i(i)}, pointOnObj(i,:));
                     [point_on_obj(i,:), point_normal(i,:)] = tbox.findPointOnObjNormalID(env.FBT{collision_i(i)}, witness_pts(:,2)');
                 end
@@ -233,7 +233,7 @@ classdef PoseControlClass
 
                     %[TODO] [COST] Add time taken to load a mandible
                     %trajectory
-                    [mandibleOut, reloadSuccessFlag] = obj.actionGen.loadMandibleTrajectory(mandibleIn, qIn);
+                    [mandibleOut, reloadSuccessFlag] = tbox.loadMandibleTrajectory(mandibleIn, qIn, obj.actionGen.maxvelocities, obj.interval);
 
                     if ~reloadSuccessFlag
                         return
@@ -256,14 +256,17 @@ classdef PoseControlClass
             end
         end
 
+        % ------------ Neck Pose update function
+
         function [neckOut] = newNeckTrajectory(obj, neckIn, qIn, goalStruct)
             neckOut = neckIn;
-            neckOut.trajectory_queue = obj.actionGen.loadNeckTrajectory(neckIn, qIn, goalStruct);
-
+            if obj.RUNTIME_ARGS.BODY_MOTION_ENABLE
+                waypoints = tbox.generateNeckTrajectory(neckIn, qIn, goalStruct);
+                %Turn the sequential 4x4 poses into joint configurations
+                neckOut.trajectory_queue = neckIn.findIKforNeckPose(waypoints, qIn);
+            end
         end
 
-
-        % ------------ Neck Pose update function
         function [antOut] = moveNeck(~, antIn)
             antOut = antIn;
             qIn = antIn.q;
@@ -274,8 +277,6 @@ classdef PoseControlClass
                 antOut.neckObj = neckOut;
                 antOut.q = neckOut.applyMask(qIn, qLocal);
             end
-
-
 
         end
 
