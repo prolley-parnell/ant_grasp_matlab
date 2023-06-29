@@ -34,7 +34,7 @@ classdef Ant
     methods
 
         function obj = Ant(RUNTIME_ARGS)
-            %ANT Construct an instance of this class
+            %% ANT Construct an instance of this class
             %Save a copy of the RuntimeArgs (RA)
             obj.RUNTIME_ARGS = RUNTIME_ARGS;
 
@@ -180,7 +180,7 @@ classdef Ant
                 graspOut.qualityObj = obj.graspEval.evaluateGoal(graspOut, env);
 
                 % End the experiment trial loop
-                %obj.grasp_complete = 1;
+                obj.grasp_complete = 1;
                 
             end
             % [COST] Calculate memory space occupied by contact points
@@ -302,9 +302,6 @@ classdef Ant
                 end
             end
         end
-
     end
-
-
 end
 

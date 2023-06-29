@@ -205,10 +205,6 @@ classdef tbox
 
         end
 
-        function outputArray = replaceLocalTransform(pointArray, currentLocalTF, desiredLocalTF)
-
-        end
-
         function globalPosition = findFKglobalPosition(RBTree, qIn, positionIn, endEffectorName)
             %FINDENDEFFECTORGLOBALPOSITION Find the cartesian coordinates of an
             %end effector

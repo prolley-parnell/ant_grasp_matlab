@@ -310,41 +310,6 @@ classdef Limb
 
 
         end
-
-%         function qOut = findIKforGlobalPt(obj, goalPoint)
-%             %% FINDIKFORGLOBALPT [REDUNDANT]
-%             % Indicate the number of goals (assumes cartesian goal)
-%             nGoal = size(goalPoint,2); %Assumes a 3xn matrix of points
-%             %Initialise qOut to be a 0x0 array
-%             qOut = [];
-% 
-%             %Loop across all provided goals
-%             for i = 1:nGoal
-%                 % convert the goal into a 4x4 transform
-%                 goalPose = trvec2tform(goalPoint(:,i)');
-%                 % set the weights for IK to consider the location more than
-%                 % the orientation of the end effector
-%                 weights = [0 0 0 0.8 0.8 0.8]; %Weight the tolerance for cartesian position (4:6) rather than orientation (1:3)
-%                 % Set the initial guess to be the home location (may give
-%                 % inappropriate joint poses, but minimises the joint
-%                 % variation to reach the goal)
-%                 initialguess = homeConfiguration(obj.subtree);
-%             
-%                 %Define the inverse kinematic solver for the subtree
-%                 ik = inverseKinematics('RigidBodyTree', obj.subtree);
-% 
-%                 % Find the joint configuration to reach the goal pose
-%                 [configSol,solInfo] = ik(obj.end_effector,goalPose,weights,initialguess);
-% 
-%                 % Append the joint configuration for goal i to the end of
-%                 % the array
-%                 qOut = [qOut, configSol];
-%                 
-%             end
-% 
-% 
-%         end
-
     end
 end
 

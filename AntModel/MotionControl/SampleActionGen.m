@@ -141,7 +141,7 @@ classdef SampleActionGen
         end
 
         function waypoints = generateWaypoints(obj, start_pt, end_pt, pattern)
-            %% GENERATEWAYPOINTS [DEPRECIATED] Generate a set of cartesian points to form a trajectory between two cartesian points based on a path descriptor
+            %% GENERATEWAYPOINTS Generate a set of cartesian points to form a trajectory between two cartesian points based on a path descriptor
             % Input:
             % obj - the current instance of the SampleActionGen class
             % start_pt - 1x3 cartesian point at the start of the trajectory

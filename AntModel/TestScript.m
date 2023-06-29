@@ -58,11 +58,11 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 % % stl file (binary) to import
 % RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
 %% Object to sense
-% % Scale is linear scale about the centre of the object, varies for all
-% experiments.
- RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
-% % stl file (binary) to import
- RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
+% % % Scale is linear scale about the centre of the object, varies for all
+% % experiments.
+%  RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
+% % % stl file (binary) to import
+%  RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
@@ -72,16 +72,16 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 % RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
 
 %% Object to sense
-% % Scale is linear scale about the centre of the object, varies for all
-% % experiments.
-% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
-% % stl file (binary) to import
-%RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
+% Scale is linear scale about the centre of the object, varies for all
+% experiments.
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
+% stl file (binary) to import
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
 
 
 %% Ant body setup
 % Body motion not required for these experiments
-RUNTIME_ARGS.BODY_MOTION_ENABLE = 1;
+RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
 
 % ------------- Antenna Motion -------------- %
 % Select point-to-point or joint based control
@@ -107,7 +107,7 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 %RUNTIME_ARGS.SENSE.MODE = {'dist'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis 
-RUNTIME_ARGS.SENSE.MODE = {'PCA'};
+RUNTIME_ARGS.SENSE.MODE = {'align'};
 
 %Set the stopping Criterion to be when the change in COC is less than 0.05
 %for 6 contacts

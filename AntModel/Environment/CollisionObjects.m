@@ -382,7 +382,7 @@ classdef CollisionObjects
 
         end
 
-        function [contactPtArray, normalArray, stlID, closeDist] = findRayIntersect(obj, orig, dir, includeOrigin, vargin)
+        function [contactPtArray, normalArray, stlID, stlMinDist] = findRayIntersect(obj, orig, dir, includeOrigin, vargin)
             %%FINDRAYINTERSECT Return the first point of intersection
             %%created along a vector from a point in space. Include which
             %%STL the ray intersects and the contact point and surface
@@ -394,7 +394,7 @@ classdef CollisionObjects
             contactPtArray = nan(1,3);
             normalArray = nan(1,3);
             stlID = -1;
-            closeDist = inf;
+            stlMinDist = inf;
 
 
             nRay = size(orig,1);
@@ -430,11 +430,19 @@ classdef CollisionObjects
 
 
                         [~, closeID] = min(abs(intersectDist));
+%                         closeDist = intersectDist(closeID);
+%                         stlID = i;
+%                         faceID = intersectID(closeID);
+%                         contactPtArray = xcoor(faceID, :);
+%                         normalArray = faceNormal(obj.FBT{i}, faceID);
                         closeDist = intersectDist(closeID);
-                        stlID = i;
-                        faceID = intersectID(closeID);
-                        contactPtArray = xcoor(faceID, :);
-                        normalArray = faceNormal(obj.FBT{i}, faceID);
+                        if closeDist < stlMinDist
+                            stlMinDist = closeDist;
+                            stlID = i;
+                            faceID = intersectID(closeID);
+                            contactPtArray = xcoor(faceID, :);
+                            normalArray = faceNormal(obj.FBT{i}, faceID);
+                        end
                     end
                 end
             end
