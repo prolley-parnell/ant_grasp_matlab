@@ -6,6 +6,8 @@ classdef RuntimeArgs
 
         PLOT
 
+        INDEPENDENT
+
         % Refresh Rate
         % This is the length of time in seconds that the system pauses for between
         % each time step in the simulation. This is real world time and helps to
@@ -77,6 +79,11 @@ classdef RuntimeArgs
             %axes.
             obj.PLOT.CAMERA = [obj.PLOT.AXES([2, 4, 6])];
 
+            %When randomly generating values, and using parallel computing,
+            %initialise the workers so the random number streams are not
+            %identical
+            obj.INDEPENDENT = true;
+
             % Refresh Rate
             % This is the length of time in seconds that the system pauses for between
             % each time step in the simulation. This is real world time and helps to
@@ -138,7 +145,7 @@ classdef RuntimeArgs
             %Sense object file path relative to AntModel
             obj.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
             %Global position of centre of object
-            obj.COLLISION_OBJ.POSITION = [0 3 0.5];
+            obj.COLLISION_OBJ.POSITION = [0 3 0];
             %Orientation of object [NOT IMPLEMENTED]
             obj.COLLISION_OBJ.ROTATION = [0 0 0]; %roll pitch yaw
             %Scale of object
@@ -183,9 +190,15 @@ classdef RuntimeArgs
             % See below function for specific default values
             obj = obj.setAntennaControl({});
 
-            obj.SEARCH.VEL = ones([10,1]) * deg2rad(5) / obj.RATE;
-            %Make the scape pedicel joint have a higher speed limit
-            obj.SEARCH.VEL([7 10]) = deg2rad(9) / obj.RATE;
+            
+            obj.SEARCH.VEL = ones([10,1]) * 2;
+            %Set the pedicel funiculus joint
+            obj.SEARCH.VEL([7 10]) = 3;
+            %Make the scape pedicel joint 2  a higher speed limit
+            obj.SEARCH.VEL([6 9]) = 3;
+            %Make the scape pedicel joint 1  a higher speed limit
+            obj.SEARCH.VEL([5 8]) = 3;
+            
 
             %Arguments required for the refinement of sampled points
             %For REFINE, specifically for the Information Gain Estimation
@@ -344,9 +357,9 @@ classdef RuntimeArgs
 
 
             elseif methodFlag(2)
-                obj.SEARCH.RANGE = [0 0.6;...
-                    0.15 0.8;...
-                    0.9 0.45];
+                obj.SEARCH.RANGE = [0.2 1;...
+                    0.2 1;...
+                    0.2 0.9];
                 obj.SEARCH.REFINE = '';
                 jointControlFlag = contains(jointControlMethod, cellInstruct);
                 if any(jointControlFlag)
@@ -413,9 +426,12 @@ classdef RuntimeArgs
                     obj.STOP.COUNT = varargin{3};
                 end
             end
-            
-
-
+            % If using number of contacts as a stopping criterion, make
+            % sure to set the length of memory to allow for this
+            if strcmp(obj.STOP.MODE, 'n_contact')
+                    obj.ANT_MEMORY = obj.STOP.THRESH;
+                    obj.SENSE.MINIMUM_N = obj.STOP.THRESH;
+            end
         end
 
         function obj = initiatePlots(obj)

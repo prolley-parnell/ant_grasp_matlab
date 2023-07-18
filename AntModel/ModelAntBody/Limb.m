@@ -1,11 +1,11 @@
 classdef Limb
-    %% LIMB 
+    %% LIMB
     % A class containing the relevant information for moving extremities on the ant, such as the antennae or mandibles, where each instance represents a single antenna or mandible jaw
 
     %%
 
     properties
-        name %Identifying name of the limb 
+        name %Identifying name of the limb
         number %Identifying index of the limb (per type)
         type %Limb type, currently "Antenna" or "Mandible"
         colour %Colour used to plot or visualise contacts made by this limb
@@ -21,14 +21,15 @@ classdef Limb
         trajectory_queue %An array where each column corresponds to a set of joint positions that make up a full trajectory
         collision_latch %A boolean flag to indicate whether the limb was in collision in the previous time step
         control_type %Taken from the RuntimeArgs.SEARCH.MODE to indicate the control method of antennae
+        traj_gen_mode %The index used for sample based path generation
         motion_state %Used mainly with mandibles, -1, 0 or 1 are opening, stationary, closing respectively.
-        
+
     end
 
     methods
         function obj = Limb(name, number, type, control_type, colour, end_effector, base_name, antTree, position, RUNTIME_ARGS)
             %LIMB Construct an instance of this class
-            
+
             %Copy the constructing variables into the current instance of
             %the class
             obj.name = name;
@@ -51,6 +52,7 @@ classdef Limb
             obj.trajectory_queue = [];
             obj.collision_latch = 0;
             obj.control_type = control_type;
+            obj = obj.findTrajGenMode();
             obj.motion_state = 0;
 
             % Set the transform for the subtree in this current Limb to
@@ -82,8 +84,8 @@ classdef Limb
             %Find the combined transform from the origin-> full ant base -> subtree base
             globalTF = positionTF * baseTF;
 
-               
-            %Set the transform between the parent of the base of the Limb chain 
+
+            %Set the transform between the parent of the base of the Limb chain
             % to include the global transform to include full Ant position change
             setFixedTransform(obj.subtree.Bodies{1,1}.Joint, globalTF);
 
@@ -142,16 +144,16 @@ classdef Limb
             % bodyTree - The rigidBodyTree that is not linked to the input
             % tree and consists of the neck and head and mandibles.
             %%
-            
+
             %Create a copy of the full rigidBodyTree as to not make changes
             %to the original
             head_subtree = copy(tree);
-            
+
             %Remove both antennae chains from this head_subtree (returns
             %itself)
             removeBody(head_subtree, 'left_antenna_base');
             removeBody(head_subtree, 'right_antenna_base');
-            
+
             bodyTree = head_subtree;
 
         end
@@ -207,10 +209,10 @@ classdef Limb
 
 
             %If the user provides only a valid subtree, use this input
-            if and(length(varargin) == 1, validTree(varargin{1}))                
+            if and(length(varargin) == 1, validTree(varargin{1}))
                 subtree = varargin{1};
 
-            % If the first input parameter is a valid text input
+                % If the first input parameter is a valid text input
             elseif validText(varargin{1})
                 % Define the possible components of the text input
                 LR = ['left', 'right'];
@@ -218,7 +220,7 @@ classdef Limb
 
                 %If the first input argument specifies a limb type (found in AJ), and they provide more than one input
                 if and(any(strcmp(varargin{1}, AJ)) , length(varargin) >1)
-                    
+
                     %Extract the specific string in the correct text case
                     part_name = AJ(strcmp(varargin{1}, AJ));
                     side_name = LR(strcmp(varargin{2}, LR));
@@ -281,14 +283,14 @@ classdef Limb
 
             % Loop across all Bodies in the array
             for i = 1:length(bodies)
-                
+
                 joint_type = bodies{i}.Joint.Type;
                 % If the type of the joint is not 'fixed'
                 if ~strcmp(joint_type,'fixed')
                     % Find whether this specific body is requested by the
                     % body_idx
                     index = find(body_idx == i);
-                    
+
                     % If the movable joint is relevant as the index is not
                     % empty
                     if ~isempty(index)
@@ -304,11 +306,41 @@ classdef Limb
                     end
                 end
             end
-            
+
             % Ensure the mask matches the array size needed for later use
             mask = tree_q';
 
 
+        end
+
+        function obj = findTrajGenMode(obj)
+            % FINDTRAJGENMODE
+            % Establish the method of generating goal properties,
+            % Through performing IK on all cartesian waypoints
+            % OR
+            % Finding an IK solution for the endPt and interpolating between qIn and the IK solution
+            %---
+            if obj.type ~= "Antenna"
+                obj.traj_gen_mode = nan;
+            else
+                trajOption = {'jointInterp', 'cartesianPath'};
+                trajGenFlag = contains(trajOption, obj.control_type);
+
+                %Check for errors in assigning the mode of generating the
+                %trajectory to the cartesian point.
+                if all(trajGenFlag)
+                    warning('Too many options selected, default to jointInterp');
+                    trajGenMode = 'jointInterp';
+                    trajGenFlag = contains(trajOption, trajGenMode);
+                elseif any(trajGenFlag)
+                    %trajGenMode = trajOption{trajGenFlag==1}
+                else
+                    warning('No option selected for traj generation, default to jointInterp')
+                    trajGenMode = 'jointInterp';
+                    trajGenFlag = contains(trajOption, trajGenMode);
+                end
+                obj.traj_gen_mode = find(trajGenFlag);
+            end
         end
     end
 end

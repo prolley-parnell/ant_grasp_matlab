@@ -1,10 +1,10 @@
-%% Experiment Template - Currently Windows only
-% 18/01/2023 - Emily Rolley-Parnell
+%% IPDAlign_CGMMC_fixvar
+%07/07/2023 - Persie Rolley-Parnell
 %% Set the environment by closing any previous figures and variables
 
 %If errors persist and the system crashes or closes, use diary to store
 %printout
-    %diary lastDiaryFile
+%diary lastDiaryFile
 
 %Close any figures and clear all variables
 close all;
@@ -17,13 +17,13 @@ modelFolder = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\'
 scriptFolder = pwd;
 cd(modelFolder)
 
-%Add the subfolders within AntModel to the path 
+%Add the subfolders within AntModel to the path
 addpath('MotionControl','ModelAntBody', 'BehaviourControl', 'Environment',...
     'urdf', 'Grasp', 'ExperimentOutput', 'ExperimentScripts', 'MainScript', 'ToolClasses');
 
 %Set the seed for any random number generation to be according to the
 %current time
-rng('shuffle');
+defaultStream = RandStream('mrg32k3a', 'Seed', 'shuffle');
 
 %% Initialise the Model Property handler - RuntimeArgs
 
@@ -33,11 +33,11 @@ RUNTIME_ARGS = RuntimeArgs();
 RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
-RUNTIME_ARGS.N_TRIALS = 50;
+RUNTIME_ARGS.N_TRIALS = 40;
 
 % Sampling rate in simulated time - smaller is smoother for plotting, but
 % takes longer to run (0.05 to 0.15)
-RUNTIME_ARGS.RATE = 0.05;
+RUNTIME_ARGS.RATE = 0.03;
 
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
@@ -69,7 +69,7 @@ control_method = {'GMM'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
-            
+
 %If using 'mean' or 'GMM' then option to set variance {'varinc', 'vardec', 'var=1.2'};
 variance_mode = {};
 
@@ -89,7 +89,7 @@ RUNTIME_ARGS.SENSE.MODE = {'dist','align'};
 
 % Experiment runs trial_n experiments per number of contact points sensed
 % before goal evaluation
-NumberOfPoints = [2:1:40];
+NumberOfPoints = [22:3:70];
 nExperiment = length(NumberOfPoints);
 
 %Structure:
@@ -101,8 +101,7 @@ experiment_name = 'dice\IPDAlign_CGMMC_fixvar'; %Fill in with the name of the fo
 
 for i = 1: nExperiment
     RUNTIME_ARGS_i(i).TRIAL_NAME = [experiment_name,'\', int2str(NumberOfPoints(i)), '_contact_pts'];
-    RUNTIME_ARGS_i(i).ANT_MEMORY = NumberOfPoints(i);
-    RUNTIME_ARGS_i(i).SENSE.MINIMUM_N = NumberOfPoints(i);
+    RUNTIME_ARGS_i(i) = RUNTIME_ARGS_i(i).setStoppingCriterion('n_contact', NumberOfPoints(i));
 end
 
 %Start timer for this experiment
@@ -115,7 +114,15 @@ opts = parforOptions(p);
 
 R_A_i = parallel.pool.Constant(RUNTIME_ARGS_i);
 
+disp(['Experiment started at: ', char(datetime("now"))])
+
 parfor (n = 1:nExperiment, opts)
+
+    if R_A_i.Value(n).INDEPENDENT
+        set(defaultStream, 'Substream', n);
+        RandStream.setGlobalStream(defaultStream);
+    end
+
     [exitflag, fileHandler] = AntModelFunction(R_A_i.Value(n));
 end
 experimentEndTime = toc(experimentStartTime);

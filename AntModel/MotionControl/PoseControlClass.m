@@ -53,9 +53,11 @@ classdef PoseControlClass
             limbs = ant.limbs;
             contactStructArray = [];
 
-
-            for i=1:length(limbs)
-
+            %[EDIT] For experiment: Mandibles not in use in experiment so
+            %do not include them in the limb check (reduce experiment
+            %duration)
+            %for i=1:length(limbs)
+            for i=1:2
                 limbCostStruct.name(i) = limbs{i}.type;
                 %Move the object rigidBodyTree base to match the global ant
                 %position.
@@ -66,6 +68,7 @@ classdef PoseControlClass
                 ant.plotAnt()
                 %If limb is not in collision, store the free point
                 [limbs{i}, dataStruct] = obj.tactileSenseEval(limbs{i}, ant.q, ant.position, env);
+                
                 contactStructArray = cat(1,contactStructArray, [dataStruct{:}]');
 
                 switch(limbs{i}.type)
@@ -153,7 +156,10 @@ classdef PoseControlClass
             surface_normals = nan([1,3]);
 
             %objID = 1;
-            distThreshold = 0.09;
+            %distThreshold = 0.09; %This threshold is good for when the
+            %velocity limits are 20 degrees per second, less so when 1000 degrees per second
+            distThreshold = 0.12; 
+
 
             subpose = q(limbIn.joint_mask == 1);
             subtree = limbIn.subtree;

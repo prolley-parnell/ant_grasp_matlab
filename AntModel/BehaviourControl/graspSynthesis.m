@@ -61,13 +61,13 @@ classdef graspSynthesis
             %CHECK Use the methods defined to evaluate the contact point data pairs and select a goal
 
             goalCostStruct = struct(); %Define the table used to store cost info
-            %% [COST] Start exhaustive grasp search
-            senseTStart = tic;
+
             goalOut = goalStruct();
             antOut = antIn;
 
             %Deal with exceptions (no contact points, or no grasp synthesis method)
-
+            %% [COST] Start exhaustive grasp search
+            senseTStart = tic;
             if isempty(sensedData)
                 %[COST] End time if no new data has been collected
                 graspSynthTEnd = toc(senseTStart);
@@ -127,7 +127,7 @@ classdef graspSynthesis
 
             if sc_mode_flag(1) %Stop based on the number of contacts
                 nContactThresh = length(contact_point_struct) - obj.RUNTIME_ARGS.STOP.THRESH;
-                if nContactThresh > 0
+                if nContactThresh >= 0
                     obj.sc_count = obj.sc_count + 1;
                 else
                     obj.sc_count = 0;

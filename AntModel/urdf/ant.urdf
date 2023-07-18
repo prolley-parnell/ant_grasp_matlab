@@ -238,29 +238,29 @@
   </link>
   <link name="l_scape">
     <visual>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </visual>
     <collision>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </collision>
   </link>
   <link name="l_funiculus">
     <visual>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </visual>
     <collision>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </collision>
   </link>
@@ -286,26 +286,29 @@
   <parent link="left_antenna_base"/>
   <child link="l_pedicel"/>
   <axis xyz="-1.0 0.0 0.0"/>
-  <limit lower="-0.5" upper="1.2" effort="0.0" velocity="0.0"/>
+  <!--<limit lower="-0.5" upper="1.2" effort="0.0" velocity="0.0"/> -->
+  <limit lower="-0.5" upper="0.77" effort="0.0" velocity="0.0"/>
 </joint>
 <joint name="l_PS2" type="revolute">
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="l_pedicel"/>
     <child link="l_scape"/>
     <axis xyz="0.0 1.0 0.0"/>
-    <limit lower="-1.2" upper="1.2" effort="0.0" velocity="0.0"/>
+    <!-- <limit lower="-1.2" upper="1.2" effort="0.0" velocity="0.0"/> -->
+    <limit lower="0.175" upper="1.7453" effort="0.0" velocity="0.0"/>
 </joint>
 
 <joint name="l_SF1" type="revolute">
-    <origin xyz="0.0 0.0 2" rpy="0.0 1.57 0"/>
+    <origin xyz="0.0 0.0 1.6" rpy="0.0 1.57 0"/>
     <parent link="l_scape"/>
     <child link="l_funiculus"/>
     <axis xyz="0.0 1.0 0.0"/>
-    <limit lower="-1.57" upper="1.374" effort="0.0" velocity="0.0"/>
+    <!-- <limit lower="-1.57" upper="1.374" effort="0.0" velocity="0.0"/> -->
+    <limit lower="-0.768" upper="1.047" effort="0.0" velocity="0.0"/>
 </joint> 
 
 <joint name="l_end_joint" type="fixed">
-  <origin xyz="0.0 0.0 2.0" rpy="0.0 0.0 0.0"/>
+  <origin xyz="0.0 0.0 1.6" rpy="0.0 0.0 0.0"/>
   <axis xyz="0.0 0.0 0.0"/>
   <parent link="l_funiculus"/>
   <child link="l_tip"/>  
@@ -344,29 +347,29 @@
   </link>
   <link name="r_scape">
     <visual>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </visual>
     <collision>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </collision>
   </link>
   <link name="r_funiculus">
     <visual>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </visual>
     <collision>
-    <origin xyz="0.0 0.0 1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.8" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <cylinder length="2" radius="0.05"/>
+        <cylinder length="1.6" radius="0.05"/>
       </geometry>
     </collision>
   </link>
@@ -392,26 +395,29 @@
   <parent link="right_antenna_base"/>
   <child link="r_pedicel"/>
   <axis xyz="1.0 0.0 0.0"/>
-  <limit lower="-0.5" upper="1.2" effort="0.0" velocity="0.0"/>
+  <!-- <limit lower="-0.5" upper="1.2" effort="0.0" velocity="0.0"/> -->
+  <limit lower="-0.5" upper="0.77" effort="0.0" velocity="0.0"/>
 </joint>
 <joint name="r_PS2" type="revolute">
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="r_pedicel"/>
     <child link="r_scape"/>
     <axis xyz="0.0 1.0 0.0"/>
-    <limit lower="-1.2" upper="1.2" effort="0.0" velocity="0.0"/>
+    <!-- <limit lower="-1.2" upper="1.2" effort="0.0" velocity="0.0"/> -->
+    <limit lower="0.175" upper="1.7453" effort="0.0" velocity="0.0"/>
 </joint>
 
 <joint name="r_SF1" type="revolute">
-    <origin xyz="0.0 0.0 2" rpy="0.0 1.57 0"/>
+    <origin xyz="0.0 0.0 1.6" rpy="0.0 1.57 0"/>
     <parent link="r_scape"/>
     <child link="r_funiculus"/>
     <axis xyz="0.0 1.0 0.0"/>
-    <limit lower="-1.57" upper="1.374" effort="0.0" velocity="0.0"/>
+    <!-- <limit lower="-1.57" upper="1.374" effort="0.0" velocity="0.0"/> -->
+    <limit lower="-0.768" upper="1.047" effort="0.0" velocity="0.0"/>
 </joint> 
 
 <joint name="r_end_joint" type="fixed">
-  <origin xyz="0.0 0.0 2.0" rpy="0.0 0.0 0.0"/>
+  <origin xyz="0.0 0.0 1.6" rpy="0.0 0.0 0.0"/>
   <axis xyz="0.0 0.0 0.0"/>
   <parent link="r_funiculus"/>
   <child link="r_tip"/>  

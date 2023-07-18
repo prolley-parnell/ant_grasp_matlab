@@ -3,7 +3,7 @@ classdef SampleActionGen
 
     properties
         interval %Float copied from the Runtime Args set "RATE"
-        maxvelocities %10x1 Array of Floats with Maximum joint velocity limits
+        maxvelocities %10x1 Array of Floats with Maximum joint velocity limits in radians per second
         gik %A local instance of GeneralizedInverseKinematic solver
         search_config %Copy of the Runtime Args "SEARCH"
         search_range %Copy of the Runtime Args "SEARCH.RANGE"
@@ -264,29 +264,8 @@ classdef SampleActionGen
 
             %Define the goal struct properties
             goalTrajProperties = struct('startPt', [], 'endPt', [], 'cartesianPath', [], 'jointPath', []);
-
-            % Establish the method of generating goal properties,
-            % Through performing IK on all cartesian waypoints
-            % OR
-            % Finding an IK solution for the endPt and interpolating between qIn and the IK solution
-            %---
-            trajOption = {'jointInterp', 'cartesianPath'};
-            trajGenFlag = contains(trajOption, antennaIn.control_type);
-
-            %Check for errors in assigning the mode of generating the
-            %trajectory to the cartesian point.
-            if all(trajGenFlag)
-                warning('Too many options selected, default to jointInterp');
-                trajGenMode = 'jointInterp';
-                trajGenFlag = contains(trajOption, trajGenMode);
-            elseif any(trajGenFlag)
-                %trajGenMode = trajOption{trajGenFlag==1}
-            else
-                warning('No option selected for traj generation, default to jointInterp')
-                trajGenMode = 'jointInterp';
-                trajGenFlag = contains(trajOption, trajGenMode);
-            end
-            trajGenModeIdx = find(trajGenFlag);
+            
+            trajGenModeIdx = antennaIn.traj_gen_mode;
             %---
             %Loop through all goals
             nGoal = size(goalArray,1);

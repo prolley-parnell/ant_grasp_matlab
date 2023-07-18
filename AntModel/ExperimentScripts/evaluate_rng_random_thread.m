@@ -75,3 +75,46 @@ parfor (n = 1:samples, opts)
 end
 
 r4_out
+
+%% Checking that randomness can be disabled
+
+close all;
+clear;
+
+
+defaultStream = RandStream('mrg32k3a', 'Seed', 'shuffle');
+
+%Disable any printed warnings for the parallel pool
+delete(gcp('nocreate'))
+p = parpool();
+parfevalOnAll(p,@warning, 0,'off');
+opts = parforOptions(p);
+
+samples = 20
+r3_out = nan(samples,5);
+parfor (n = 1:samples, opts)
+%     set(defaultStream, 'Substream', n);
+%     RandStream.setGlobalStream(defaultStream)
+    r3_rng(n) = rng
+    r3_out(n,:) = rand(1,5);
+end
+
+r3_out
+
+% %Disable any printed warnings for the parallel pool
+% delete(gcp('nocreate'))
+% p = parpool();
+% parfevalOnAll(p,@warning, 0,'off');
+% opts = parforOptions(p);
+
+defaultStream = RandStream('mrg32k3a', 'Seed', 'shuffle');
+
+r4_out = nan(samples,5);
+parfor (n = 1:samples, opts)
+    set(defaultStream, 'Substream', n);
+    RandStream.setGlobalStream(defaultStream)
+    r4_rng(n) = rng
+    r4_out(n,:) = rand(1,5);
+end
+
+r4_out

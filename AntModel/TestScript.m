@@ -30,14 +30,14 @@ rng('shuffle');
 RUNTIME_ARGS = RuntimeArgs();
 
 % Warnings are automatically enabled
-RUNTIME_ARGS.disableWarnings();
+%RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
 RUNTIME_ARGS.N_TRIALS = 1;
 
 % Sampling rate in simulated time - smaller is smoother for plotting, but
 % takes longer to run (0.05 to 0.15)
-RUNTIME_ARGS.RATE = 0.05;
+RUNTIME_ARGS.RATE = 0.03;
 
 %Plot the experiment
 RUNTIME_ARGS.PLOT.ENABLE = [1 0];
@@ -53,7 +53,7 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
-% % experiments.
+% experiments.
 % RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.04;
 % % stl file (binary) to import
 % RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
@@ -73,12 +73,21 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
-% experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
-% stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
+% % experiments.
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/doughnut_v8_STL';
+%%
+% % % experiments.
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = '';
+%% Reset the joint limits
+%RUNTIME_ARGS.ANT_POSE = [0;0;0;0;0.5;0;0.5;0.5;0;0.5];
 
 
+RUNTIME_ARGS.COLLISION_OBJ.POSITION = [0, 3, 0]
+            
 %% Ant body setup
 % Body motion not required for these experiments
 RUNTIME_ARGS.BODY_MOTION_ENABLE = 0;
@@ -89,7 +98,7 @@ motion_type = {'joint'}; %{'p2p', 'joint'};
 
 %if using p2p then p2pmode = {'GMM'};
 %if using joint control then jointmode = {'mean'}
-control_method = {'mean'};
+control_method = {'random'};
 
 %If using Information gain refinement {'IG'}
 refine_method = {};
@@ -97,6 +106,7 @@ refine_method = {};
 %If using 'mean' or 'GMM' then option to set variance {'IPD', 'varinc', 'vardec', 'var=1.2'};
 variance_mode = {};
 
+%antenna_control_cell = [motion_type,control_method,refine_method,variance_mode,  {'range=[0.1,1;0.1,1;0,1]'}];
 antenna_control_cell = [motion_type,control_method,refine_method,variance_mode];
 
 RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
@@ -111,7 +121,7 @@ RUNTIME_ARGS.SENSE.MODE = {'align'};
 
 %Set the stopping Criterion to be when the change in COC is less than 0.05
 %for 6 contacts
-%RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('COC', 0.05, 6)
+RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('n_contact', 30);
 
 %% -------- Test Specific Set Up ------------ %%
 % 

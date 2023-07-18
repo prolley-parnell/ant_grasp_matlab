@@ -27,12 +27,12 @@ run('.\Align_CMC_fixvar.m')
 
 %5
 run('.\IPDAlign_RRaP.m')
-%5.5
-run('.\IPDAlign_CMC_fixvar.m')
 %6
+run('.\IPDAlign_CMC_fixvar.m')
+%6.1
 %run('.\IPDAlign_CMC_vardec.m')
 
-%6.5
+%6.2
 %run('.\IPDAlign_CMC_varinc.m')
 
 cd('C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentScripts')
