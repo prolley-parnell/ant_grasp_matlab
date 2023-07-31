@@ -28,8 +28,6 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
     trial_time = 0;
     tStart = tic;
 
-
-
     %Define Ant object
     ant = Ant(RUNTIME_ARGS);
 
@@ -72,7 +70,7 @@ for n = 1:RUNTIME_ARGS.N_TRIALS
         fileHandler = fileHandler.saveTrial(n, ant.antTree, toc(tStart));
     end
 
-    
+
 
 end
 

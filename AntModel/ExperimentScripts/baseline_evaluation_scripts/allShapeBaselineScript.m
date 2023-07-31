@@ -27,3 +27,4 @@ save('./ExperimentScripts/baseline_evaluation_scripts/baselineQualityRangeStruct
 
 
 %%
+cd(scriptFolder)

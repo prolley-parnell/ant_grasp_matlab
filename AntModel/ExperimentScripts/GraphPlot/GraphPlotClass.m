@@ -93,7 +93,7 @@ classdef GraphPlotClass
             if isempty(varargin)
                 folderPath = 'C:\Users\eroll\Documents\MATLAB\Model\ant_grasp_matlab\AntModel\ExperimentOutput\remoteParallelFunction';
             else
-                
+
                 folderPath = varargin{:};
             end
             experimentDir = dir(folderPath);
@@ -108,7 +108,7 @@ classdef GraphPlotClass
 
             %%
             obj = obj.addExperiment(variableCellName, resultsFolderCell);
-            %obj = obj.renameTableColumns;
+            obj = obj.renameTableColumns;
         end
 
         function obj = addExperiment(obj, variableCellName, folderPathCell)
@@ -151,42 +151,6 @@ classdef GraphPlotClass
 
         end
 
-        function obj = addTrial(obj, MATFile)
-            load(MATFile, 'senseGoalTable', 'costSummaryTable')
-            [experimentTitle, experimentContact, trialNumber] = obj.addressFromPath(MATFile);
-
-            existingExperimentFlag = ismember({obj.experimentDataStruct(:).Title}, experimentTitle);
-            if any(existingExperimentFlag)
-                entryIndex = find(existingExperimentFlag);
-            else
-                entryIndex = length(existingExperimentFlag) + 1;
-                obj.experimentDataStruct(entryIndex).Title = experimentTitle;
-            end
-
-
-
-            existingContactNumberFlag = ismember(obj.experimentDataStruct(entryIndex).nContact(:), experimentContact);
-            if any(existingContactNumberFlag)
-                contactIndex = find(existingContactNumberFlag);
-            else
-                contactIndex = length(existingContactNumberFlag)+1;
-                obj.experimentDataStruct(entryIndex).nContact(contactIndex) = experimentContact;
-                obj.experimentDataStruct(entryIndex).trialData(contactIndex).contactNumber = experimentContact;
-                obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = table.empty;
-                obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = table.empty;
-            end
-
-
-
-            existingGoalData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable;
-            existingCostData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable;
-            newGoalData = [existingGoalData; senseGoalTable];
-            newCostData = [existingCostData; costSummaryTable];
-            obj.experimentDataStruct(entryIndex).trialData(contactIndex).senseGoalTable = newGoalData;
-            obj.experimentDataStruct(entryIndex).trialData(contactIndex).costSummaryTable = newCostData;
-            obj.experimentDataStruct(entryIndex).trialData(contactIndex).nTrial = size(newGoalData,1);
-        end
-
         function obj = addTrialV2(obj, variableCellName, MATFile)
             tableStruct = load(MATFile, variableCellName{:});
             [experimentTitle, experimentContact, trialNumber] = obj.addressFromPath(MATFile);
@@ -218,9 +182,9 @@ classdef GraphPlotClass
                 existingData = obj.experimentDataStruct(entryIndex).trialData(contactIndex).(varName{n});
                 if strcmp(varName{n}, 'contactsTable')
                     trialContact = addvars(tableStruct.(varName{n}), ...
-                                            repmat(trialNumber, size(tableStruct.(varName{n}),1),1), ...
-                                            'Before', 1, ...
-                                            'NewVariableNames', 'Trial Number');
+                        repmat(trialNumber, size(tableStruct.(varName{n}),1),1), ...
+                        'Before', 1, ...
+                        'NewVariableNames', 'Trial Number');
                     newData = [existingData; trialContact];
                 else
                     newData = [existingData; tableStruct.(varName{n})];
@@ -450,40 +414,60 @@ classdef GraphPlotClass
         end
 
         %% Data Refinement and Transformations
-        function [refinedDataOut, successNumber, failureNumber] = excludeFailedGrasp(obj, experimentDataIn)
+        function [refinedDataOut, successNumber, failureNumber] = excludeFailedGrasp(obj, experimentDataIn, varargin)
             %EXCLUDEFAILEDGRASP For all trials, exclude any grasps that are
             %classed as failing based on any of the measures
-            if iscell(experimentDataIn)
-                experimentDataIn = experimentDataIn{1};
+            if ~iscell(experimentDataIn)
+                experimentDataIn = {experimentDataIn};
             end
+            if ~isempty(varargin)
+                measureName = varargin{:};
+            else
+                measureName = [];
+            end
+            nExperiment = length(experimentDataIn);
+
+            refinedDataOut = cell(1, nExperiment);
+            successNumber = cell(1, nExperiment);
+            failureNumber = cell(1, nExperiment);
+
+            for i = 1:nExperiment
 
 
-            %WARNING: Expects the order layer to match that found in
-            %obj.all_measure_name
-            %Define the masks for different measures
-            alignLayerID = find(strcmp(obj.all_quality_name, "Align"));
-            alignFailMask = find(experimentDataIn(:,:,alignLayerID) <= 1e-1);
+                %WARNING: Expects the order layer to match that found in
+                %obj.all_measure_name
+                %Define the masks for different measures
+                alignLayerID = find(strcmp(obj.all_quality_name, "Align"));
+                alignFailMask = find(experimentDataIn{i}(:,:,alignLayerID) <= 1e-1);
 
-            withinReachLayerID = find(strcmp(obj.all_quality_name, "Within Reach"));
-            withinReachFailMask = find(experimentDataIn(:,:,withinReachLayerID) < 1e-1);
+                withinReachLayerID = find(strcmp(obj.all_quality_name, "Within Reach"));
+                withinReachFailMask = find(experimentDataIn{i}(:,:,withinReachLayerID) < 1e-1);
 
-            epsilonLayerID = find(strcmp(obj.all_quality_name, "Epsilon"));
-            epsilonFailMask = find(experimentDataIn(:,:,epsilonLayerID) < 1e-1);
+                epsilonLayerID = find(strcmp(obj.all_quality_name, "Epsilon"));
+                epsilonFailMask = find(experimentDataIn{i}(:,:,epsilonLayerID) < 1e-1);
 
-            volumeLayerID = find(strcmp(obj.all_quality_name, "Volume"));
-            volumeFailMask = find(experimentDataIn(:,:,volumeLayerID) < 2e-13);
-
-
-            failIdx = [alignFailMask;withinReachFailMask;epsilonFailMask;volumeFailMask];
-            refineMask = ones(size(experimentDataIn, 1,2));
-            refineMask(unique(failIdx)) = nan;
-
-            refinedDataOut = experimentDataIn.*refineMask;
+                volumeLayerID = find(strcmp(obj.all_quality_name, "Volume"));
+                volumeFailMask = find(experimentDataIn{i}(:,:,volumeLayerID) < 2e-13);
 
 
-            successNumber = sum(refineMask == 1);
-            failureNumber = sum(isnan(refineMask));
+                failIdx = [alignFailMask;withinReachFailMask;epsilonFailMask;volumeFailMask];
+                refineMask = ones(size(experimentDataIn{i}, 1,2));
+                refineMask(unique(failIdx)) = nan;
 
+                if ~isempty(measureName)
+                    unsortedDataOut = experimentDataIn{i}.*refineMask;
+                    for m = 1:length(measureName)
+                        layerID = find(strcmp(obj.all_quality_name, measureName(m)));
+                        refinedDataOut{i}(:,:,m) = unsortedDataOut(:,:,layerID);
+                    end
+                else
+                    refinedDataOut{i} = experimentDataIn{i}.*refineMask;
+                end
+
+                successNumber{i} = sum(refineMask == 1);
+                failureNumber{i} = sum(isnan(refineMask));
+
+            end
 
         end
 
@@ -516,6 +500,8 @@ classdef GraphPlotClass
             if refineFlag
                 [~, rawY] = obj.extractMeasure(experimentName);
                 [refinedDataOut, successNumber, failureNumber] = obj.excludeFailedGrasp(rawY{1});
+                %ERROR Changed excludeFailedGrasp output type to allow
+                %multiple cells to be processed at once
 
                 %Find the 3rd Dimension pages of interest
                 [r, c] = find(obj.all_quality_name == measureName(:));
@@ -565,7 +551,7 @@ classdef GraphPlotClass
                 if strcmp(measureName(n), "Volume")
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        if all(isnan(x))
+                        if sum(isnan(x))>(length(x)*0.25)
                             medianOut(n, i) = NaN;
                         else
 
@@ -579,10 +565,10 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        if all(isnan(x))
+                        if sum(isnan(x))>(length(x)*0.25)
                             medianOut(n, i) = NaN;
                         else
-                            pd = fitdist(x, "tLocationScale");
+                            pd = fitdist(x, "Beta");
                             medianOut(n, i) = pd.median;
                         end
                     end
@@ -591,10 +577,10 @@ classdef GraphPlotClass
                 if strcmp(measureName(n), "Epsilon")
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        if all(isnan(x))
+                        if sum(isnan(x))>(length(x)*0.25)
                             medianOut(n, i) = NaN;
                         else
-                            pd = fitdist(x, "tLocationScale");
+                            pd = fitdist(x, "LogNormal");
                             medianOut(n, i) = pd.median;
                         end
                     end
@@ -604,7 +590,7 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        if all(isnan(x))
+                        if sum(isnan(x))>(length(x)*0.25)
                             medianOut(n, i) = NaN;
                         else
                             pd = fitdist(x, "Loglogistic");
@@ -617,10 +603,10 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        if all(isnan(x))
+                        if sum(isnan(x))>(length(x)*0.25)
                             medianOut(n, i) = NaN;
                         else
-                            pd = fitdist(x, "Gamma");
+                            pd = fitdist(x, "Rician");
                             medianOut(n, i) = pd.median;
                         end
                     end
@@ -630,10 +616,11 @@ classdef GraphPlotClass
 
                     for i = 1:size((dataIn(:,:,n)),2)
                         x = dataIn(:,i,n);
-                        if all(isnan(x))
+                        if sum(isnan(x))>(length(x)*0.25)
                             medianOut(n, i) = NaN;
                         else
-                            pd = fitdist(x, "Weibull");
+                            %pd = fitdist(x, "Weibull");
+                            pd = fitdist(x, "Loglogistic");
                             medianOut(n, i) = pd.median;
                         end
                     end
@@ -737,7 +724,8 @@ classdef GraphPlotClass
 
                             for meas_i = 1:nMeasure
                                 %Find the knee point for each measure of this experiment
-                                resultStruct = struct('KneeNContact', [], 'KneeY', [], 'PercentSuccess', [], 'SimulationTime', [], 'RealWorldTime', []);
+                                %resultStruct = struct('KneeNContact', [], 'KneeY', [], 'PercentSuccess', [], 'SimulationTime', [], 'RealWorldTime', []);
+                                resultStruct = struct('KneeNContact', nan, 'KneeY', nan, 'PercentSuccess', 0, 'SimulationTime', inf, 'RealWorldTime', inf);
                                 % Find the number of contacts at the knee
                                 %Find the layer index if measure names are
                                 %reordered
@@ -754,22 +742,32 @@ classdef GraphPlotClass
                                 %number of contacts at the knee
                                 x_i = find(xData{:}==resultStruct.KneeNContact);
 
-                                % Find the median value for the trial with
-                                % that number of contacts
-                                resultStruct.KneeY = medianOut(median_idx, x_i);
+                                if ~isnan(resultStruct.KneeNContact)
 
-                                % Find the failure rate for that number of
-                                % contacts
-                                resultStruct.PercentSuccess = percentRate(x_i);
+                                    % Find the median value for the trial with
+                                    % that number of contacts
+                                    resultStruct.KneeY = medianOut(median_idx, x_i);
+                                    if ~isempty(obj.baseline_grasp_quality)
+                                        resultStruct.KneeY = scaleMedian(median_idx, x_i);
+                                    else
+                                        resultStruct.KneeY = medianOut(median_idx, x_i);
+                                    end
 
-                                % Add the cost median for that number of
-                                % contacts
-                                simTime_idx = (measureTitle == "Simulation Time");
-                                resultStruct.SimulationTime = medianOut(simTime_idx,x_i);
+                                    % Find the failure rate for that number of
+                                    % contacts
+                                    resultStruct.PercentSuccess = percentRate(x_i);
 
-                                realWorldTime_idx = (measureTitle == "Real World Time");
-                                resultStruct.RealWorldTime = medianOut(realWorldTime_idx,x_i);
+                                    % Add the cost median for that number of
+                                    % contacts
+                                    simTime_idx = (measureTitle == "Simulation Time");
+                                    resultStruct.SimulationTime = medianOut(simTime_idx,x_i);
 
+                                    realWorldTime_idx = (measureTitle == "Real World Time");
+                                    resultStruct.RealWorldTime = medianOut(realWorldTime_idx,x_i);
+                                else
+                                    warning('The knee value is nan, thats no good')
+
+                                end
                                 %% Assign the values to the output cell
                                 resultCellArray{find(rowFlag), meas_i} = resultStruct;
 
@@ -1108,12 +1106,12 @@ classdef GraphPlotClass
             nQMeasure = 4;
             kneeNContact = nan(1,nQMeasure);
             smoothQMedian = nan(4, size(medianOut,2));
-            
+
             %% Carry out the scaling
             % Percent success divided by number of contacts
             scalePercent = percentRate ./ xData{:};
             scaleTime = medianOut(5,:) ./ xData{:};
-            
+
             xPlotData = xData{:};
 
             figureHandle = figure;
@@ -1123,7 +1121,7 @@ classdef GraphPlotClass
             fontsize(gca,12,"points")
             title(["Test Plot of the Scaled Percent and Time", "by the number of contacts"], 'FontSize', 13);
             subtitle(experimentName, 'Interpreter', 'none', 'FontSize', 12);
-            
+
             yyaxis left
             h = plot(xPlotData, scalePercent);
             set(h, {'DisplayName'}, {'Percent per Contact'}')
@@ -1259,40 +1257,6 @@ classdef GraphPlotClass
             hold off
         end
 
-
-
-        %Rewatch Experiment
-        function obj = replayFromMAT(obj, file)
-            [~,~,type] = fileparts(file);
-
-            fileStruct = load(file);
-            contactsTable = fileStruct.contactsTable;
-            replayTable = fileStruct.replayTable;
-            AntRigidBodyTree = fileStruct.antTree;
-
-            figure(3);
-
-            for i=1:size(replayTable,1)
-                time = replayTable.Time(i);
-                pose = replayTable.Pose{i,:};
-                position = replayTable.Position(i,:);
-
-                show(AntRigidBodyTree, pose ,'Parent', gca, 'Position', position, 'PreservePlot',false, 'Collisions', 'off', 'Visual', 'on', 'FastUpdate',true);
-
-                rows = (contactsTable.Time == time);
-                if any(rows)
-                    idx = find(rows);
-                    for p = 1:length(idx)
-                        hold on;
-                        collision_points = contactsTable.("Contact Location")(idx,:);
-                        plot3(collision_points(1), collision_points(2), collision_points(3),'o','MarkerSize',5, 'Color', 'c')
-                        hold off
-                    end
-                end
-                pause(0.1);
-
-            end
-        end
 
         function plotPaperRank(obj, paperRankTable)
             %PLOTRANK Show in a comparative graph the different ranks with
@@ -1546,6 +1510,215 @@ classdef GraphPlotClass
             hold off
         end
 
+        function [baselineOut, successNumber, failureNumber] = fetchBaseline(obj, measureName, varargin)
+
+            removeFailedGrasp = 0;
+            if strcmp(measureName, "all")
+                measureName = [obj.all_quality_name];
+            end
+            if ~isempty(varargin) && strcmp(varargin{:}, "true")
+                removeFailedGrasp = 1;
+            end
+            baselineOut = nan([size(obj.baseline_grasp_quality.epsArray), length(measureName)]);
+            baselineData = {cat(3, obj.baseline_grasp_quality.epsArray, ...
+                obj.baseline_grasp_quality.volArray, ...
+                obj.baseline_grasp_quality.comoffArray, ...
+                obj.baseline_grasp_quality.alignArray, ...
+                obj.baseline_grasp_quality.reachArray)};
+            if removeFailedGrasp
+                %Compile the baseline to the correct format to remove
+                %failed grasps (compiled in order of the provided quality
+                %names "Epsilon", "Volume", "COM Offset", "Align", "Within Reach"
+                %ERROR Changed excludeFailedGrasp output type to allow
+                %multiple cells to be processed at once
+                [baselineData, successNumber, failureNumber] = obj.excludeFailedGrasp(baselineData);
+
+            end
+
+            for m = 1:length(measureName)
+                layerID = find(strcmp(obj.all_quality_name, measureName(m)));
+                baselineOut(:,:,m) = baselineData{1}(:,:,layerID);
+            end
+
+
+        end
+
+        function plotBaselineComparison(obj, experimentName, plotPercentPass, varargin)
+            %This plot shows the baseline for each measure on this specific
+            %GPC shape. It overlays the curves that match the probability
+            %distribution of the histogram of measures from unfiltered
+            %measures (without excluding failed grasps)
+
+            %Define any plot titles
+            graspMethod = ["Distance", "Alignment", "Distance and Alignment", "PCA"];
+            nGraspMethod = length(graspMethod);
+
+            searchMethod = ["Random", "Mean Centred"];
+            nSearchMethod = length(searchMethod);
+
+            controlMethod = ["Joint", "Location"];
+            nControlMethod = length(controlMethod);
+
+
+            %        costTitle = ["Simulation Time", "Real World Time"];
+            %        measureTitle = [qualityTitle, costTitle];
+
+            if isempty(varargin)
+                %If measure name is not specified, return all quality
+                %measures (but not "withinReach")
+                measureName = [obj.all_quality_name(1:4)];
+            else
+                measureName = [varargin{:}];
+            end
+            nMeasure = length(measureName);
+
+            if strcmp(experimentName, "all")
+                experimentName = {obj.experimentDataStruct(:).Title};
+            end
+
+            figure
+            if plotPercentPass
+                t = tiledlayout(1,nMeasure+1);
+            else
+                t = tiledlayout(1,nMeasure);
+            end
+
+            nExperiment = length(experimentName);
+
+
+            nContactsIdx = 10;
+            excludeFailedGrasp_flag = 1;
+
+            if excludeFailedGrasp_flag
+                [xData, yData] = obj.extractMeasure(experimentName);
+                [refinedY, passY, failY] = obj.excludeFailedGrasp(yData, measureName);
+            else
+                [~, yData] = obj.extractMeasure(experimentName, measureName);
+            end
+            [baselineArray, bl_pass, bl_fail] = obj.fetchBaseline(measureName, "true");
+
+
+            [titl, subtitl] = title(t,'Distribution of Grasp Quality Measures for a Single Shape', ['at ', int2str(xData{1}(nContactsIdx)), ' Contact Points']);
+            titl.FontSize = 14;
+            titl.FontWeight = "bold";
+            subtitl.FontWeight = "normal";
+            subtitl.FontSize = 12;
+            xlabel(t,'Grasp Quality Measure')
+            ylabel(t,'Shape')
+
+
+            pd = cell(nExperiment, nMeasure);
+            for meas_i = 1:nMeasure
+
+                %% -- Extract the baseline value -- %
+                bl = baselineArray(:,:,meas_i);
+
+                %Find the PD for the baseline
+                bl_pd = fitdist(bl, "Weibull");
+
+                max_x = max(bl);
+                min_x = min(bl);
+
+                for exp_i = 1:nExperiment %For each experiment
+
+                    if excludeFailedGrasp_flag
+                        y = refinedY{exp_i}(:,nContactsIdx,meas_i);
+                    else
+                        y = yData{exp_i}(:,nContactsIdx,meas_i);
+                    end
+                    %Update the range of the plot
+                    if max(y) > max_x
+                        max_x = max(y);
+                    end
+                    if min(y) < min_x
+                        min_x = min(y);
+                    end
+
+                    if ~(sum(isnan(y))>(length(y)*0.5))
+                        y(y<=0) = [];
+                        pd{exp_i, meas_i} = fitdist(y, "Weibull");
+                    end
+                end
+
+                %Now we have all the PD, find set the x steps for the overlaid
+                %plot
+                x_step = [min_x : (max_x-min_x)/50 : max_x];
+
+                ax = nexttile(meas_i);
+                hold on
+
+                if meas_i == 1
+                    ylabel(ax, "PDF", 'FontWeight', 'bold')
+                end
+
+
+
+                for exp_i = 1:nExperiment %For each experiment
+                    if exp_i == 1
+                        xlabel(ax, measureName(meas_i), 'FontWeight', 'bold')
+                    end
+                    if ~isempty(pd{exp_i, meas_i})
+                        pdf_y = pdf(pd{exp_i, meas_i}, x_step);
+                        [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
+                        plot(x_step,pdf_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
+                    end
+
+                end
+
+                bl_pdf = pdf(bl_pd, x_step);
+                plot(x_step, bl_pdf, 'DisplayName', [measureName{meas_i}, ' baseline'], 'Color', [0.25 0.25 0.25], LineWidth=1);
+
+                hold off
+
+            end
+
+            if plotPercentPass
+                ax = nexttile(meas_i+1);
+                ylabel("Percent Successful Grasps", "FontWeight","bold")
+                hold on
+
+                for exp_i = 1:nExperiment %For each experiment
+                    if exp_i == 1
+                        xlabel(ax, "Experiment ID", "FontAngle","italic")
+                        xticks([1:16]);
+                    end
+
+                    percent_y = passY{exp_i}(nContactsIdx) / (passY{exp_i}(nContactsIdx)+failY{exp_i}(nContactsIdx));
+                    [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
+                    plot(exp_i,percent_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
+
+                end
+
+                bl_percent_y = bl_pass{1} / (bl_pass{1}+bl_fail{1});
+                yline(bl_percent_y, 'DisplayName', ['Percent pass baseline'], 'Color', [0.25 0.25 0.25], LineWidth=1);
+
+                hold off
+
+
+            end
+
+        end
+
+        function [styleString, markerString, colourArray] = getLineStyle(obj, experimentName)
+            %Return the plot style string that is specific to the
+            %experiment and uses minimal colour
+
+            graspStyle = table(["IPD"; "Align"; "IPD Align"; "PCA"], [1; 2; 3; 4], [":"; "--"; "-."; "-"]);
+            graspStyle.Properties.VariableNames = ["Name", "Row Index", "Style"];
+            searchMethod = table(["Random"; "Mean"], [1; 2], ["*"; "o"]);
+            searchMethod.Properties.VariableNames = ["Name", "Search Method", "Marker"];
+            controlMethod = table(["Joint"; "Cartesian"], [1; 2], [[0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560]], ["Yellow"; "Purple"]);
+            controlMethod.Properties.VariableNames = ["Name", "Control Method", "Color", "Color Name"];
+
+            experimentIndex = strcmp(obj.mapTable.Title, experimentName);
+            mapRow = obj.mapTable(experimentIndex, :);
+            %For some reason I titled the grasp methods as Row Index?
+            styleString = graspStyle(mapRow.("Row Index"), "Style").Variables;
+            markerString = searchMethod(mapRow.("Search Method"), "Marker").Variables;
+            colourArray = controlMethod(mapRow.("Control Method"), "Color").Variables;
+
+
+        end
 
     end
 end

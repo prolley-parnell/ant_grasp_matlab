@@ -29,7 +29,7 @@ vert = env.FBT{1}.Points;
 maxV = max(vert);
 minV = min(vert);
 
-nRandomPt = 1000;
+nRandomPt = 200;
 
 r = @(a, b, set) (a + (b-a).*set);
 randomScale = rand([nRandomPt,3]);
@@ -46,15 +46,17 @@ randomSampleFull = r(minV,maxV,randomScale);
 %For each point, find the face it is contained by
 [pointOnObj, normalVArray, vertIDArray, faceIDArray] = tbox.findPointOnObjNormalID(env.FBT{1}, randomSampleFull);
 
-%% Plot a subset to make sure they look right
-% subsetSize = 5000;
-% subsetPForPlot = pointOnObj(1:subsetSize,:);
-% subsetFForPlot = normalVArray(1:subsetSize,:);
-%
-% %Plotting
-% hold on
-% quiver3(subsetPForPlot(:,1),subsetPForPlot(:,2),subsetPForPlot(:,3), ...
-%     subsetFForPlot(:,1),subsetFForPlot(:,2),subsetFForPlot(:,3),'off','color','r');
+% %% Plot a subset to make sure they look right
+figure;
+title(shapePath, 'Interpreter','none')
+subsetSize = 200;
+subsetPForPlot = pointOnObj(1:subsetSize,:);
+subsetFForPlot = normalVArray(1:subsetSize,:);
+
+%Plotting
+hold on
+quiver3(subsetPForPlot(:,1),subsetPForPlot(:,2),subsetPForPlot(:,3), ...
+    subsetFForPlot(:,1),subsetFForPlot(:,2),subsetFForPlot(:,3),'off','color','r');
 
 %% For finding the worst (completely random) - find the quality for every pair then find mean
 
@@ -94,7 +96,7 @@ epsArray = cat(1, grasp_quality_array.epsilon);
 comoffArray = cat(1, grasp_quality_array.com_offset);
 alignArray = cat(1,grasp_quality_array.normAlign);
 reachArray = cat(1,grasp_quality_array.withinReach);
-%%
+%% Remove self-pairs
 emptyGrasp_idx = find(isinf(comoffArray));
 volArray(emptyGrasp_idx) = [];
 epsArray(emptyGrasp_idx) = [];
@@ -103,18 +105,18 @@ alignArray(emptyGrasp_idx) = [];
 reachArray(emptyGrasp_idx) = [];
 
 %% Best overall grasp
-volumeScore = rescale(volArray);
-epsilonScore = rescale(epsArray);
-offsetScore = 1 - rescale(comoffArray);
-alignScore = rescale(alignArray);
+% volumeScore = rescale(volArray);
+% epsilonScore = rescale(epsArray);
+% offsetScore = 1 - rescale(comoffArray);
+% alignScore = rescale(alignArray);
 
 %Sum/multiply all values to find which scores the best on all fronts
 %Assumes all features are weighted equally
 %Volume should be large, epsilon should be large, align should be large but
 %offset should be small, so - offset
 % 
-prodScore = volumeScore .* epsilonScore .* offsetScore .* alignScore .* reachArray;
-prodScore(prodScore == 0) = nan;
+% prodScore = volumeScore .* epsilonScore .* offsetScore .* alignScore .* reachArray;
+% prodScore(prodScore == 0) = nan;
 
 % [max_prod_score, prod_score_max_idx] = max(prodScore, [], 'all', "omitnan");
 % bestGrasp = graspQuality();
@@ -133,12 +135,12 @@ prodScore(prodScore == 0) = nan;
 % worstGrasp.normAlign = alignArray(prod_score_min_idx);
 % worstGrasp.withinReach = reachArray(prod_score_min_idx);
 
-
-failedGrasp_idx = isnan(prodScore);
-volArray(failedGrasp_idx) = [];
-epsArray(failedGrasp_idx) = [];
-comoffArray(failedGrasp_idx) = [];
-alignArray(failedGrasp_idx) = [];
+%% Remove failed grasps
+% failedGrasp_idx = isnan(prodScore);
+% volArray(failedGrasp_idx) = [];
+% epsArray(failedGrasp_idx) = [];
+% comoffArray(failedGrasp_idx) = [];
+% alignArray(failedGrasp_idx) = [];
 
 
 shapeRange.volume.min = min(volArray,[], "all", "omitnan");
@@ -149,6 +151,12 @@ shapeRange.com_offset.min = min(comoffArray,[], "all", "omitnan");
 shapeRange.com_offset.max = max(comoffArray,[], "all", "omitnan");
 shapeRange.normAlign.min = min(alignArray,[], "all", "omitnan"); 
 shapeRange.normAlign.max = max(alignArray,[], "all", "omitnan");
+
+shapeRange.volArray = volArray;
+shapeRange.epsArray = epsArray;
+shapeRange.comoffArray = comoffArray;
+shapeRange.alignArray = alignArray;
+shapeRange.reachArray = reachArray;
 
 
 end

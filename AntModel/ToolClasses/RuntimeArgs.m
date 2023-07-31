@@ -25,7 +25,7 @@ classdef RuntimeArgs
 
         COLLISION_OBJ
 
-        ANT_URDF string {mustBeFile, mustBeText} = './urdf/ant.urdf'
+        ANT_URDF string {mustBeText} = './urdf/ant.urdf'
 
         ANT_POSE
         ANT_POSITION(1,4) double = [0 0 0 0]

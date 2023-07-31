@@ -30,7 +30,7 @@ rng('shuffle');
 RUNTIME_ARGS = RuntimeArgs();
 
 % Warnings are automatically enabled
-%RUNTIME_ARGS.disableWarnings();
+RUNTIME_ARGS.disableWarnings();
 
 % Number of Iterations
 RUNTIME_ARGS.N_TRIALS = 1;
@@ -58,11 +58,11 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 % % stl file (binary) to import
 % RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Wedge V1.stl';
 %% Object to sense
-% % % Scale is linear scale about the centre of the object, varies for all
-% % experiments.
-%  RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
-% % % stl file (binary) to import
-%  RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
+% % Scale is linear scale about the centre of the object, varies for all
+% experiments.
+ RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
+% % stl file (binary) to import
+ RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
@@ -86,7 +86,7 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %RUNTIME_ARGS.ANT_POSE = [0;0;0;0;0.5;0;0.5;0.5;0;0.5];
 
 
-RUNTIME_ARGS.COLLISION_OBJ.POSITION = [0, 3, 0]
+RUNTIME_ARGS.COLLISION_OBJ.POSITION = [0, 3, 0];
             
 %% Ant body setup
 % Body motion not required for these experiments
