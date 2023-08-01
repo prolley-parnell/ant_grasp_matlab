@@ -20,6 +20,8 @@ classdef OutputData
         contact_data
         sense_goal_data
         replay_data
+
+        experiment_seed
        
 
         costClass
@@ -62,6 +64,9 @@ classdef OutputData
             obj.replay_data = {};
             obj.costClass = CostCalculator();
 
+
+            obj.experiment_seed = RandStream.getGlobalStream;
+
         end
 
         function obj = saveTrial(obj, trial_number, antTree, tocTime)
@@ -94,10 +99,13 @@ classdef OutputData
             %Rename the runtime args for no particular reason
             setupRuntimeArgs = obj.RUNTIME_ARGS;
 
+            %Save the random seed used in this experiment
+            randomSeedCopy = obj.experiment_seed;
+
             %If you provided a destination then save a mat file for every trial with all the set up
             %details
             if ~isempty(obj.mat_path)
-                save([obj.mat_path, '\trial_',int2str(trial_number), '.mat'], 'contactsTable', 'senseGoalTable', 'replayTable', 'costSummaryTable', 'antTree', 'setupRuntimeArgs')
+                save([obj.mat_path, '\trial_',int2str(trial_number), '.mat'], 'contactsTable', 'senseGoalTable', 'replayTable', 'costSummaryTable', 'antTree', 'setupRuntimeArgs', "randomSeedCopy")
             end
 
             % If you want the experiment saved in a written format
