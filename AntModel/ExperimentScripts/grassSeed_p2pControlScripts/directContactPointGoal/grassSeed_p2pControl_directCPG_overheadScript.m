@@ -14,19 +14,19 @@
 %Warning: current folder must be the one that contains the overhead script
 
 %1
-% run('.\IPD_RSS.m')
-% 
-% %2
-% run('.\IPD_CGMMC_fixvar.m')
-% 
-% %3
-% run('.\Align_RSS.m')
-% 
-% %4
-% run('.\Align_CGMMC_fixvar.m')
-% 
-% %5
-% run('.\IPDAlign_RSS.m')
+run('.\IPD_RSS.m')
+
+%2
+run('.\IPD_CGMMC_fixvar.m')
+
+%3
+run('.\Align_RSS.m')
+
+%4
+run('.\Align_CGMMC_fixvar.m')
+
+%5
+run('.\IPDAlign_RSS.m')
 
 %6
 run('.\IPDAlign_CGMMC_fixvar.m')

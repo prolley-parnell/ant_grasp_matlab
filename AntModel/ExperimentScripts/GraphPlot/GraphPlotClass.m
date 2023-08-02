@@ -106,7 +106,7 @@ classdef GraphPlotClass
 
             %%
             obj = obj.addExperiment(variableCellName, resultsFolderCell);
-            obj = obj.renameTableColumns;
+            %obj = obj.renameTableColumns;
         end
 
         function obj = addExperiment(obj, variableCellName, folderPathCell)
@@ -1285,8 +1285,8 @@ classdef GraphPlotClass
             hold on
             for exp_i = 1:nExperiment
                 percent_y = successNumber{exp_i} ./ (successNumber{exp_i} + failureNumber{exp_i});
-                [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
-                plot(xData{exp_i},percent_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
+                [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{exp_i});
+                plot(xData{exp_i},percent_y, 'DisplayName', displayName, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
             end
             legend('Interpreter', 'none')
 
@@ -1720,8 +1720,8 @@ classdef GraphPlotClass
                     end
                     if ~isempty(pd{exp_i, meas_i})
                         cdf_y = cdf(pd{exp_i, meas_i}, x_step);
-                        [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
-                        plot(x_step,cdf_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, MarkerSize=3, Color=colourArray);
+                        [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{exp_i});
+                        plot(x_step,cdf_y, 'DisplayName', displayName, LineStyle=lineStyle, Marker=markerString, MarkerSize=3, Color=colourArray);
                     end
 
                 end
@@ -1749,8 +1749,8 @@ classdef GraphPlotClass
                     end
 
                     percent_y = passY{exp_i}(nContactsIdx) / (passY{exp_i}(nContactsIdx)+failY{exp_i}(nContactsIdx));
-                    [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
-                    stem(exp_i,percent_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
+                    [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{exp_i});
+                    stem(exp_i,percent_y, 'DisplayName', displayName, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
 
                 end
 
@@ -1764,7 +1764,7 @@ classdef GraphPlotClass
 
         end
 
-        function plotGraspBaselineComparison(obj, experimentName, plotPercentPass, varargin)
+        function percent_ax = plotGraspBaselineComparison(obj, experimentName, plotPercentPass, varargin)
             %This plot shows the baseline for each measure on this specific
             %GPC shape. It overlays the curves that match the probability
             %distribution of the histogram of measures from unfiltered
@@ -1795,7 +1795,7 @@ classdef GraphPlotClass
             nExperiment = length(experimentName);
 
 
-            nContactsIdx = 17;
+            nContactsIdx = 23;
             excludeFailedGrasp_flag = 1;
 
             if excludeFailedGrasp_flag
@@ -1903,14 +1903,14 @@ classdef GraphPlotClass
                     end
                     if ~isempty(pd{exp_i, meas_i})
                         pdf_y = pdf(pd{exp_i, meas_i}, x_step);
-                        [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
-                        plot(x_step,pdf_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, MarkerSize=3, Color=colourArray);
+                        [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{exp_i});
+                        plot(x_step,pdf_y, 'DisplayName', displayName, LineStyle=lineStyle, Marker=markerString, MarkerSize=3, Color=colourArray);
                     end
 
                 end
                 if ~isempty(bl_pd)
                     bl_pdf = pdf(bl_pd, x_step);
-                    plot(x_step, bl_pdf, 'DisplayName', [measureName{meas_i}, ' baseline'], 'Color', [0.25 0.25 0.25], LineWidth=1);
+                    plot(x_step, bl_pdf, 'DisplayName', [measureName{meas_i}, ' Baseline'], 'Color', [0.25 0.25 0.25], LineWidth=1);
                 end
                 legend(Interpreter="none")
                 hold off
@@ -1918,27 +1918,30 @@ classdef GraphPlotClass
             end
 
             if plotPercentPass
-                ax = nexttile(meas_i+1);
+                percent_ax = nexttile(meas_i+1);
                 ylabel("Percent Successful Grasps", "FontWeight","bold")
                 hold on
 
                 for exp_i = 1:nExperiment %For each experiment
                     if exp_i == 1
-                        xlabel(ax, "Experiment ID", "FontAngle","italic")
+                        xlabel(percent_ax, "Experiment ID", "FontAngle","italic")
                         xticks([1:nExperiment]);
-                        xticklabels(experimentName);
-                        ax.TickLabelInterpreter = 'none';
-                        ax.FontSize = 7;
+                        yticks(0:0.1:1);
+                        ylim(percent_ax, [0,1])
+                        percent_ax.TickLabelInterpreter = 'none';
+                        percent_ax.FontSize = 7;
                     end
 
                     percent_y = passY{exp_i}(nContactsIdx) / (passY{exp_i}(nContactsIdx)+failY{exp_i}(nContactsIdx));
-                    [lineStyle, markerString, colourArray] = obj.getLineStyle(experimentName{exp_i});
-                    stem(exp_i,percent_y, 'DisplayName', experimentName{exp_i}, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
+                    [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{exp_i});
+                    stem(exp_i,percent_y, 'DisplayName', displayName, LineStyle=lineStyle, Marker=markerString, Color=colourArray);
+                    percent_ax.XTickLabel{exp_i} = displayName;
+                    
 
                 end
 
                 bl_percent_y = bl_pass{1} / (bl_pass{1}+bl_fail{1});
-                yline(bl_percent_y, 'DisplayName', ['Percent pass baseline'], 'Color', [0.25 0.25 0.25], LineWidth=1);
+                yline(bl_percent_y, 'DisplayName', ['Percent Pass Baseline'], 'Color', [0.25 0.25 0.25], LineWidth=1);
 
                 hold off
 
@@ -2052,26 +2055,180 @@ classdef GraphPlotClass
 
         end
 
-        function [styleString, markerString, colourArray] = getLineStyle(obj, experimentName)
+        function plotCombinedPercent(obj, axCell)
+
+            f = figure("Name", "Percent Success at 70 Contacts Combined Graph")
+            t = tiledlayout(f, 2,2);
+            for a=1:length(axCell)
+                ax = nexttile(a);
+                
+                axCell{a}.Parent = f;
+                axCell{a}.Position = ax.Position;
+            end
+
+        end
+
+        function [styleString, markerString, colourArray, displayName] = getLineStyle(obj, experimentName)
             %Return the plot style string that is specific to the
             %experiment and uses minimal colour
 
-            graspStyle = table(["IPD"; "Align"; "IPD Align"; "PCA"], [1; 2; 3; 4], [":"; "--"; "-."; "-"]);
-            graspStyle.Properties.VariableNames = ["Name", "Row Index", "Style"];
-            searchMethod = table(["Random"; "Mean"], [1; 2], ["+"; "o"]);
+            graspStyle = table(["IPD"; "Align"; "IPD+Align"; "PCA"], [1; 2; 3; 4], [ [0.25,0.25,0.8]; [0.8, 0.8, 0.25]; [0.25, 0.8, 0.25];  [0.8,0.25,0.25]], ["Red"; "Green"; "Blue"; "Green"]);
+            graspStyle.Properties.VariableNames = ["Name", "Row Index", "Color", "Color Name"];
+            searchMethod = table(["Random"; "Mean Centred"], [1; 2], ["+"; "o"]);
             searchMethod.Properties.VariableNames = ["Name", "Search Method", "Marker"];
-            controlMethod = table(["Joint"; "Cartesian"], [1; 2], [[0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560]], ["Yellow"; "Purple"]);
-            controlMethod.Properties.VariableNames = ["Name", "Control Method", "Color", "Color Name"];
+            controlMethod = table(["Joint"; "Cartesian"], [1; 2], ["-"; "--"]);
+            controlMethod.Properties.VariableNames = ["Name", "Control Method", "Style"];
 
             experimentIndex = strcmp(obj.mapTable.Title, experimentName);
             mapRow = obj.mapTable(experimentIndex, :);
             %For some reason I titled the grasp methods as Row Index?
-            styleString = graspStyle(mapRow.("Row Index"), "Style").Variables;
+            colourArray = graspStyle(mapRow.("Row Index"), "Color").Variables;
             markerString = searchMethod(mapRow.("Search Method"), "Marker").Variables;
-            colourArray = controlMethod(mapRow.("Control Method"), "Color").Variables;
+            styleString = controlMethod(mapRow.("Control Method"), "Style").Variables;
+
+%             graspStyle = table(["IPD"; "Align"; "IPD+Align"; "PCA"], [1; 2; 3; 4], [":"; "--"; "-."; "-"]);
+%             graspStyle.Properties.VariableNames = ["Name", "Row Index", "Style"];
+%             searchMethod = table(["Random"; "Mean Centred"], [1; 2], ["+"; "o"]);
+%             searchMethod.Properties.VariableNames = ["Name", "Search Method", "Marker"];
+%             controlMethod = table(["Joint"; "Cartesian"], [1; 2], [[0.9290 0.6940 0.1250]; [0.4940 0.1840 0.5560]], ["Yellow"; "Purple"]);
+%             controlMethod.Properties.VariableNames = ["Name", "Control Method", "Color", "Color Name"];
+% 
+%             experimentIndex = strcmp(obj.mapTable.Title, experimentName);
+%             mapRow = obj.mapTable(experimentIndex, :);
+%             %For some reason I titled the grasp methods as Row Index?
+%             styleString = graspStyle(mapRow.("Row Index"), "Style").Variables;
+%             markerString = searchMethod(mapRow.("Search Method"), "Marker").Variables;
+%             colourArray = controlMethod(mapRow.("Control Method"), "Color").Variables;
+            displayName = [searchMethod(mapRow.("Search Method"), "Name").Variables + ...
+                            " " + ...
+                            controlMethod(mapRow.("Control Method"), "Name").Variables + ...
+                            " -> " + ...
+                            graspStyle(mapRow.("Row Index"), "Name").Variables];
 
 
         end
 
+        function plotAllShapeNContact(obj, GPC_input, experimentName, nContacts, varargin)
+            %For all shapes provided by the GPC_input, and the behaviour
+            %name for nContacts, plot tiles that show the qualities and
+            %costs as a median of the combined data
+
+            if isempty(varargin)
+                %If measure name is not specified, return all quality
+                %measures (but not "withinReach")
+                measureName = [obj.all_quality_name(1:4), "Simulation Time", "Real World Time"];
+            else
+                measureName = [varargin{:}];
+            end
+            nMeasure = length(measureName);
+
+            if strcmp(experimentName, "all")
+                experimentName = {obj.experimentDataStruct(:).Title};
+            end
+
+            nShape = length(GPC_input);
+            nExperiment = length(experimentName);
+            contactListLength = length(nContacts);
+
+            %plotY = nan(40,length(nContacts),nMeasure,nExperiment, nShape);
+
+
+
+            pd = cell(length(nContacts), nExperiment, nMeasure);
+            min_x = cell(1, nMeasure);
+            max_x = cell(1, nMeasure);
+
+            for shape_i = 1:nShape
+                %Extract and refine ALL the relevant data contained within
+                %the specific GPC
+                [xData, yData] = GPC_input(shape_i).extractMeasure(experimentName);
+                [refinedY, passY, failY] = GPC_input(shape_i).excludeFailedGrasp(yData, measureName);
+                for experiment_i = 1:nExperiment
+                    for contact_i = 1:contactListLength
+                        % Find the data for the set number of contacts
+                        contact_idx = find(xData{experiment_i}==nContacts(contact_i));
+                        fullY = refinedY{experiment_i}(:,contact_idx,:);
+
+                        for measure_i = 1:nMeasure
+                            % Find the PDF for this specific measure
+                            y = fullY(:,:,measure_i);
+                            if sum(isnan(y)) <= length(y)*0.7
+                                y(y<=0) = [];
+                                %Make initial distribution to find a median estimate
+                                y_pre = fitdist(y, "Weibull");
+                                median_y = y_pre.median;
+
+                                c=-1/(sqrt(2)*erfcinv(3/2));
+                                sMAD = c*median(abs(y-median_y), 'omitnan');
+                                upper_lim = 3*sMAD + median_y;
+                                lower_lim = median_y - 3*sMAD;
+                                y(y >= upper_lim) = [];
+                                y(y <= lower_lim) = [];
+                                %%--
+
+                                pd{contact_i, experiment_i, measure_i} = fitdist(y, "Weibull");
+                                if experiment_i == 1
+                                    max_x{measure_i} = max(y);
+                                    min_x{measure_i} = min(y);
+                                end
+                            end
+
+                            %% --
+
+                            %Update the range of the plot
+                            if max(y) > max_x{measure_i}
+                                max_x{measure_i} = max(y);
+                            end
+                            if min(y) < min_x{measure_i}
+                                min_x{measure_i} = min(y);
+                            end
+
+                        end
+
+                    end
+
+                end
+            end
+
+            
+            figure
+            
+            t = tiledlayout(1, nMeasure);
+            
+            title(t, "Median performance of Experiments at N contacts across all shapes")
+
+            for measure_i = 1:nMeasure
+                %Now we have all the PD, find set the x steps for the overlaid
+                %plot
+                x_step = [min_x{measure_i} : (max_x{measure_i}-min_x{measure_i})/50 : max_x{measure_i}];
+    
+                ax = nexttile(measure_i);
+                hold on
+    
+                if measure_i == 1
+                    ylabel(ax, "PDF", 'FontWeight', 'bold')
+                end
+    
+                for experiment_i = 1:nExperiment %For each experiment
+                    for contact_i = 1:contactListLength
+                        if experiment_i == 1
+                            xlabel(ax, measureName(measure_i), 'FontWeight', 'bold')
+                        end
+                        if ~isempty(pd{contact_i, experiment_i, measure_i})
+                            pdf_y = pdf(pd{contact_i, experiment_i, measure_i}, x_step);
+                            [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{experiment_i});
+                            plot(ax, x_step,pdf_y, 'DisplayName', [displayName, ' ', int2str(nContacts(contact_i))], LineStyle=lineStyle, Marker=markerString, MarkerSize=3, Color=colourArray);
+                        end
+                    end
+                end
+                hold off
+                legend('Interpreter', 'none')
+
+            end
+            
+
+        end
+
     end
+    
 end
