@@ -88,8 +88,8 @@ RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
 % Experiment runs trial_n experiments per number of contact points sensed
 % before goal evaluation
-%NumberOfPoints = [22:3:70];
-NumberOfPoints = [3:3:19];
+NumberOfPoints = [4:3:70];
+
 
 nExperiment = length(NumberOfPoints);
 

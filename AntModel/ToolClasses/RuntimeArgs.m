@@ -342,7 +342,7 @@ classdef RuntimeArgs
             if methodFlag(1)
                 obj.SEARCH.RANGE = [-2, 2; ...
                     2, 4; ...
-                    0, 1];
+                    -1, 1];
                 refineFlag = contains(refineMethod, cellInstruct);
                 if any(refineFlag)
                     obj.SEARCH.REFINE.MODE = refineMethod{refineFlag==1};

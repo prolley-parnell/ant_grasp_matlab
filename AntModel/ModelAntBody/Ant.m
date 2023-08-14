@@ -123,7 +123,7 @@ classdef Ant
             %%
             if obj.RUNTIME_ARGS.PLOT.ENABLE(1)
                 figure(1)
-                show(obj.antTree, obj.q ,'Parent', gca, 'Position', obj.position, 'PreservePlot',false, 'Collisions', 'off', 'Visual', 'on', 'FastUpdate',true);
+                show(obj.antTree, obj.q ,'Parent', gca, 'Position', obj.position, 'PreservePlot',false, 'Collisions', 'off', 'Visual', 'on', 'Frames', 'off', 'FastUpdate',true);
             end
         end
 

@@ -154,8 +154,12 @@ classdef JointActionGen
             randomScale = rand([2,1]);
             jointAB = r(minAB,maxAB,randomScale);
 
-            outPath = [jointAB;restrictJointLimit(3,2)];
-            sweepIn = [jointAB;restrictJointLimit(3,1)];
+            % outPath = [jointAB;restrictJointLimit(3,2)];
+            % sweepIn = [jointAB;restrictJointLimit(3,1)];
+
+
+            outPath = [jointAB;restrictJointLimit(3,1)];
+            sweepIn = [jointAB;restrictJointLimit(3,2)];
 
             waypoints = [outPath, sweepIn];
 
@@ -201,8 +205,8 @@ classdef JointActionGen
             q12 = tbox.applyUpperandLowerLimit(newJointGoal, antennaIn.joint_limits(1:2,:));
 
             %also generate a sweeping motion for q3
-            outPath = [q12;meanWorkingLimit(3,2)];
-            sweepIn = [q12;meanWorkingLimit(3,1)];
+            outPath = [q12;meanWorkingLimit(3,1)];
+            sweepIn = [q12;meanWorkingLimit(3,2)];
 
             %compile the random base with the sweeping motion
             waypointArray = [outPath, sweepIn];

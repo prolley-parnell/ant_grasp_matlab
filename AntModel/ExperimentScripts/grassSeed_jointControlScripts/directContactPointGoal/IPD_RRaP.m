@@ -89,9 +89,8 @@ RUNTIME_ARGS.SENSE.MODE = {'dist'};
 
 % Experiment runs trial_n experiments per number of contact points sensed
 % before goal evaluation
+NumberOfPoints = [4:3:70];
 
-%NumberOfPoints = [22:3:70];
-NumberOfPoints = [3:3:19];
 
 nExperiment = length(NumberOfPoints);
 
