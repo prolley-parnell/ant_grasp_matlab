@@ -453,7 +453,9 @@ classdef GraphPlotClass
                     unsortedDataOut = experimentDataIn{i}.*refineMask;
                     for m = 1:length(measureName)
                         layerID = find(strcmp([obj.all_quality_name, "Simulation Time", "Real World Time"] , measureName(m)));
-                        refinedDataOut{i}(:,:,m) = unsortedDataOut(:,:,layerID);
+                        if ~isempty(layerID)
+                            refinedDataOut{i}(:,:,m) = unsortedDataOut(:,:,layerID);
+                        end
                     end
                 else
                     refinedDataOut{i} = experimentDataIn{i}.*refineMask;
@@ -2444,7 +2446,7 @@ classdef GraphPlotClass
             if isempty(varargin)
                 %If measure name is not specified, return all quality
                 %measures (but not "withinReach")
-                measureName = [obj.all_quality_name(1:4), "Simulation Time", "Real World Time"];
+                measureName = [obj.all_quality_name(1:4), "Simulation Time", "Real World Time", "{\tau_{RW}} / {\tau_{S}}"];
             else
                 measureName = [varargin{:}];
             end
@@ -2470,8 +2472,12 @@ classdef GraphPlotClass
 
 
                 for experiment_i = 1:nExperiment
-
-                    y_full{experiment_i} = [y_full{experiment_i};refinedY{experiment_i}(:,ismember(xData{experiment_i}, nContacts),:)];
+                    
+                    %Hard coded, beware!
+                    time_ratio_y = refinedY{experiment_i}(:,ismember(xData{experiment_i}, nContacts),6) ./ refinedY{experiment_i}(:,ismember(xData{experiment_i}, nContacts),5);
+                    
+                    y_full{experiment_i} = [y_full{experiment_i};cat(3, refinedY{experiment_i}(:,ismember(xData{experiment_i}, nContacts),:), time_ratio_y)];
+                    %y_full{experiment_i} = [y_full{experiment_i};refinedY{experiment_i}(:,ismember(xData{experiment_i}, nContacts),:)];
                     percent_successful(experiment_i,:, shape_i) = passY{experiment_i}(ismember(xData{experiment_i}, nContacts));
 
                     if experiment_i == 1
@@ -2480,12 +2486,12 @@ classdef GraphPlotClass
                     end
                     %Update the range of the plot
                     max_flag = max(y_full{experiment_i}) > max_x;
-                    if any(max_flag)
+                    if any(any(max_flag))
                         max_temp = max(y_full{experiment_i});
                         max_x(max_flag) = max_temp(max_flag);
                     end
                     min_flag = min(y_full{experiment_i}) < min_x;
-                    if any(min_flag)
+                    if any(any(min_flag))
                         min_temp = min(y_full{experiment_i});
                         min_x(min_flag) = min_temp(min_flag);
                     end
@@ -2499,7 +2505,11 @@ classdef GraphPlotClass
 
             figure
 
+
+            
             t = tiledlayout(contactListLength, nMeasure);
+
+            
 
             title(t, ["Experiment Quality Measures at [" + int2str(nContacts) + "] Contacts Across All Shapes"], 'FontSize', 20);
             ylabel(t, "Frequency", 'FontSize', 16)
@@ -2512,7 +2522,7 @@ classdef GraphPlotClass
 
                     %Now we have all the PD, find set the x steps for the overlaid
                     %plot
-                    x_step = [min_x(:,:,measure_i) : (max_x(:,:,measure_i)-min_x(:,:,measure_i))/20 : max_x(:,:,measure_i)];
+                    x_step = [min(min_x(:,:,measure_i)) : (max(max_x(:,:,measure_i))-min(min_x(:,:,measure_i)))/27 : max(max_x(:,:,measure_i))];
 
                     ax = nexttile(tilenum(t, contact_i, measure_i));
                     hold on
@@ -2523,6 +2533,7 @@ classdef GraphPlotClass
 
                         if (experiment_i == 1) && (contact_i == contactListLength)
                             xlabel(ax, measureName(measure_i), 'FontWeight', 'bold', 'FontSize', 12)
+                            
                         end
 
                         [lineStyle, markerString, colourArray, displayName] = obj.getLineStyle(experimentName{experiment_i});
@@ -2537,8 +2548,8 @@ classdef GraphPlotClass
                         %successful ones have the same range of quality
                         %values
                         hist_line_y = H.Values;
-                        % H.FaceAlpha = 0.15;
-                        % H.EdgeAlpha = 0.6;
+                        %H.FaceAlpha = 0.15;
+                        %H.EdgeAlpha = 0.6;
                         H.FaceAlpha = 0;
                         H.EdgeAlpha = 0;
                         H.FaceColor = colourArray;
@@ -2550,7 +2561,7 @@ classdef GraphPlotClass
                         if any(hist_line_y > y_limits(measure_i))
                             y_limits(measure_i) = max(hist_line_y);
                         end
-                        if any(strcmp(measureName(measure_i), ["COM Offset", "Simulation Time",	"Real World Time"]))
+                        if any(strcmp(measureName(measure_i), ["COM Offset", "Simulation Time",	"Real World Time", "{\tau_{RW}} / {\tau_{S}}"]))
                             ax.XDir = "reverse";
                         end
                     end
@@ -2569,7 +2580,8 @@ classdef GraphPlotClass
 
                     ax = nexttile(tilenum(t, contact_i, measure_i));
                     ax.YLim = [0, multiplier*ceil(y_limits(measure_i)/multiplier)];
-                    ax.YTick = [0:5:ax.YLim(2)];
+                    ax.YTick = [0:(ax.YLim(2)/5):ax.YLim(2)];
+                    
                 end
             end
 

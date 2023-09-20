@@ -40,7 +40,7 @@ RUNTIME_ARGS.N_TRIALS = 1;
 RUNTIME_ARGS.RATE = 0.03;
 
 %Plot the experiment
-RUNTIME_ARGS.PLOT.ENABLE = [1 0];
+RUNTIME_ARGS.PLOT.ENABLE = [0 0];
 
 % Printout saves the experiment results to an excel file, the position and pose, and cost,
 % only prints out if a grasp is selected, use if data needs exporting to
@@ -61,15 +61,15 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 % % Scale is linear scale about the centre of the object, varies for all
 % experiments.
 %  RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.8;
-% % stl file (binary) to import
+% stl file (binary) to import
 %  RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/Grass Seed 2pt8 v3.stl';
 
 %% Object to sense
 % % Scale is linear scale about the centre of the object, varies for all
 % % experiments.
-% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
-% % stl file (binary) to import
-% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
+RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.045;
+% stl file (binary) to import
+RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/plank.stl';
 
 %% Object to sense
 % Scale is linear scale about the centre of the object, varies for all
@@ -80,9 +80,9 @@ RUNTIME_ARGS.RECORD.ENABLE = 0;
 %%
 % Scale is linear scale about the centre of the object, varies for all
 % experiments.
-RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
-% stl file (binary) to import
-RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
+% RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0.18;
+% % stl file (binary) to import
+% RUNTIME_ARGS.COLLISION_OBJ.FILE_PATH = './Environment/12_sided_tiny_shape.stl';
 %%
 % % % experiments.
 % RUNTIME_ARGS.COLLISION_OBJ.SCALE = 0;
@@ -123,11 +123,11 @@ RUNTIME_ARGS = RUNTIME_ARGS.setAntennaControl(antenna_control_cell);
 %RUNTIME_ARGS.SENSE.MODE = {'dist'};
 % Uses the centre of contact to generate a potential grasp along the PCA
 % axis 
-RUNTIME_ARGS.SENSE.MODE = {'align'};
+RUNTIME_ARGS.SENSE.MODE = {'PCA'};
 
 %Set the stopping Criterion to be when the change in COC is less than 0.05
 %for 6 contacts
-RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('n_contact', 20);
+RUNTIME_ARGS = RUNTIME_ARGS.setStoppingCriterion('n_contact', 30);
 
 %% -------- Test Specific Set Up ------------ %%
 % 
