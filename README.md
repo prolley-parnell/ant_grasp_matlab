@@ -1,7 +1,5 @@
 # ant_grasp_matlab
 
-**# Changes**
-
 ## Position Control
 Originally this model used the discrete time steps to plot the approach and grasp of a proposed grasp. However as this was for visual information and wasn't required to generate a synthetic grasp, the movement aspect gradually drifted out of the code and the noise/error was introduced manually (using ray intersection) rather than through the URDF and collision calculation.
 The main difficulty arose from trying to generate a reasonable grasp approximation using the URDF, and collision when the ```CollisionObject``` used to estimate antennal collision is essentially an initial approximation before the actual location is generated using triangle-ray intersection.

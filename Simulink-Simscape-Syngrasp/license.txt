@@ -1,5 +1,0 @@
-CC-BY 4.0
-
-Derived from Khalife, Adam, Keller, Roberto A., Billen, Johan, Hita Garcia, Francisco, Economo, Evan P., & Peeters, Christian. (2018). Skeletomuscular adaptations of head and legs of Melissotarsus ants for tunnelling through living wood [Data set]. In Frontiers in Zoology (Vol. 15, Number 30). Zenodo. https://doi.org/10.5281/zenodo.1341553.
-
-3D model segmented by Weyna, Arthur.
